@@ -17,6 +17,8 @@ function showPage(id){
  document.querySelectorAll('.bottom button').forEach(b=>b.classList.remove('active'));
  document.getElementById(id).classList.add('active');
  let nav=document.getElementById('nav-'+id);if(nav)nav.classList.add('active');
+ let bottomNav=document.querySelector('.bottom');
+ if(bottomNav){bottomNav.style.display=id==='universe'?'none':'grid'}
  window.scrollTo({top:0,behavior:'smooth'});render()
 }
 
@@ -30,20 +32,6 @@ function toast(msg){let t=document.getElementById('toast');t.textContent=msg;t.c
 
 function drawOrbit(d){let el=bigOrbit;el.innerHTML='<div class="orbit-circle o1"></div><div class="orbit-circle o2"></div><div class="orbit-circle o3"></div><div class="me">yo</div>';let coords=[[50,18],[80,34],[82,67],[52,83],[19,68],[19,35],[65,25],[67,74]];d.orbit.slice(0,8).forEach((o,i)=>{let p=document.createElement('div');p.className='planet';p.style.left=coords[i][0]+'%';p.style.top=coords[i][1]+'%';p.textContent=o.name;el.appendChild(p)})}
 
-const constellationDefs=[
- {id:'lyra',name:'Lira',need:8,desc:'Una primera señal de que algo nuevo empieza a dibujarse.',
-  pts:[[50,18],[34,44],[50,63],[70,45],[50,18],[50,63]],edges:[[0,1],[1,2],[2,3],[3,0],[0,4]]},
- {id:'cassiopeia',name:'Casiopea',need:15,desc:'Cinco estrellas que recuerdan que también hay belleza en los cambios.',
-  pts:[[18,48],[34,30],[50,52],[68,28],[84,47]],edges:[[0,1],[1,2],[2,3],[3,4]]},
- {id:'ursa-major',name:'Osa Mayor',need:30,desc:'Una constelación para orientarte cuando cuesta encontrar el norte.',
-  pts:[[15,54],[31,46],[47,50],[60,39],[71,26],[83,31],[73,45]],edges:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,3]]},
- {id:'orion',name:'Orión',need:50,desc:'Fuerza, invierno y la certeza de que las noches también cambian.',
-  pts:[[34,20],[66,22],[46,43],[52,44],[58,45],[36,72],[65,74]],edges:[[0,2],[1,4],[2,3],[3,4],[2,5],[4,6]]},
- {id:'cygnus',name:'Cisne',need:80,desc:'Una cruz de estrellas que atraviesa el cielo como un camino.',
-  pts:[[50,12],[50,35],[50,58],[50,83],[26,47],[76,47]],edges:[[0,1],[1,2],[2,3],[4,2],[2,5]]},
- {id:'andromeda',name:'Andrómeda',need:120,desc:'Una constelación que comparte nombre con una galaxia: todavía hay universo por delante.',
-  pts:[[15,55],[31,46],[47,38],[61,31],[76,20],[58,54],[72,63]],edges:[[0,1],[1,2],[2,3],[3,4],[2,5],[5,6]]}
-];
 function constellationSvg(def,unlocked,progress){
  let activeCount=unlocked?def.pts.length:Math.max(1,Math.floor(def.pts.length*progress));
  let lines=def.edges.map(([a,b])=>{
@@ -63,16 +51,82 @@ function renderUniverse(d){
  let prevNeed=idx>0?constellationDefs[idx-1].need:0;
  let progress=next?Math.max(0,Math.min(1,(total-prevNeed)/(current.need-prevNeed))):1;
  constellationProgressText.textContent=next?`${total.toFixed(1).replace('.',',')} / ${current.need} estrellas`:'Colección actual completada';
- constellationStage.innerHTML=constellationSvg(current,!next,progress)+
-   `<div class="constellation-caption"><strong>${next?'Dibujando '+current.name:current.name+' completada'}</strong><small>${next?`Faltan ${(current.need-total).toFixed(1).replace('.',',')} estrellas`:current.desc}</small></div>`;
- constellationBook.innerHTML=constellationDefs.map(c=>{
-   let unlocked=total>=c.need;
-   return `<div class="card book-card ${unlocked?'':'locked'}">
-     <div class="mini-const">${constellationSvg(c,unlocked,unlocked?1:0)}</div>
-     <span class="unlock">${unlocked?'desbloqueada':c.need+' estrellas'}</span>
-     <h3>${c.name}</h3><p>${unlocked?c.desc:'Todavía por descubrir.'}</p>
-   </div>`
- }).join('')
+ constellationStage.innerHTML=constellationSvg(current,!next,progress);
+ let captionDetails = document.getElementById('constellationDetailsCaption');
+ if(captionDetails){
+  captionDetails.innerHTML=`<div class="constellation-caption"><strong>${next?'Dibujando '+current.name:current.name+' completada'}</strong><small>${next?`Faltan ${(current.need-total).toFixed(1).replace('.',',')} estrellas`:current.desc}</small></div>`;
+ }
+ 
+ const collections = [
+   { id: 'zodiaco', name: 'Zodiaco' },
+   { id: 'norte', name: 'Cielo del norte' },
+   { id: 'invierno', name: 'Cielo de invierno' },
+   { id: 'profundo', name: 'Espacio profundo' }
+ ];
+ 
+ let bookHtml = '';
+ collections.forEach(col => {
+   let colConsts = constellationDefs.filter(c => c.collection === col.id);
+   let ownedCount = colConsts.filter(c => d.claimed && d.claimed[c.id]).length;
+   bookHtml += `
+     <div class="collection-header" style="grid-column: 1 / -1; margin-top: 15px; border-bottom: 1px solid var(--line); padding-bottom: 5px;">
+       <h4 style="margin: 0; font-size: 13px; color: var(--wine); text-transform: uppercase; letter-spacing: 0.05em;">
+         ${col.name} (${ownedCount}/${colConsts.length})
+       </h4>
+     </div>
+   `;
+   bookHtml += colConsts.map(c => {
+     let owned = d.claimed && d.claimed[c.id];
+     let discovered = !owned && total >= c.need;
+     if (owned) {
+       let acqDate = new Date(d.claimed[c.id]).toLocaleDateString('es-ES', {day:'numeric', month:'short'});
+       return `<div class="card book-card owned">
+         <div class="mini-const">${constellationSvg(c, true, 1.0)}</div>
+         <span class="unlock text-owned" style="color: #aa5966; font-weight: bold; font-size: 9px;">En mi universo</span>
+         <h3>${c.name}${c.extra === 'tu signo' ? '<span class="sign-tag">tu signo</span>' : ''}</h3>
+         <p style="font-size: 9px; color: var(--muted); margin-bottom: 6px;">Adquirida: ${acqDate}</p>
+         <button class="btn btn-line" style="padding: 4px 8px; font-size: 9px; border-radius: 8px;" onclick="verFichaConstelacion('${c.id}')">Ficha</button>
+       </div>`;
+     } else if (discovered) {
+       return `<div class="card book-card discovered">
+         <div class="mini-const">${constellationSvg(c, true, 0.5)}</div>
+         <span class="unlock text-discovered" style="color: var(--wine); font-size: 9px;">Descubierta</span>
+         <h3>${c.name}${c.extra === 'tu signo' ? '<span class="sign-tag">tu signo</span>' : ''}</h3>
+         <button class="btn btn-main" style="padding: 4px 8px; font-size: 9px; border-radius: 8px; margin-top: 5px;" onclick="guardarConstelacion('${c.id}', ${c.cost})">Guardar · ${c.cost} ⭐</button>
+       </div>`;
+     } else {
+       return `<div class="card book-card locked">
+         <div class="mini-const">${constellationSvg(c, false, 0.2)}</div>
+         <span class="unlock" style="color: var(--muted); font-size: 9px;">${c.need} hist.</span>
+         <h3>${c.name}</h3>
+         <p style="font-size: 9px; color: var(--muted);">Bloqueada. Necesitas ${c.need} estrellas históricas.</p>
+       </div>`;
+     }
+   }).join('');
+ });
+ constellationBook.innerHTML = bookHtml;
+}
+
+function guardarConstelacion(id, cost){
+  let d = load();
+  if (Number(d.wallet || 0) < cost) {
+    return toast('No tienes suficientes estrellas disponibles en tu cesta.');
+  }
+  d.wallet = Number(d.wallet || 0) - cost;
+  d.bank = d.wallet;
+  if(!d.claimed) d.claimed = {};
+  d.claimed[id] = Date.now();
+  save(d);
+  toast(`${constellationDefs.find(x => x.id === id).name} guardada en tu universo.`);
+  render();
+}
+
+function verFichaConstelacion(id){
+  let c=constellationDefs.find(x=>x.id===id);
+  detailConstName.textContent=c.name;
+  detailConstMeta.textContent=c.collection === 'zodiaco' ? 'Colección: Zodiaco' : c.collection === 'norte' ? 'Colección: Cielo del norte' : c.collection === 'invierno' ? 'Colección: Cielo de invierno' : 'Colección: Espacio profundo';
+  detailConstDesc.textContent=c.desc;
+  document.getElementById('constellationDetailModal').classList.add('show');
 }
 
 function render(){let d=accrue(),now=Date.now(),p=prompts[new Date().getDate()%prompts.length];todayDate.textContent=new Date().toLocaleDateString('es-ES',{weekday:'short',day:'numeric',month:'short'});dailyPromptTitle.textContent=p[0];dailyPromptSub.textContent=p[1];let c=d.checkins[dayKey()];if(c){needToday.value=c.need||'';forMeToday.value=c.forMe||'';mood=c.mood||3;document.querySelectorAll('#moodScale button').forEach((b,i)=>b.classList.toggle('sel',i+1===mood))}
@@ -98,3 +152,9 @@ function render(){let d=accrue(),now=Date.now(),p=prompts[new Date().getDate()%p
  renderArchive()
 }
 setInterval(render,60000);render();
+
+function openShopModal(){document.getElementById('shopModal').classList.add('show')}
+function openInfoModal(){document.getElementById('infoModal').classList.add('show')}
+function openShipModal(){document.getElementById('shipModal').classList.add('show')}
+function openUniverseDetailsModal(){document.getElementById('universeDetailsModal').classList.add('show')}
+function openConstellationBookModal(){document.getElementById('constellationBookModal').classList.add('show')}

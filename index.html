@@ -118,11 +118,33 @@
 
 <section id="return" class="page">
   <div class="card hero"><div class="kicker">volver a mí</div><h1>Cuando algo me arrastra hacia fuera</h1><p>Esta sección existe para ayudarte con los impulsos. No es el centro de Orbit.</p></div>
-  <div class="grid2" style="margin-top:12px">
+
+  <!-- Barra compacta de accesos discretos -->
+  <div class="compact-access-grid">
+    <button class="access-btn" onclick="showPage('universe')">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="2"/><path d="m12 2 1.5 4h-3zm0 20 1.5-4h-3zM2 12l4 1.5v-3zM22 12l-4 1.5v-3z"/></svg>
+      <span>Mi Universo</span>
+    </button>
+    <button class="access-btn" onclick="openShopModal()">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7H4v14h16zM4 7V5a4 4 0 0 1 8 0v2"/></svg>
+      <span>Tienda</span>
+    </button>
+    <button class="access-btn" onclick="openInfoModal()">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+      <span>¿Cómo gano?</span>
+    </button>
+    <button class="access-btn" onclick="showPage('archive');setArchiveView('urges')">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>
+      <span>Historial</span>
+    </button>
+  </div>
+
+  <div class="grid3" style="margin-top:14px">
     <div class="card stat"><div class="label">estrellas de hoy</div><strong id="todayPoints">0</strong></div>
     <div class="card stat"><div class="label">cesta</div><strong id="bank">0</strong></div>
+    <div class="card stat"><div class="label">mejor racha</div><strong id="bestStreak">0h</strong></div>
   </div>
-  <div class="card stat" style="margin-top:9px"><div class="label">mejor racha</div><strong id="bestStreak">0h</strong></div>
+
   <div class="section-head"><h2>Mi racha</h2><small>una sola racha para todo</small></div>
   <div class="card goal" id="sharedStreakCard">
     <div class="goal-top">
@@ -138,32 +160,7 @@
 
   <div class="section-head"><h2>Qué estoy evitando comprobar</h2><small>todas reinician la misma racha</small></div>
   <div id="goals"></div>
-  <button class="btn btn-main btn-wide" onclick="openUrge()">Tengo ganas de mirar</button>
-  <div class="section-head"><h2>Mis estrellas</h2><small>todo lo relacionado con recompensas</small></div>
-  <div class="shop-summary">
-    <div class="card stat"><div class="label">estrellas disponibles</div><strong id="shopWallet">0</strong></div>
-    <div class="card stat"><div class="label">estrellas de mi historia</div><strong id="shopLifetime">0</strong></div>
-  </div>
-  <button class="btn btn-main btn-wide" style="margin-bottom:12px" onclick="showPage('universe')">Entrar en mi universo</button>
-
-  <div class="section-head"><h2>Tienda de recompensas</h2><small>extras, nunca permisos</small></div>
-  <div id="rewards"></div>
-  <button class="btn btn-dashed btn-wide" onclick="openReward()">Añadir mi propio premio</button>
-
-  <div class="section-head"><h2>Cómo gano estrellas</h2><small>las de hoy se reinician mañana</small></div>
-  <div class="card prompt-card">
-    <div class="prompt-sub" style="line-height:1.75">
-      <b>Racha común:</b> 2 h +0,2 · 4 h +0,3 · 8 h +0,5 · 12 h +0,5 · 24 h +1 · 48 h +1,5 · 3 días +2 · 7 días +3. Cualquier comprobación reinicia esta única racha.
-      <br><b>Check-in:</b> +0,2 una vez al día.
-      <br><b>Escribir:</b> +0,1 por entrada, máximo +0,5 al día.
-      <br><b>Algo bueno:</b> +0,1 por registro, máximo +0,5 al día.
-      <br><b>Pausa ante un impulso:</b> +0,2 por detenerte y +0,3 adicional si terminas sin comprobar.
-      <br><br>
-      Los <b>estrellas de hoy</b> vuelven a 0 al cambiar de día. Todo lo ganado entra también en tu <b>cesta</b>, que se acumula hasta que canjeas un premio.
-      Si incumples un límite, no pierdes nada: solo se reinicia ese reloj y su racha actual.
-    </div>
-  </div>
-  <button class="btn btn-line btn-wide" style="margin-top:9px" onclick="showPage('archive');setArchiveView('urges')">Ver historial de impulsos</button>
+  <button class="btn btn-main btn-wide" style="margin-top:10px" onclick="openUrge()">Tengo ganas de mirar</button>
 </section>
 
 <section id="archive" class="page">
@@ -254,22 +251,31 @@
   </div>
 </section>
 
-<section id="universe" class="page">
-  <div class="universe-hero">
-    <div class="kicker">mi universo</div>
-    <h1 style="font-family:Georgia,serif;font-weight:500;margin:5px 0 7px">Las estrellas que voy reuniendo</h1>
-    <p style="font-size:12px;line-height:1.5;margin:0">Las estrellas que gastas siguen formando parte de tu historia. Las constelaciones desbloqueadas no desaparecen.</p>
-    <div class="star-balance">
-      <div class="star-chip"><small>disponibles</small><strong id="universeWallet">0</strong></div>
-      <div class="star-chip"><small>conseguidas</small><strong id="universeLifetime">0</strong></div>
-    </div>
+<section id="universe" class="page universe-immersive-page">
+  <!-- Fondo del espacio con estrellas y nebulosa sutil -->
+  <div class="sky-container">
+    <div class="stars-background"></div>
+    <div class="constellation-stage" id="constellationStage"></div>
   </div>
 
-  <div class="section-head"><h2>Constelación en curso</h2><small id="constellationProgressText"></small></div>
-  <div class="constellation-stage" id="constellationStage"></div>
-
-  <div class="section-head"><h2>Libro de constelaciones</h2><small>mi colección</small></div>
-  <div class="book-grid" id="constellationBook"></div>
+  <!-- Barra de herramientas flotante y minimalista -->
+  <div class="sky-toolbar">
+    <button class="tool-btn" onclick="showPage('return')" title="Volver a mí">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+    </button>
+    <button class="tool-btn" onclick="openUniverseDetailsModal()" title="Progreso y Estrellas">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+    </button>
+    <button class="tool-btn" onclick="openConstellationBookModal()" title="Libro de Constelaciones">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M4 19.5A2.5 2.5 0 0 0 6.5 22H20M4 19.5V3A2.5 2.5 0 0 1 6.5 5H20v12H6.5a2.5 2.5 0 0 0-2.5 2.5z"/></svg>
+    </button>
+    <button class="tool-btn" onclick="openShopModal()" title="Tienda de Recompensas">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7H4v14h16zM4 7V5a4 4 0 0 1 8 0v2"/></svg>
+    </button>
+    <button class="tool-btn" onclick="openShipModal()" title="Nave Espacial">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 22h9v-4h2v4h9z"/></svg>
+    </button>
+  </div>
 </section>
 
 </div>
@@ -328,6 +334,93 @@
   <button class="btn btn-line btn-wide" style="margin-top:7px" onclick="closeModal('dateRangeModal')">Cancelar</button>
 </div></div>
 
+<!-- Modal de Tienda -->
+<div class="modal" id="shopModal"><div class="sheet">
+  <h3>Tienda de recompensas</h3>
+  <p class="prompt-sub">Canjea tus estrellas disponibles por premios creados por ti.</p>
+  <div class="shop-balance-bar">
+    <div class="star-chip"><small>estrellas disponibles</small><strong id="shopWallet">0</strong></div>
+    <div class="star-chip"><small>conseguidas en total</small><strong id="shopLifetime">0</strong></div>
+  </div>
+  <div id="rewards" style="margin-top:15px"></div>
+  <button class="btn btn-dashed btn-wide" style="margin-top:12px" onclick="closeModal('shopModal'); openReward()">Añadir mi propio premio</button>
+  <button class="btn btn-line btn-wide" style="margin-top:9px" onclick="closeModal('shopModal')">Cerrar</button>
+</div></div>
+
+<!-- Modal Informativo de Estrellas -->
+<div class="modal" id="infoModal"><div class="sheet">
+  <h3>¿Cómo gano estrellas?</h3>
+  <div class="info-scroll-box" style="text-align:left; font-size:13px; line-height:1.6; margin-top:12px; max-height: 300px; overflow-y: auto;">
+    <b>Racha común:</b>
+    <ul>
+      <li>2 h: +0,2 estrellas</li>
+      <li>4 h: +0,3 estrellas</li>
+      <li>8 h: +0,5 estrellas</li>
+      <li>12 h: +0,5 estrellas</li>
+      <li>24 h: +1,0 estrellas</li>
+      <li>48 h: +1,5 estrellas</li>
+      <li>3 días: +2,0 estrellas</li>
+      <li>7 días: +3,0 estrellas</li>
+    </ul>
+    <p>Cualquier comprobación (deslizar) reinicia esta única racha.</p>
+    <b>Acciones diarias:</b>
+    <ul>
+      <li><b>Check-in:</b> +0,2 estrellas (una vez al día).</li>
+      <li><b>Escribir diario:</b> +0,1 por entrada (máx +0,5 al día).</li>
+      <li><b>Algo bueno:</b> +0,1 por registro (máx +0,5 al día).</li>
+      <li><b>Detenerse ante impulso:</b> +0,2 estrellas por pausar 10 min.</li>
+      <li><b>Superar impulso sin mirar:</b> +0,3 estrellas adicionales.</li>
+    </ul>
+    <p>Las <i>estrellas de hoy</i> se reinician cada mañana. Todo lo ganado entra también en tu <i>cesta</i> (estrellas disponibles) para canjear en la tienda.</p>
+  </div>
+  <button class="btn btn-line btn-wide" style="margin-top:15px" onclick="closeModal('infoModal')">Entendido</button>
+</div></div>
+
+<!-- Modal de Nave / Exploración -->
+<div class="modal" id="shipModal"><div class="sheet">
+  <h3>Nave Espacial</h3>
+  <p class="prompt-sub">Navegación y aproximación orbital</p>
+  <div class="ship-status-box" style="border: 1px dashed var(--accent); padding: 15px; border-radius: 8px; margin: 15px 0; text-align: left; font-size: 13px; font-family: monospace;">
+    SYSTEMS: READY<br>
+    PROPULSION: ION DRIVE STABLE<br>
+    DESTINATION: ORBITAL DEPARTURE<br>
+    APPROACH SPEED: 0.00 km/s
+  </div>
+  <p style="font-size:12px;">Explora destinos como la Luna, Marte, Venus, Júpiter y más allá para desbloquear nuevas constelaciones e hitos de bitácora.</p>
+  <div class="card nav-card" style="margin-top:12px; cursor: default;">
+    <div><h3>Próximamente</h3><p>La integración con destinos y mejoras espaciales estará lista en la siguiente fase.</p></div>
+  </div>
+  <button class="btn btn-line btn-wide" style="margin-top:15px" onclick="closeModal('shipModal')">Cerrar</button>
+</div></div>
+
+<!-- Modal del Libro de Constelaciones -->
+<div class="modal" id="constellationBookModal"><div class="sheet" style="max-height: 80vh; overflow-y: auto;">
+  <h3>Libro de constelaciones</h3>
+  <p class="prompt-sub" style="margin-bottom:15px">Tu catálogo y progreso global en el universo.</p>
+  <div class="book-grid" id="constellationBook"></div>
+  <button class="btn btn-line btn-wide" style="margin-top:15px" onclick="closeModal('constellationBookModal')">Cerrar</button>
+</div></div>
+
+<!-- Modal de Detalles de Universo -->
+<div class="modal" id="universeDetailsModal"><div class="sheet">
+  <h3>Mi Progreso Estelar</h3>
+  <div class="star-balance" style="margin: 15px 0; display: flex; gap: 9px;">
+    <div class="star-chip" style="flex:1; border:1px solid var(--line); background:var(--soft); border-radius:16px; padding:11px;"><small style="display:block; font-size:9px; text-transform:uppercase; color:var(--muted);">disponibles</small><strong id="universeWallet" style="font-family:Georgia,serif; font-size:24px; font-weight:500;">0</strong></div>
+    <div class="star-chip" style="flex:1; border:1px solid var(--line); background:var(--soft); border-radius:16px; padding:11px;"><small style="display:block; font-size:9px; text-transform:uppercase; color:var(--muted);">conseguidas</small><strong id="universeLifetime" style="font-family:Georgia,serif; font-size:24px; font-weight:500;">0</strong></div>
+  </div>
+  <div class="section-head"><h2>Constelación en curso</h2><small id="constellationProgressText"></small></div>
+  <div id="constellationDetailsCaption" style="margin-top:10px;"></div>
+  <button class="btn btn-line btn-wide" style="margin-top:20px" onclick="closeModal('universeDetailsModal')">Cerrar</button>
+</div></div>
+
+<!-- Modal de Ficha de Constelación -->
+<div class="modal" id="constellationDetailModal"><div class="sheet">
+  <h3 id="detailConstName"></h3>
+  <p class="prompt-sub" id="detailConstMeta"></p>
+  <p style="font-size:14px; margin-top:15px; line-height:1.6;" id="detailConstDesc"></p>
+  <button class="btn btn-line btn-wide" style="margin-top:20px" onclick="closeModal('constellationDetailModal')">Cerrar</button>
+</div></div>
+
 <div class="toast" id="toast"></div>
 
 
@@ -336,6 +429,7 @@
   <script src="js/streak.js"></script>
   <script src="js/journal.js"></script>
   <script src="js/archive.js"></script>
+  <script src="data/constellations.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

@@ -67,10 +67,23 @@ function toggleSort(target){
  if(target==='urges')renderUrgeArchive()
 }
 
-function setArchiveView(v){archiveView=v;document.querySelectorAll('.archive-panel').forEach(x=>x.classList.remove('active'));document.getElementById('panel-'+v).classList.add('active');document.querySelectorAll('.archive-switch button').forEach(x=>x.classList.remove('active'));document.getElementById('av-'+v).classList.add('active');renderArchive();renderUniverse(d)}
+function setArchiveView(v){archiveView=v;document.querySelectorAll('.archive-panel').forEach(x=>x.classList.remove('active'));document.getElementById('panel-'+v).classList.add('active');document.querySelectorAll('.archive-switch button').forEach(x=>x.classList.remove('active'));document.getElementById('av-'+v).classList.add('active');renderArchive();let d=load();renderUniverse(d)}
 function changeMonth(delta){archiveMonth=new Date(archiveMonth.getFullYear(),archiveMonth.getMonth()+delta,1);renderCalendar(load())}
 
-function renderCalendar(d){let y=archiveMonth.getFullYear(),m=archiveMonth.getMonth(),first=new Date(y,m,1),last=new Date(y,m+1,0),offset=(first.getDay()+6)%7;calendarTitle.textContent=archiveMonth.toLocaleDateString('es-ES',{month:'long',year:'numeric'});let active=new Set([...Object.keys(d.checkins),...d.journal.map(e=>dayKey(e.ts)),...d.urges.map(e=>dayKey(e.ts)),...d.goodThings.map(e=>dayKey(e.ts))]);let html='';for(let i=0;i<offset;i++)html+='<div></div>';for(let day=1;day<=last.getDate();day++){let dt=new Date(y,m,day),k=dayKey(dt.getTime()),cls='day'+(active.has(k)?' has':'')+(k===dayKey()?' today':'')+(k===selectedDay?' selected':'');html+=`<button class="${cls}" onclick="selectDay('${k}')">${day}</button>`}calendar.innerHTML=html}
+function renderCalendar(d){
+  let y=archiveMonth.getFullYear(),m=archiveMonth.getMonth(),first=new Date(y,m,1),last=new Date(y,m+1,0),offset=(first.getDay()+6)%7;
+  let titleEl = document.getElementById('calendarTitle');
+  if(titleEl) titleEl.textContent=archiveMonth.toLocaleDateString('es-ES',{month:'long',year:'numeric'});
+  let active=new Set([...Object.keys(d.checkins),...d.journal.map(e=>dayKey(e.ts)),...d.urges.map(e=>dayKey(e.ts)),...d.goodThings.map(e=>dayKey(e.ts))]);
+  let html='';
+  for(let i=0;i<offset;i++)html+='<div></div>';
+  for(let day=1;day<=last.getDate();day++){
+    let dt=new Date(y,m,day),k=dayKey(dt.getTime()),cls='day'+(active.has(k)?' has':'')+(k===dayKey()?' today':'')+(k===selectedDay?' selected':'');
+    html+=`<button class="${cls}" onclick="selectDay('${k}')">${day}</button>`
+  }
+  let calEl = document.getElementById('calendar');
+  if(calEl) calEl.innerHTML=html;
+}
 function selectDay(k){selectedDay=k;renderCalendar(load());renderDayDetail(load())}
 
 function renderDayDetail(d){let dt=new Date(selectedDay+'T12:00:00');selectedDayTitle.textContent=dt.toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'long'});let html='';let pa=d.pointAwards?.[selectedDay];if(pa){let pts=0;if(Array.isArray(pa.events))pts=pa.events.reduce((s,e)=>s+Number(e.amount||0),0);else{if(pa.actions)Object.values(pa.actions).forEach(v=>pts+=Number(v||0));if(pa.limits)Object.values(pa.limits).forEach(v=>pts+=Number(v||0))}html+=`<div class="card stat"><div class="label">estrellas ganados este día</div><strong>${pts.toFixed(1).replace('.',',')}</strong></div>`;}let c=d.checkins[selectedDay];if(c)html+=`<div class="card entry-card"><div class="entry-meta"><span class="entry-type">check-in</span></div><p>Estado: ${c.mood}/5${c.need?'<br>Necesitaba: '+esc(c.need):''}${c.forMe?'<br>Por mí: '+esc(c.forMe):''}</p></div>`;d.journal.filter(e=>dayKey(e.ts)===selectedDay).forEach(e=>html+=entryHTML(e));d.goodThings.filter(e=>dayKey(e.ts)===selectedDay).forEach(g=>html+=goodHTML(g));d.urges.filter(e=>dayKey(e.ts)===selectedDay).forEach(u=>html+=urgeHTML(u,d));dayDetail.innerHTML=html||'<div class="empty">No guardaste nada este día.</div>'}

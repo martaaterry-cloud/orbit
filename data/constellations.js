@@ -1,17 +1,21 @@
 // Catálogo inicial de constelaciones de Orbit.
 const constellationDefs=[
- {id:'lyra',name:'Lira',need:8,desc:'Una primera señal de que algo nuevo empieza a dibujarse.',
-  pts:[[50,18],[34,44],[50,63],[70,45],[50,18],[50,63]],edges:[[0,1],[1,2],[2,3],[3,0],[0,4]]},
- {id:'cassiopeia',name:'Casiopea',need:15,desc:'Cinco estrellas que recuerdan que también hay belleza en los cambios.',
-  pts:[[18,48],[34,30],[50,52],[68,28],[84,47]],edges:[[0,1],[1,2],[2,3],[3,4]]},
- {id:'ursa-major',name:'Osa Mayor',need:30,desc:'Una constelación para orientarte cuando cuesta encontrar el norte.',
-  pts:[[15,54],[31,46],[47,50],[60,39],[71,26],[83,31],[73,45]],edges:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,3]]},
- {id:'orion',name:'Orión',need:50,desc:'Fuerza, invierno y la certeza de que las noches también cambian.',
-  pts:[[34,20],[66,22],[46,43],[52,44],[58,45],[36,72],[65,74]],edges:[[0,2],[1,4],[2,3],[3,4],[2,5],[4,6]]},
- {id:'cygnus',name:'Cisne',need:80,desc:'Una cruz de estrellas que atraviesa el cielo como un camino.',
-  pts:[[50,12],[50,35],[50,58],[50,83],[26,47],[76,47]],edges:[[0,1],[1,2],[2,3],[4,2],[2,5]]},
- {id:'andromeda',name:'Andrómeda',need:120,desc:'Una constelación que comparte nombre con una galaxia: todavía hay universo por delante.',
-  pts:[[15,55],[31,46],[47,38],[61,31],[76,20],[58,54],[72,63]],edges:[[0,1],[1,2],[2,3],[3,4],[2,5],[5,6]]}
+ {id:'aries',name:'Aries',collection:'zodiaco',need:20,cost:2,desc:'El carnero, símbolo de inicios y energía incipiente.',pts:[[25,45],[50,35],[75,55]],edges:[[0,1],[1,2]]},
+ {id:'taurus',name:'Tauro',collection:'zodiaco',need:35,cost:3,desc:'El toro, constelación que evoca estabilidad, fuerza y paciencia.',pts:[[20,20],[40,35],[60,35],[80,20],[60,55],[40,65]],edges:[[0,1],[1,2],[2,3],[2,4],[4,5]]},
+ {id:'gemini',name:'Géminis',collection:'zodiaco',need:50,cost:4,desc:'Los gemelos, que representan la dualidad, el diálogo y el aprendizaje.',pts:[[30,20],[70,20],[30,70],[70,70],[30,45],[70,45]],edges:[[0,1],[0,2],[1,3],[4,5]]},
+ {id:'cancer',name:'Cáncer',collection:'zodiaco',need:65,cost:5,desc:'El cangrejo, símbolo de protección, hogar y el mundo emocional.',pts:[[50,20],[50,45],[30,70],[70,70]],edges:[[0,1],[1,2],[1,3]]},
+ {id:'leo',name:'Leo',collection:'zodiaco',need:80,cost:6,desc:'El león, constelación que brilla con fuerza propia y expresión vital.',pts:[[30,60],[50,60],[70,45],[70,25],[55,20],[40,25],[40,40],[55,40]],edges:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7]]},
+ {id:'virgo',name:'Virgo',collection:'zodiaco',need:95,cost:7,desc:'La virgen, que representa el análisis, la curación y la atención al detalle.',pts:[[25,25],[45,35],[65,25],[55,55],[35,65],[75,65]],edges:[[0,1],[1,2],[1,3],[3,4],[3,5]]},
+ {id:'libra',name:'Libra',collection:'zodiaco',need:110,cost:8,desc:'La balanza, símbolo de equilibrio, relaciones y justicia interior.',pts:[[50,20],[30,50],[70,50],[50,80]],edges:[[0,1],[0,2],[1,3],[2,3]]},
+ {id:'scorpio',name:'Escorpio',collection:'zodiaco',need:125,cost:9,desc:'El escorpión, representante de la transformación profunda y la intensidad.',pts:[[30,20],[50,25],[60,40],[55,60],[45,80],[30,75]],edges:[[0,1],[1,2],[2,3],[3,4],[4,5]]},
+ {id:'sagittarius',name:'Sagitario',collection:'zodiaco',need:140,cost:10,extra:'tu signo',desc:'El arquero, símbolo de búsqueda, sentido, libertad y tu propio signo solar.',pts:[[30,50],[50,35],[70,50],[50,65],[30,50],[70,30],[85,50],[70,70]],edges:[[0,1],[1,2],[2,3],[3,0],[2,5],[2,6],[2,7]]},
+ {id:'capricorn',name:'Capricornio',collection:'zodiaco',need:155,cost:11,desc:'La cabra marina, símbolo de perseverancia, raíces y metas a largo plazo.',pts:[[20,30],[40,55],[70,60],[80,35],[55,30]],edges:[[0,1],[1,2],[2,3],[3,4],[4,0]]},
+ {id:'aquarius',name:'Acuario',collection:'zodiaco',need:170,cost:12,desc:'El aguador, símbolo de innovación, comunidad y renovación mental.',pts:[[25,30],[45,35],[50,55],[70,45],[80,65]],edges:[[0,1],[1,2],[2,3],[3,4]]},
+ {id:'pisces',name:'Piscis',collection:'zodiaco',need:185,cost:13,desc:'Los peces, símbolo de intuición, disolución y empatía cósmica.',pts:[[20,20],[40,35],[60,40],[80,55],[65,75],[45,70]],edges:[[0,1],[1,2],[2,3],[3,4],[4,5]]},
+ {id:'lyra',name:'Lira',collection:'norte',need:8,cost:2,desc:'Una primera señal de que algo nuevo empieza a dibujarse.',pts:[[50,18],[34,44],[50,63],[70,45],[50,18],[50,63]],edges:[[0,1],[1,2],[2,3],[3,0],[0,4]]},
+ {id:'cassiopeia',name:'Casiopea',collection:'norte',need:15,cost:2,desc:'Cinco estrellas que recuerdan que también hay belleza en los cambios.',pts:[[18,48],[34,30],[50,52],[68,28],[84,47]],edges:[[0,1],[1,2],[2,3],[3,4]]},
+ {id:'ursa-major',name:'Osa Mayor',collection:'norte',need:30,cost:3,desc:'Una constelación para orientarte cuando cuesta encontrar el norte.',pts:[[15,54],[31,46],[47,50],[60,39],[71,26],[83,31],[73,45]],edges:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,3]]},
+ {id:'cygnus',name:'Cisne',collection:'norte',need:80,cost:6,desc:'Una cruz de estrellas que atraviesa el cielo como un camino.',pts:[[50,12],[50,35],[50,58],[50,83],[26,47],[76,47]],edges:[[0,1],[1,2],[2,3],[4,2],[2,5]]},
+ {id:'orion',name:'Orión',collection:'invierno',need:60,cost:5,desc:'Fuerza, invierno y la certeza de que las noches también cambian.',pts:[[34,20],[66,22],[46,43],[52,44],[58,45],[36,72],[65,74]],edges:[[0,2],[1,4],[2,3],[3,4],[2,5],[4,6]]},
+ {id:'andromeda',name:'Andrómeda',collection:'profundo',need:120,cost:8,desc:'Una constelación que comparte nombre con una galaxia: todavía hay universo por delante.',pts:[[15,55],[31,46],[47,38],[61,31],[76,20],[58,54],[72,63]],edges:[[0,1],[1,2],[2,3],[3,4],[2,5],[5,6]]}
 ];
-
-// Este archivo se ampliará con las constelaciones zodiacales y demás colecciones.

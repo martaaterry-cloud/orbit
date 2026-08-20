@@ -79,7 +79,7 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
 .archive-switch{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:12px 0}
 .archive-switch button{border:1px solid var(--line);background:white;border-radius:13px;padding:9px 5px;font-size:10px;color:var(--muted)}
 .archive-switch button.active{background:var(--soft);color:var(--wine);font-weight:700}
-.calendar{padding:12px}.cal-head,.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;text-align:center}.cal-head{font-size:9px;color:var(--muted);margin-bottom:5px}.day{aspect-ratio:1;border-radius:10px;display:grid;place-items:center;font-size:10px;background:#fff;border:0}.day.has{background:var(--soft);color:var(--wine);font-weight:700}.day.today{outline:1px solid var(--wine)}.day.selected{background:var(--wine);color:white}
+.calendar{padding:12px}.cal-head,.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;text-align:center}.cal-head{font-size:9px;color:var(--muted);margin-bottom:5px}.day{aspect-ratio:1;border-radius:10px;display:grid;place-items:center;font-size:11px;background:rgba(0,0,0,0.02);border:0;color:var(--ink);transition:all 0.2s ease}.day:hover{background:var(--soft2)}.day.has{background:var(--soft);color:var(--wine);font-weight:700}.day.today{outline:2px solid var(--wine);font-weight:700}.day.selected{background:var(--wine);color:white;font-weight:700}
 .archive-tools{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0}
 .archive-panel{display:none}.archive-panel.active{display:block}
 .quote{padding:17px;background:#4e3b3f;color:#fff;border-radius:21px;font-family:Georgia,serif;font-size:16px;line-height:1.5}.quote small{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;display:block;color:#d8cbcd;font-size:9px;margin-top:8px;letter-spacing:.04em}
@@ -132,3 +132,240 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
 .future-sealed{border-style:dashed;background:linear-gradient(145deg,#fffdfb,#f7edef)}
 
 @media(max-width:390px){.hero p{max-width:100%}.goal-actions{padding-left:0}.progressline{margin-left:0}.archive-switch{grid-template-columns:1fr 1fr}}
+
+/* Rediseño Visual - Estilos Adicionales */
+.grid3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 9px;
+}
+
+.compact-access-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-top: 14px;
+  margin-bottom: 14px;
+}
+
+.access-btn {
+  background: rgba(255, 253, 251, 0.94);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 12px 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  color: var(--wine);
+  box-shadow: var(--shadow);
+  transition: all 0.2s ease;
+}
+
+.access-btn:hover {
+  transform: translateY(-2px);
+  background: var(--soft);
+}
+
+.access-btn span {
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--muted);
+  text-align: center;
+}
+
+.access-btn .icon {
+  width: 20px;
+  height: 20px;
+}
+
+/* Universo Inmersivo */
+.universe-immersive-page {
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(150deg, #100d23, #15112e 50%, #080612);
+  z-index: 15;
+  display: none;
+}
+
+.universe-immersive-page.active {
+  display: block;
+}
+
+.sky-container {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.stars-background {
+  position: absolute;
+  inset: 0;
+  background-image: 
+    radial-gradient(circle at 10% 20%, rgba(255, 255, 255, 0.9) 0 1px, transparent 2px),
+    radial-gradient(circle at 30% 40%, rgba(255, 255, 255, 0.75) 0 1px, transparent 2px),
+    radial-gradient(circle at 50% 60%, rgba(255, 255, 255, 0.8) 0 1px, transparent 2px),
+    radial-gradient(circle at 70% 80%, rgba(255, 255, 255, 0.7) 0 1px, transparent 2px),
+    radial-gradient(circle at 90% 15%, rgba(255, 255, 255, 0.85) 0 1px, transparent 2px),
+    radial-gradient(circle at 20% 70%, rgba(255, 255, 255, 0.8) 0 1px, transparent 2px),
+    radial-gradient(circle at 80% 50%, rgba(255, 255, 255, 0.9) 0 1px, transparent 2px);
+  background-size: cover;
+  opacity: 0.65;
+}
+
+.universe-immersive-page .constellation-stage {
+  margin-top: 0;
+  background: transparent;
+  border: none;
+  min-height: unset;
+  width: 100%;
+  max-width: 500px;
+  height: 85vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.universe-immersive-page .constellation-stage svg {
+  height: 100%;
+  width: 100%;
+}
+
+.sky-toolbar {
+  position: absolute;
+  bottom: calc(20px + env(safe-area-inset-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 12px;
+  padding: 8px 12px;
+  background: rgba(16, 13, 35, 0.8);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 99px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  z-index: 20;
+}
+
+.tool-btn {
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  color: rgba(255, 255, 255, 0.85);
+  transition: all 0.2s ease;
+}
+
+.tool-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  transform: scale(1.05);
+}
+
+.tool-btn .icon {
+  width: 22px;
+  height: 22px;
+}
+
+.shop-balance-bar {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.shop-balance-bar .star-chip {
+  flex: 1;
+  border: 1px solid var(--line);
+  background: var(--soft);
+  border-radius: 16px;
+  padding: 11px;
+  color: var(--ink);
+}
+
+.shop-balance-bar .star-chip small {
+  display: block;
+  font-size: 9px;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.shop-balance-bar .star-chip strong {
+  font-family: Georgia, serif;
+  font-size: 24px;
+  font-weight: 500;
+}
+
+.rewards-list-container {
+  max-height: 50vh;
+  overflow-y: auto;
+  margin: 15px 0;
+}
+
+.info-scroll-box ul {
+  padding-left: 18px;
+  margin: 8px 0;
+}
+
+/* Libro de constelaciones - Reestilo de Estados */
+.book-card {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.book-card.locked {
+  opacity: 0.45;
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.book-card.locked .mini-const svg {
+  opacity: 0.12;
+  filter: grayscale(1) blur(0.5px);
+}
+
+.book-card.discovered {
+  opacity: 0.85;
+  border: 1px dashed var(--rose2);
+  background: rgba(255, 253, 251, 0.98);
+}
+
+.book-card.discovered .mini-const svg {
+  opacity: 0.48;
+}
+
+.book-card.owned {
+  opacity: 1;
+  background: linear-gradient(135deg, #fffdfb 0%, #fff6f7 100%);
+  border: 1px solid var(--rose2);
+  box-shadow: 0 8px 24px rgba(141, 76, 87, 0.08);
+}
+
+.book-card.owned .mini-const svg {
+  opacity: 1;
+  filter: drop-shadow(0 0 6px rgba(165, 89, 102, 0.3));
+}
+
+.sign-tag {
+  background: var(--wine);
+  color: #fff;
+  font-size: 7px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  margin-left: 5px;
+  vertical-align: middle;
+}
+
+.collection-header h4 {
+  font-family: Georgia, serif;
+}
+
+
