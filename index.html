@@ -1,0 +1,642 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f3e1e4">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Orbit">
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+<link rel="manifest" href="manifest.webmanifest">
+<title>Orbit</title>
+<style>
+:root{
+  --bg:#faf7f5;--paper:#fffdfb;--ink:#2d2829;--muted:#8d8385;
+  --rose:#efd4d8;--rose2:#e8bdc5;--wine:#8d4c57;--wine2:#6f3942;
+  --line:#eadfe0;--soft:#f6eaec;--soft2:#f2eeea;
+  --shadow:0 15px 42px rgba(88,59,64,.07);--radius:22px
+}
+*{box-sizing:border-box}
+html{-webkit-tap-highlight-color:transparent}
+body{
+  margin:0;color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",sans-serif;
+  background:radial-gradient(circle at 90% 0%,rgba(239,212,216,.75),transparent 28%),linear-gradient(180deg,#f8ecee 0,#faf7f5 19%,#faf7f5 100%);
+  min-height:100vh
+}
+button,input,textarea,select{font:inherit}button{cursor:pointer}
+.app{max-width:640px;margin:auto;padding:calc(16px + env(safe-area-inset-top)) 16px calc(98px + env(safe-area-inset-bottom))}
+header{display:flex;align-items:center;justify-content:space-between;padding:3px 3px 16px}
+.brand{font-family:Georgia,serif;font-size:25px;letter-spacing:.18em;font-weight:500}
+.brand-mark{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--wine);margin-left:7px;transform:translateY(-7px)}
+.icon-button{border:0;background:transparent;color:var(--wine);padding:7px;display:grid;place-items:center}
+.icon{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.card{background:rgba(255,253,251,.94);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+.page{display:none}.page.active{display:block}
+.kicker{text-transform:uppercase;letter-spacing:.13em;color:var(--muted);font-size:9px;font-weight:700}
+.hero{padding:19px;background:linear-gradient(135deg,#fffafa,#f5dadd);position:relative;overflow:hidden}
+.hero:after{content:"";position:absolute;width:150px;height:150px;border:1px solid rgba(141,76,87,.14);border-radius:50%;right:-58px;top:-65px}
+.hero h1{font-family:Georgia,serif;font-size:25px;font-weight:500;margin:5px 0 7px;letter-spacing:-.02em}
+.hero p{font-size:13px;line-height:1.5;color:#62585a;margin:0;max-width:88%}
+.section-head{display:flex;align-items:flex-end;justify-content:space-between;margin:20px 3px 10px}
+.section-head h2{margin:0;font-size:16px}.section-head small{font-size:10px;color:var(--muted)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.nav-card{padding:15px;min-height:124px;display:flex;flex-direction:column;justify-content:space-between;cursor:pointer}
+.nav-card .mini-icon{width:36px;height:36px;border-radius:50%;background:var(--soft);display:grid;place-items:center;color:var(--wine)}
+.nav-card h3{font-family:Georgia,serif;font-size:17px;font-weight:500;margin:14px 0 3px}
+.nav-card p{font-size:10px;line-height:1.4;color:var(--muted);margin:0}
+.checkin{padding:15px}
+.scale{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:9px}
+.scale button{border:1px solid var(--line);background:white;border-radius:12px;padding:9px 0;color:var(--muted);font-size:12px}
+.scale button.sel{background:var(--soft);border-color:var(--rose2);color:var(--wine);font-weight:700}
+.field{margin:13px 0}.field label{display:block;font-size:11px;font-weight:700;margin-bottom:6px}
+input,textarea,select{width:100%;border:1px solid var(--line);border-radius:14px;background:white;padding:12px;color:var(--ink);outline:none}
+textarea{resize:vertical;min-height:84px;line-height:1.45}
+.btn{border:0;border-radius:13px;padding:11px 13px;font-size:12px;font-weight:700}
+.btn-main{background:linear-gradient(135deg,#aa5966,#854650);color:white}
+.btn-soft{background:var(--soft);color:#754a52}
+.btn-line{background:white;border:1px solid var(--line);color:#6d5d60}
+.btn-dashed{background:white;border:1px dashed #d7b9be;color:#925461}
+.btn-wide{width:100%}
+.tabs{display:flex;gap:7px;overflow:auto;padding-bottom:2px;margin:10px 0 13px;scrollbar-width:none}.tabs::-webkit-scrollbar{display:none}
+.tabs button{white-space:nowrap;border:1px solid var(--line);background:white;border-radius:999px;padding:8px 11px;font-size:11px;color:var(--muted)}
+.tabs button.active{background:var(--soft);color:var(--wine);border-color:#e3c5ca;font-weight:700}
+.prompt-card{padding:15px;margin-bottom:9px}
+.prompt-title{font-family:Georgia,serif;font-size:17px;margin-bottom:5px}
+.prompt-sub{font-size:11px;color:var(--muted);line-height:1.45}
+.entry-card{padding:13px 14px;margin-bottom:8px}
+.entry-meta{display:flex;justify-content:space-between;gap:10px;color:var(--muted);font-size:10px}
+.entry-type{font-weight:700;color:var(--wine)}
+.entry-card h3{font-family:Georgia,serif;font-size:16px;margin:8px 0 4px;font-weight:500}
+.entry-card p{font-size:12px;line-height:1.48;margin:0;white-space:pre-wrap}
+.orbit-wrap{padding:20px;text-align:center}
+.orbit-scene{position:relative;height:330px;max-width:390px;margin:0 auto}
+.orbit-circle{position:absolute;border:1px solid rgba(141,76,87,.16);border-radius:50%;left:50%;top:50%;transform:translate(-50%,-50%)}
+.o1{width:150px;height:150px}.o2{width:235px;height:235px}.o3{width:315px;height:315px}
+.me{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:88px;height:88px;border-radius:50%;background:linear-gradient(145deg,#f0cfd4,#e6b7bf);display:grid;place-items:center;font-family:Georgia,serif;font-size:18px;color:#70414a;box-shadow:0 10px 30px rgba(111,57,66,.12);z-index:2}
+.planet{position:absolute;transform:translate(-50%,-50%);border:1px solid var(--line);background:#fffefa;border-radius:999px;padding:7px 10px;font-size:10px;box-shadow:0 8px 18px rgba(80,58,61,.06)}
+.orbit-note{font-size:11px;color:var(--muted);line-height:1.45;margin-top:3px}
+.good-card{padding:13px 14px;margin-bottom:8px;display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center}
+.good-card strong{font-size:13px}.good-card small{display:block;color:var(--muted);font-size:10px;margin-top:3px}
+.goal{padding:14px;margin-bottom:9px}
+.goal-top{display:grid;grid-template-columns:36px 1fr auto;gap:10px;align-items:center}
+.goal-icon{width:36px;height:36px;border-radius:50%;background:var(--soft);display:grid;place-items:center;color:var(--wine)}
+.goal-title{font-size:13px;font-weight:700}.goal-sub{font-size:10px;color:var(--muted);margin-top:3px;line-height:1.35}
+.goal-time{text-align:right}.goal-time strong{display:block;font-size:16px}.goal-time small{font-size:9px;color:var(--muted)}
+.goal-actions{display:flex;gap:7px;margin-top:11px;padding-left:46px}
+.progressline{height:5px;border-radius:99px;background:#f0e7e8;overflow:hidden;margin:9px 0 0 46px}.progressline>div{height:100%;background:linear-gradient(90deg,#d99ba5,#9e5965)}
+.reward{padding:13px 14px;margin-bottom:8px;display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center}
+.reward strong{font-size:13px}.reward small{display:block;color:var(--muted);font-size:10px;margin-top:3px}
+.stat{padding:15px;text-align:center}.stat .label{font-size:9px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase}.stat strong{display:block;font-family:Georgia,serif;font-size:28px;font-weight:500;margin-top:4px}
+.archive-switch{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:12px 0}
+.archive-switch button{border:1px solid var(--line);background:white;border-radius:13px;padding:9px 5px;font-size:10px;color:var(--muted)}
+.archive-switch button.active{background:var(--soft);color:var(--wine);font-weight:700}
+.calendar{padding:12px}.cal-head,.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;text-align:center}.cal-head{font-size:9px;color:var(--muted);margin-bottom:5px}.day{aspect-ratio:1;border-radius:10px;display:grid;place-items:center;font-size:10px;background:#fff;border:0}.day.has{background:var(--soft);color:var(--wine);font-weight:700}.day.today{outline:1px solid var(--wine)}.day.selected{background:var(--wine);color:white}
+.archive-tools{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0}
+.archive-panel{display:none}.archive-panel.active{display:block}
+.quote{padding:17px;background:#4e3b3f;color:#fff;border-radius:21px;font-family:Georgia,serif;font-size:16px;line-height:1.5}.quote small{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;display:block;color:#d8cbcd;font-size:9px;margin-top:8px;letter-spacing:.04em}
+.bottom{position:fixed;left:50%;bottom:10px;transform:translateX(-50%);width:min(610px,calc(100% - 20px));padding:7px;background:rgba(255,253,251,.95);backdrop-filter:blur(16px);border:1px solid var(--line);border-radius:21px;box-shadow:var(--shadow);display:grid;grid-template-columns:repeat(5,1fr);gap:3px;z-index:20}
+.bottom button{border:0;background:transparent;border-radius:14px;color:var(--muted);padding:8px 2px;font-size:9px}
+.bottom button .icon{width:19px;height:19px;margin:auto auto 3px}
+.bottom button.active{background:var(--soft);color:var(--wine);font-weight:700}
+.modal{position:fixed;inset:0;background:rgba(46,35,37,.34);display:none;align-items:flex-end;z-index:30}.modal.show{display:flex}
+.sheet{width:min(640px,100%);max-height:88vh;overflow:auto;margin:auto;background:var(--paper);border-radius:25px 25px 0 0;padding:20px 16px calc(24px + env(safe-area-inset-bottom))}
+.sheet h3{font-family:Georgia,serif;font-weight:500;font-size:21px;margin:0 0 5px}.sheet>p{font-size:11px;color:var(--muted);line-height:1.45;margin-top:0}
+.pause{text-align:center;background:linear-gradient(145deg,#fffafa,#f5e2e5);padding:17px;border-radius:18px;margin-top:15px}.timer{font-family:Georgia,serif;font-size:39px;margin:6px 0 10px}
+.toast{position:fixed;left:50%;bottom:94px;transform:translateX(-50%) translateY(18px);background:#3e3133;color:white;padding:10px 14px;border-radius:999px;font-size:11px;opacity:0;transition:.25s;z-index:60}.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.empty{padding:14px;color:var(--muted);font-size:11px;text-align:center}
+@media(max-width:390px){.hero p{max-width:100%}.goal-actions{padding-left:0}.progressline{margin-left:0}.archive-switch{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<div class="app">
+<header>
+  <button class="icon-button" onclick="showPage('today')"><svg class="icon" viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 16 0A8 8 0 1 0 4 12"/><path d="M12 8v4l2.5 1.5"/></svg></button>
+  <div class="brand">ORBIT<span class="brand-mark"></span></div>
+  <button class="icon-button" onclick="toast('Tus textos y registros se guardan solo en este dispositivo')"><svg class="icon" viewBox="0 0 24 24"><path d="M12 3 5 6v5c0 4.5 2.6 7.7 7 10 4.4-2.3 7-5.5 7-10V6z"/><path d="m9.5 12 1.7 1.7L15 10"/></svg></button>
+</header>
+
+<section id="today" class="page active">
+  <div class="card hero">
+    <div class="kicker">hoy</div>
+    <h1>Un lugar para volver a ti</h1>
+    <p>Escribe, guarda pequeñas cosas y entra en las partes que necesites. No tienes que usarlo todo cada día.</p>
+  </div>
+
+  <div class="section-head"><h2>Cómo estoy hoy</h2><small id="todayDate"></small></div>
+  <div class="card checkin">
+    <div class="kicker">estado</div>
+    <div class="scale" id="moodScale"></div>
+    <div class="field"><label>Una cosa que necesito hoy</label><input id="needToday" placeholder="Espacio, descanso, compañía, movimiento..."></div>
+    <div class="field"><label>Una cosa que quiero hacer por mí</label><input id="forMeToday" placeholder="Algo pequeño también cuenta"></div>
+    <button class="btn btn-main btn-wide" onclick="saveCheckin()">Guardar mi día</button>
+  </div>
+
+  <div class="section-head"><h2>Entrar en Orbit</h2><small>elige solo lo que necesites</small></div>
+  <div class="grid2">
+    <div class="card nav-card" onclick="showPage('journal')">
+      <div class="mini-icon"><svg class="icon" viewBox="0 0 24 24"><path d="M6 4h10a2 2 0 0 1 2 2v14H8a2 2 0 0 1-2-2z"/><path d="M9 8h6M9 12h6"/></svg></div>
+      <div><h3>Escribir</h3><p>Entrada libre, cartas, lo que no envié o lo que aprendí.</p></div>
+    </div>
+    <div class="card nav-card" onclick="showPage('orbit')">
+      <div class="mini-icon"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="2"/><ellipse cx="12" cy="12" rx="9" ry="4" transform="rotate(-28 12 12)"/></svg></div>
+      <div><h3>Mi órbita</h3><p>Lo que me sostiene y las pequeñas cosas buenas de hoy.</p></div>
+    </div>
+    <div class="card nav-card" onclick="showPage('return')">
+      <div class="mini-icon"><svg class="icon" viewBox="0 0 24 24"><path d="M9 7H5v-4"/><path d="M5 7a8 8 0 1 1-1 8"/></svg></div>
+      <div><h3>Volver a mí</h3><p>Cuando aparece la necesidad de comprobar o buscar señales.</p></div>
+    </div>
+    <div class="card nav-card" onclick="showPage('archive')">
+      <div class="mini-icon"><svg class="icon" viewBox="0 0 24 24"><path d="M5 5h14v14H5z"/><path d="M8 3v4M16 3v4M5 9h14"/></svg></div>
+      <div><h3>Archivo</h3><p>Volver a días, entradas, impulsos y cosas que sí pasaron.</p></div>
+    </div>
+  </div>
+
+  <div class="section-head"><h2>Una línea para hoy</h2><small>opcional</small></div>
+  <div class="card prompt-card">
+    <div class="prompt-title" id="dailyPromptTitle"></div>
+    <div class="prompt-sub" id="dailyPromptSub"></div>
+    <textarea id="quickText" placeholder="Hoy..."></textarea>
+    <button class="btn btn-soft btn-wide" style="margin-top:8px" onclick="saveQuickEntry()">Guardar</button>
+  </div>
+
+  <div class="quote">“Lo invisible también deja gravedad.”<small>Hay cosas que no se ven y aun así forman parte de lo que somos.</small></div>
+</section>
+
+<section id="journal" class="page">
+  <div class="card hero"><div class="kicker">diario</div><h1>Escribir sin tener que contarlo todo</h1><p>Una página en blanco, una carta o una pregunta. Tú eliges la forma.</p></div>
+  <div class="tabs" id="journalTabs">
+    <button class="active" onclick="setJournalType('libre',this)">Entrada libre</button>
+    <button onclick="setJournalType('no-enviado',this)">Lo que no envié</button>
+    <button onclick="setJournalType('futuro',this)">Para mi yo futuro</button>
+    <button onclick="setJournalType('aprendi',this)">Lo que aprendí</button>
+    <button onclick="setJournalType('invisible',this)">Lo invisible</button>
+  </div>
+  <div class="card prompt-card">
+    <div class="prompt-title" id="journalPrompt">¿Qué quieres dejar aquí?</div>
+    <div class="prompt-sub" id="journalHint">No hace falta que tenga principio ni final.</div>
+    <div class="field"><label>Título opcional</label><input id="entryTitle" placeholder="Una palabra también vale"></div>
+    <textarea id="entryText" style="min-height:200px" placeholder="Escribe..."></textarea>
+    <button class="btn btn-main btn-wide" style="margin-top:9px" onclick="saveJournalEntry()">Guardar entrada</button>
+  </div>
+  <button class="btn btn-line btn-wide" onclick="showPage('archive');setArchiveView('journal')">Ver mis entradas anteriores</button>
+</section>
+
+<section id="orbit" class="page">
+  <div class="card hero"><div class="kicker">mi órbita</div><h1>Lo que también forma parte de mi vida</h1><p>Algunas cosas permanecen como pilares. Otras aparecen porque hoy pasó algo bonito, tranquilo o simplemente mío.</p></div>
+
+  <div class="card orbit-wrap" style="margin-top:14px">
+    <div class="orbit-scene" id="bigOrbit"></div>
+    <div class="orbit-note">Los pilares se quedan. Las pequeñas cosas del día van formando una memoria de lo que sí estuvo ahí.</div>
+  </div>
+
+  <div class="section-head"><h2>Mis pilares</h2><small>cosas que quiero mantener cerca</small></div>
+  <div id="orbitItems"></div>
+  <button class="btn btn-dashed btn-wide" onclick="openOrbitItem()">Añadir un pilar</button>
+
+  <div class="section-head"><h2>Algo bueno de hoy</h2><small>por pequeño que sea</small></div>
+  <div class="card prompt-card">
+    <div class="field"><label>¿Qué quiero recordar de hoy?</label><input id="goodThing" placeholder="Me reí, avancé algo, entrené, estuve tranquila..."></div>
+    <div class="field"><label>¿Por qué quiero guardarlo? (opcional)</label><input id="goodMeaning" placeholder="Me hizo sentir capaz, acompañada, ligera..."></div>
+    <button class="btn btn-main btn-wide" onclick="addGoodThing()">Guardar en mi órbita de hoy</button>
+  </div>
+  <div id="todayGoodThings"></div>
+  <button class="btn btn-line btn-wide" onclick="showPage('archive');setArchiveView('good')">Ver todas las cosas que sí pasaron</button>
+</section>
+
+<section id="return" class="page">
+  <div class="card hero"><div class="kicker">volver a mí</div><h1>Cuando algo me arrastra hacia fuera</h1><p>Esta sección existe para ayudarte con los impulsos. No es el centro de Orbit.</p></div>
+  <div class="grid2" style="margin-top:12px">
+    <div class="card stat"><div class="label">puntos de hoy</div><strong id="todayPoints">0</strong></div>
+    <div class="card stat"><div class="label">cesta</div><strong id="bank">0</strong></div>
+  </div>
+  <div class="card stat" style="margin-top:9px"><div class="label">mejor racha</div><strong id="bestStreak">0h</strong></div>
+  <div class="section-head"><h2>Mis límites</h2><small>+1 punto cada 2 h · máx. 3 por límite/día</small></div>
+  <div id="goals"></div>
+  <button class="btn btn-main btn-wide" onclick="openUrge()">Tengo el impulso</button>
+  <div class="section-head"><h2>Premios</h2><small>refuerzo, no exigencia</small></div>
+  <div id="rewards"></div>
+  <button class="btn btn-dashed btn-wide" onclick="openReward()">Añadir mi propio premio</button>
+
+  <div class="section-head"><h2>Cómo gano puntos</h2><small>los de hoy se reinician mañana</small></div>
+  <div class="card prompt-card">
+    <div class="prompt-sub" style="line-height:1.75">
+      <b>Rachas:</b> 2 h +0,5 · 4 h +0,5 · 8 h +1 · 12 h +1 · 24 h +2 · 48 h +2,5 · 3 días +3 · 7 días +5.
+      <br><b>Check-in:</b> +0,5 una vez al día.
+      <br><b>Escribir:</b> +0,2 por entrada, máximo +1 al día.
+      <br><b>Algo bueno:</b> +0,2 por registro, máximo +1 al día.
+      <br><b>Pausa ante un impulso:</b> +0,5 por detenerte y +0,5 adicional si terminas sin comprobar.
+      <br><br>
+      Los <b>puntos de hoy</b> vuelven a 0 al cambiar de día. Todo lo ganado entra también en tu <b>cesta</b>, que se acumula hasta que canjeas un premio.
+      Si incumples un límite, no pierdes nada: solo se reinicia ese reloj y su racha actual.
+    </div>
+  </div>
+  <button class="btn btn-line btn-wide" style="margin-top:9px" onclick="showPage('archive');setArchiveView('urges')">Ver historial de impulsos</button>
+</section>
+
+<section id="archive" class="page">
+  <div class="card hero"><div class="kicker">archivo</div><h1>Volver a un día concreto</h1><p>No hay una lista infinita. Puedes entrar por fecha o por tipo de recuerdo.</p></div>
+
+  <div class="archive-switch">
+    <button id="av-day" class="active" onclick="setArchiveView('day')">Por día</button>
+    <button id="av-journal" onclick="setArchiveView('journal')">Diario</button>
+    <button id="av-good" onclick="setArchiveView('good')">Lo que sí pasó</button>
+    <button id="av-urges" onclick="setArchiveView('urges')">Impulsos</button>
+  </div>
+
+  <div id="panel-day" class="archive-panel active">
+    <div class="section-head"><h2 id="calendarTitle"></h2><small>toca un día</small></div>
+    <div class="card calendar">
+      <div class="cal-head"><span>L</span><span>M</span><span>X</span><span>J</span><span>V</span><span>S</span><span>D</span></div>
+      <div class="cal-grid" id="calendar"></div>
+    </div>
+    <div class="archive-tools">
+      <button class="btn btn-line" onclick="changeMonth(-1)">Mes anterior</button>
+      <button class="btn btn-line" onclick="changeMonth(1)">Mes siguiente</button>
+    </div>
+    <div class="section-head"><h2 id="selectedDayTitle">Hoy</h2><small>todo lo registrado</small></div>
+    <div id="dayDetail"></div>
+  </div>
+
+  <div id="panel-journal" class="archive-panel">
+    <div class="tabs time-tabs" id="journalTimeTabs">
+      <button class="active" onclick="setTimeFilter('journal','all',this)">Todo</button>
+      <button onclick="setTimeFilter('journal','today',this)">Hoy</button>
+      <button onclick="setTimeFilter('journal','7d',this)">7 días</button>
+      <button onclick="setTimeFilter('journal','month',this)">Este mes</button>
+      <button onclick="setTimeFilter('journal','prevmonth',this)">Mes anterior</button>
+      <button onclick="openDateRange('journal')">Elegir fechas</button>
+    </div>
+    <div class="tabs" id="archiveJournalTabs">
+      <button class="active" onclick="setJournalFilter('all',this)">Todas</button>
+      <button onclick="setJournalFilter('libre',this)">Libres</button>
+      <button onclick="setJournalFilter('no-enviado',this)">No envié</button>
+      <button onclick="setJournalFilter('futuro',this)">Yo futuro</button>
+      <button onclick="setJournalFilter('aprendi',this)">Aprendí</button>
+      <button onclick="setJournalFilter('invisible',this)">Invisible</button>
+    </div>
+    <div class="field"><input id="journalSearch" placeholder="Buscar una palabra..." oninput="renderArchiveJournal()"></div>
+    <div class="entry-meta" style="margin:8px 3px 10px"><span id="journalResultsCount">0 resultados</span><button class="btn btn-line" style="padding:6px 9px" onclick="toggleSort('journal')">Orden: <span id="journalSortLabel">recientes</span></button></div><div id="archiveJournalList"></div>
+  </div>
+
+  <div id="panel-good" class="archive-panel">
+    <div class="tabs time-tabs" id="goodTimeTabs">
+      <button class="active" onclick="setTimeFilter('good','all',this)">Todo</button>
+      <button onclick="setTimeFilter('good','today',this)">Hoy</button>
+      <button onclick="setTimeFilter('good','7d',this)">7 días</button>
+      <button onclick="setTimeFilter('good','month',this)">Este mes</button>
+      <button onclick="setTimeFilter('good','prevmonth',this)">Mes anterior</button>
+      <button onclick="openDateRange('good')">Elegir fechas</button>
+    </div>
+    <div class="field"><input id="goodSearch" placeholder="Buscar algo que recuerdes..." oninput="renderGoodArchive()"></div>
+    <div class="entry-meta" style="margin:8px 3px 10px"><span id="goodResultsCount">0 resultados</span><button class="btn btn-line" style="padding:6px 9px" onclick="toggleSort('good')">Orden: <span id="goodSortLabel">recientes</span></button></div><div id="goodArchiveList"></div>
+  </div>
+
+  <div id="panel-urges" class="archive-panel">
+    <div class="tabs time-tabs" id="urgesTimeTabs">
+      <button class="active" onclick="setTimeFilter('urges','all',this)">Todo</button>
+      <button onclick="setTimeFilter('urges','today',this)">Hoy</button>
+      <button onclick="setTimeFilter('urges','7d',this)">7 días</button>
+      <button onclick="setTimeFilter('urges','month',this)">Este mes</button>
+      <button onclick="setTimeFilter('urges','prevmonth',this)">Mes anterior</button>
+      <button onclick="openDateRange('urges')">Elegir fechas</button>
+    </div>
+    <div class="field"><select id="urgeFilter" onchange="renderUrgeArchive()"></select></div>
+    <div class="field">
+      <select id="urgeOutcomeFilter" onchange="renderUrgeArchive()">
+        <option value="all">Todos los resultados</option>
+        <option value="survived">Solo atravesados</option>
+        <option value="registered">Solo registrados</option>
+      </select>
+    </div>
+    <div class="entry-meta" style="margin:8px 3px 10px"><span id="urgeResultsCount">0 resultados</span><button class="btn btn-line" style="padding:6px 9px" onclick="toggleSort('urges')">Orden: <span id="urgesSortLabel">recientes</span></button></div><div id="urgeArchiveList"></div>
+  </div>
+</section>
+</div>
+
+<nav class="bottom">
+<button id="nav-today" class="active" onclick="showPage('today')"><svg class="icon" viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 16 0A8 8 0 1 0 4 12"/><circle cx="12" cy="12" r="2"/></svg>Hoy</button>
+<button id="nav-journal" onclick="showPage('journal')"><svg class="icon" viewBox="0 0 24 24"><path d="M6 4h10a2 2 0 0 1 2 2v14H8a2 2 0 0 1-2-2z"/><path d="M9 8h6M9 12h6"/></svg>Diario</button>
+<button id="nav-orbit" onclick="showPage('orbit')"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="2"/><ellipse cx="12" cy="12" rx="9" ry="4" transform="rotate(-28 12 12)"/></svg>Órbita</button>
+<button id="nav-return" onclick="showPage('return')"><svg class="icon" viewBox="0 0 24 24"><path d="M9 7H5v-4"/><path d="M5 7a8 8 0 1 1-1 8"/></svg>Volver a mí</button>
+<button id="nav-archive" onclick="showPage('archive')"><svg class="icon" viewBox="0 0 24 24"><path d="M5 5h14v14H5z"/><path d="M8 3v4M16 3v4M5 9h14"/></svg>Archivo</button>
+</nav>
+
+<div class="modal" id="urgeModal"><div class="sheet">
+  <h3>Antes de comprobar</h3><p>Solo necesitamos crear un poco de espacio entre el impulso y lo que haces.</p>
+  <div class="field"><label>¿Qué quiero comprobar?</label><select id="urgeGoal"></select></div>
+  <div class="field"><label>¿Qué espero encontrar?</label><textarea id="urgeHope" placeholder="Lo que mi cabeza cree que me tranquilizaría..."></textarea></div>
+  <div class="field"><label>¿Qué temo encontrar?</label><textarea id="urgeFear" placeholder="Lo que me da miedo ver..."></textarea></div>
+  <div class="field"><label>Ansiedad ahora: <span id="urgeIntensityLabel">6</span>/10</label><input type="range" min="1" max="10" value="6" id="urgeIntensity" oninput="urgeIntensityLabel.textContent=this.value"></div>
+  <div class="field"><label>Durante 10 minutos puedo...</label><input id="urgeAlternative" placeholder="Seguir trabajando, salir un momento, escribir..."></div>
+  <div class="pause"><div class="kicker">pausa</div><div class="timer" id="timer">10:00</div><button class="btn btn-main" id="startTimerBtn" onclick="startUrgeTimer()">Empezar 10 minutos</button> <button class="btn btn-soft" id="surviveBtn" onclick="surviveUrge()" disabled>Lo he atravesado</button></div>
+  <button class="btn btn-line btn-wide" style="margin-top:9px" onclick="closeModal('urgeModal')">Cerrar</button>
+</div></div>
+
+<div class="modal" id="slipModal"><div class="sheet">
+  <h3>Lo he comprobado</h3><p>No se borra lo que ya habías conseguido. Solo reiniciamos este contador desde ahora.</p>
+  <input type="hidden" id="slipGoalId">
+  <div class="field"><label>¿Qué estaba pasando justo antes? (opcional)</label><textarea id="slipNote"></textarea></div>
+  <button class="btn btn-main btn-wide" onclick="confirmSlip()">Reiniciar contador</button>
+  <button class="btn btn-line btn-wide" style="margin-top:7px" onclick="closeModal('slipModal')">Cancelar</button>
+</div></div>
+
+<div class="modal" id="rewardModal"><div class="sheet">
+  <h3>Un premio para mí</h3><p>Puede ser tiempo, un plan o un pequeño gesto.</p>
+  <div class="field"><label>Premio</label><input id="rewardName"></div>
+  <div class="field"><label>Coste en puntos</label><input id="rewardCost" type="number" min="1" value="10"></div>
+  <button class="btn btn-main btn-wide" onclick="addReward()">Guardar</button>
+  <button class="btn btn-line btn-wide" style="margin-top:7px" onclick="closeModal('rewardModal')">Cancelar</button>
+</div></div>
+
+<div class="modal" id="orbitModal"><div class="sheet">
+  <h3>Añadir un pilar</h3><p>Algo que quieras recordar que forma parte de ti y de tu vida.</p>
+  <div class="field"><label>Nombre</label><input id="orbitName"></div>
+  <div class="field"><label>Qué me aporta</label><input id="orbitMeaning"></div>
+  <button class="btn btn-main btn-wide" onclick="addOrbitItem()">Añadir</button>
+  <button class="btn btn-line btn-wide" style="margin-top:7px" onclick="closeModal('orbitModal')">Cancelar</button>
+</div></div>
+
+<div class="modal" id="dateRangeModal"><div class="sheet">
+  <h3>Elegir fechas</h3><p>Solo se mostrarán registros dentro de este periodo.</p>
+  <input type="hidden" id="dateRangeTarget">
+  <div class="grid2">
+    <div class="field"><label>Desde</label><input id="dateFrom" type="date"></div>
+    <div class="field"><label>Hasta</label><input id="dateTo" type="date"></div>
+  </div>
+  <button class="btn btn-main btn-wide" onclick="applyDateRange()">Aplicar</button>
+  <button class="btn btn-line btn-wide" style="margin-top:7px" onclick="closeModal('dateRangeModal')">Cancelar</button>
+</div></div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const HOUR=3600000, STEP=2*HOUR;
+const icons={
+chat:`<svg class="icon" viewBox="0 0 24 24"><path d="M5 18l-1 3 4-2h8a4 4 0 0 0 4-4V8a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v7a4 4 0 0 0 1 3z"/></svg>`,
+insta:`<svg class="icon" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="5"/><circle cx="12" cy="12" r="3.5"/><circle cx="17.4" cy="6.8" r=".8" fill="currentColor" stroke="none"/></svg>`,
+activity:`<svg class="icon" viewBox="0 0 24 24"><path d="M4 13h3l2-6 4 11 2-6h5"/></svg>`,
+search:`<svg class="icon" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6"/><path d="m15 15 5 5"/><path d="m7 7 7 7"/></svg>`
+};
+function uid(){return Math.random().toString(36).slice(2,10)}
+function dayKey(ts=Date.now()){let d=new Date(ts);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function defaults(){
+ const n=Date.now();
+ return {v:7,wallet:0,bank:0,claimed:{},best:0,pointAwards:{},
+ goals:[
+ {id:'msg',icon:'chat',name:'No comprobar si me ha escrito',sub:'No abrir el chat solo para buscar una señal',since:n},
+ {id:'insta',icon:'insta',name:'No comprobar cambios en Instagram',sub:'No mirar seguidores, seguidos o cambios para calmar la ansiedad',since:n},
+ {id:'hevy',icon:'activity',name:'No entrar a Hevy a comprobar actividad',sub:'No usar el entrenamiento como información indirecta',since:n},
+ {id:'signals',icon:'search',name:'No buscar señales indirectas',sub:'Historias, actividad o pistas para saber de él',since:n}],
+ rewards:[
+ {id:'r1',name:'Café o bebida que me apetezca',cost:5},
+ {id:'r2',name:'Flores para mí',cost:10},
+ {id:'r3',name:'Un libro',cost:15},
+ {id:'r4',name:'Un pequeño capricho',cost:20},
+ {id:'r5',name:'Un plan que me ilusione',cost:40}],
+ urges:[],slips:[],journal:[],checkins:{},goodThings:[],
+ orbit:[
+ {id:'o1',name:'Escribir',meaning:'poner palabras a lo que siento'},
+ {id:'o2',name:'Movimiento',meaning:'volver a mi cuerpo'},
+ {id:'o3',name:'Amistades',meaning:'sentirme acompañada'},
+ {id:'o4',name:'Planes sola',meaning:'disfrutar mi propia compañía'},
+ {id:'o5',name:'Proyectos',meaning:'algo que también es mío'}]}
+}
+function load(){
+ let d;
+ try{d=JSON.parse(localStorage.getItem('orbitV7'))}catch{}
+ if(!d){
+  let old;try{old=JSON.parse(localStorage.getItem('orbitV6'))}catch{}
+  d=defaults();
+  if(old){
+   ['bank','claimed','best','pointAwards','goals','rewards','urges','slips','journal','checkins','orbit'].forEach(k=>{if(old[k]!==undefined)d[k]=old[k]});
+   if(old.goodThings)d.goodThings=old.goodThings
+  }else{
+   try{old=JSON.parse(localStorage.getItem('orbitV3'))}catch{}
+   if(old){
+    d.bank=old.bank||0;d.claimed=old.claimed||{};d.best=old.best||0;d.urges=old.urges||[];d.slips=old.slips||[];d.rewards=old.rewards||d.rewards;
+    if(old.goals)old.goals.forEach(og=>{let g=d.goals.find(x=>x.id===og.id);if(g&&og.since)g.since=og.since})
+   }
+  }
+ }
+ const insta=d.goals?.find(g=>g.id==='insta');if(insta){insta.name='No comprobar cambios en Instagram';insta.sub='No mirar seguidores, seguidos o cambios para calmar la ansiedad'}
+ if(!d.goodThings)d.goodThings=[];
+ if(!d.pointAwards)d.pointAwards={};
+ if(d.wallet===undefined||d.wallet===null)d.wallet=Number(d.bank||0);
+ d.bank=d.wallet;
+ save(d);return d
+}
+function save(d){localStorage.setItem('orbitV7',JSON.stringify(d))}
+function esc(s){return String(s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
+function fmt(ms){let h=Math.floor(ms/HOUR),m=Math.floor((ms%HOUR)/60000);if(h>=24)return Math.floor(h/24)+'d '+(h%24)+'h';return h+'h '+String(m).padStart(2,'0')+'m'}
+function addPoints(d,amount,kind,label){
+ amount=Number(amount||0);
+ if(amount<=0)return;
+ d.wallet=Number(d.wallet||0)+amount;
+ d.bank=d.wallet;
+ let k=dayKey();
+ if(!d.pointAwards[k])d.pointAwards[k]={limits:{},actions:{},events:[]};
+ if(!d.pointAwards[k].events)d.pointAwards[k].events=[];
+ d.pointAwards[k].events.push({ts:Date.now(),amount,kind,label});
+}
+function todayPointsTotal(d){
+ let p=d.pointAwards?.[dayKey()];
+ if(!p)return 0;
+ if(Array.isArray(p.events))return p.events.reduce((s,e)=>s+Number(e.amount||0),0);
+ let total=0;
+ if(p.actions)Object.values(p.actions).forEach(v=>total+=Number(v||0));
+ if(p.limits)Object.values(p.limits).forEach(v=>total+=Number(v||0));
+ return total
+}
+function accrue(){
+ let d=load(),now=Date.now(),added=0;
+ const milestones=[
+   {ms:2*HOUR,pts:.5,key:'2h'},
+   {ms:4*HOUR,pts:.5,key:'4h'},
+   {ms:8*HOUR,pts:1,key:'8h'},
+   {ms:12*HOUR,pts:1,key:'12h'},
+   {ms:24*HOUR,pts:2,key:'24h'},
+   {ms:48*HOUR,pts:2.5,key:'48h'},
+   {ms:72*HOUR,pts:3,key:'72h'},
+   {ms:168*HOUR,pts:5,key:'168h'}
+ ];
+ d.goals.forEach(g=>{
+   if(!g.awardedMilestones)g.awardedMilestones=[];
+   let elapsed=now-g.since;
+   milestones.forEach(m=>{
+     if(elapsed>=m.ms&&!g.awardedMilestones.includes(m.key)){
+       g.awardedMilestones.push(m.key);
+       addPoints(d,m.pts,'racha',g.name+' · '+m.key);
+       added+=m.pts
+     }
+   });
+   d.best=Math.max(d.best||0,elapsed)
+ });
+ save(d);
+ if(added)toast('+'+String(added).replace('.',',')+' puntos por tus rachas');
+ return d
+}
+function showPage(id){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.querySelectorAll('.bottom button').forEach(b=>b.classList.remove('active'));document.getElementById(id).classList.add('active');document.getElementById('nav-'+id).classList.add('active');window.scrollTo({top:0,behavior:'smooth'});render()}
+let mood=3;
+for(let i=1;i<=5;i++){let b=document.createElement('button');b.textContent=i;b.onclick=()=>{mood=i;document.querySelectorAll('#moodScale button').forEach(x=>x.classList.remove('sel'));b.classList.add('sel')};if(i===3)b.classList.add('sel');moodScale.appendChild(b)}
+
+function awardDailyAction(action,points,dailyCap,label){
+ let d=load(),k=dayKey();
+ if(!d.pointAwards[k])d.pointAwards[k]={limits:{},actions:{},events:[]};
+ if(!d.pointAwards[k].actions)d.pointAwards[k].actions={};
+ let already=Number(d.pointAwards[k].actions[action]||0);
+ let remaining=Math.max(0,Number(dailyCap)-already);
+ let grant=Math.min(Number(points),remaining);
+ if(grant<=0)return 0;
+ d.pointAwards[k].actions[action]=already+grant;
+ addPoints(d,grant,'accion',label||action);
+ save(d);
+ return grant
+}
+
+function saveCheckin(){let d=load();d.checkins[dayKey()]={ts:Date.now(),mood,need:needToday.value.trim(),forMe:forMeToday.value.trim()};save(d);let got=awardDailyAction('checkin',.5,.5,'Check-in');toast(got?'Día guardado · +0,5':'Día actualizado');render()}
+const prompts=[['Lo que pesa hoy','Una frase basta.'],['Algo que hoy sí fue mío','Puede ser pequeño o cotidiano.'],['Lo que no necesito resolver esta noche','Déjalo aquí.'],['Una cosa que me sorprendió de mí','Sin juzgarla.'],['Qué sigue orbitando','Algo que todavía está, aunque haya cambiado.']];
+function saveQuickEntry(){let t=quickText.value.trim();if(!t)return toast('Escribe aunque sea una línea');let d=load(),p=prompts[new Date().getDate()%prompts.length];d.journal.push({id:uid(),ts:Date.now(),type:'rapida',title:p[0],text:t});save(d);quickText.value='';let got=awardDailyAction('journal',.2,1,'Escribir');toast(got?'Guardado · +0,2':'Guardado');render()}
+let journalType='libre',journalFilter='all';
+const journalCopy={libre:['¿Qué quieres dejar aquí?','No hace falta que tenga principio ni final.'],'no-enviado':['Lo que no envié','Puedes escribir exactamente lo que te saldría mandar.'],'futuro':['Para mi yo futuro','Desde quien eres hoy hacia una versión de ti que todavía no conoces.'],aprendi:['Lo que aprendí','Sobre lo que ahora sabes.'],invisible:['Cómo se ve lo invisible','Aquello que no puede tocarse, pero sigue teniendo peso.']};
+function setJournalType(type,btn){journalType=type;document.querySelectorAll('#journalTabs button').forEach(b=>b.classList.remove('active'));btn.classList.add('active');journalPrompt.textContent=journalCopy[type][0];journalHint.textContent=journalCopy[type][1]}
+function saveJournalEntry(){let text=entryText.value.trim();if(!text)return toast('No hay nada que guardar todavía');let d=load();d.journal.push({id:uid(),ts:Date.now(),type:journalType,title:entryTitle.value.trim(),text});save(d);entryTitle.value='';entryText.value='';let got=awardDailyAction('journal',.2,1,'Escribir');toast(got?'Entrada guardada · +0,2':'Entrada guardada');render()}
+function openOrbitItem(){orbitModal.classList.add('show')}
+function addOrbitItem(){let n=orbitName.value.trim();if(!n)return toast('Ponle un nombre');let d=load();d.orbit.push({id:uid(),name:n,meaning:orbitMeaning.value.trim()});save(d);orbitName.value='';orbitMeaning.value='';closeModal('orbitModal');render()}
+function removeOrbit(id){let d=load();d.orbit=d.orbit.filter(x=>x.id!==id);save(d);render()}
+function addGoodThing(){let t=goodThing.value.trim();if(!t)return toast('Escribe algo que quieras guardar');let d=load();d.goodThings.push({id:uid(),ts:Date.now(),text:t,meaning:goodMeaning.value.trim()});save(d);goodThing.value='';goodMeaning.value='';let got=awardDailyAction('goodThing',.2,1,'Algo bueno');toast(got?'Guardado · +0,2':'Guardado en tu órbita de hoy');render()}
+function deleteGood(id){let d=load();d.goodThings=d.goodThings.filter(x=>x.id!==id);save(d);render()}
+function openUrge(){let d=load();urgeGoal.innerHTML=d.goals.map(g=>`<option value="${g.id}">${esc(g.name)}</option>`).join('');urgeModal.classList.add('show')}
+let timer=null,left=600,activeUrge=null;
+function startUrgeTimer(){let d=load(),u={id:uid(),ts:Date.now(),goalId:urgeGoal.value,hope:urgeHope.value.trim(),fear:urgeFear.value.trim(),alternative:urgeAlternative.value.trim(),intensity:+urgeIntensity.value,survived:false};d.urges.push(u);addPoints(d,.5,'impulso','Me detuve antes de comprobar');save(d);activeUrge=u.id;left=600;updateTimer();clearInterval(timer);startTimerBtn.disabled=true;surviveBtn.disabled=true;timer=setInterval(()=>{left--;updateTimer();if(left<=0){clearInterval(timer);timer=null;surviveBtn.disabled=false;startTimerBtn.disabled=false;toast('Ya han pasado 10 minutos')}},1000);render()}
+function updateTimer(){document.getElementById('timer').textContent=String(Math.floor(left/60)).padStart(2,'0')+':'+String(left%60).padStart(2,'0')}
+function surviveUrge(){if(!activeUrge)return;let d=load(),u=d.urges.find(x=>x.id===activeUrge);if(u&&!u.survived){u.survived=true;addPoints(d,.5,'impulso','Atravesé el impulso sin comprobar');save(d)}activeUrge=null;urgeHope.value='';urgeFear.value='';urgeAlternative.value='';closeModal('urgeModal');toast('+0,5 por detenerte · +0,5 por atravesarlo');render()}
+function slip(id){slipGoalId.value=id;slipNote.value='';slipModal.classList.add('show')}
+function confirmSlip(){let d=load(),g=d.goals.find(x=>x.id===slipGoalId.value);if(g){g.since=Date.now();g.awardedMilestones=[];d.slips.push({ts:Date.now(),goalId:g.id,note:slipNote.value.trim()});save(d)}closeModal('slipModal');toast('Contador reiniciado. Lo anterior sigue contando.');render()}
+function openReward(){rewardModal.classList.add('show')}
+function addReward(){let n=rewardName.value.trim(),c=+rewardCost.value;if(!n||!c)return toast('Completa el premio');let d=load();d.rewards.push({id:uid(),name:n,cost:c});save(d);rewardName.value='';closeModal('rewardModal');render()}
+function redeem(id){let d=load(),r=d.rewards.find(x=>x.id===id);if(r&&Number(d.wallet||0)>=r.cost){d.wallet=Number(d.wallet||0)-r.cost;d.bank=d.wallet;save(d);toast('Premio canjeado');render()}}
+function closeModal(id){document.getElementById(id).classList.remove('show')}
+function toast(msg){let t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(window.toastTimeout);window.toastTimeout=setTimeout(()=>t.classList.remove('show'),1900)}
+
+function nextMilestoneText(g){
+ const m=[
+  {ms:2*HOUR,pts:.5,label:'2 h'},
+  {ms:4*HOUR,pts:.5,label:'4 h'},
+  {ms:8*HOUR,pts:1,label:'8 h'},
+  {ms:12*HOUR,pts:1,label:'12 h'},
+  {ms:24*HOUR,pts:2,label:'24 h'},
+  {ms:48*HOUR,pts:2.5,label:'48 h'},
+  {ms:72*HOUR,pts:3,label:'3 días'},
+  {ms:168*HOUR,pts:5,label:'7 días'}
+ ];
+ let elapsed=Date.now()-g.since;
+ let n=m.find(x=>elapsed<x.ms);
+ return n?`Próximo: ${n.label} · +${String(n.pts).replace('.',',')}`:'Racha de 7 días completada'
+}
+
+function drawOrbit(d){let el=bigOrbit;el.innerHTML='<div class="orbit-circle o1"></div><div class="orbit-circle o2"></div><div class="orbit-circle o3"></div><div class="me">yo</div>';let coords=[[50,18],[80,34],[82,67],[52,83],[19,68],[19,35],[65,25],[67,74]];d.orbit.slice(0,8).forEach((o,i)=>{let p=document.createElement('div');p.className='planet';p.style.left=coords[i][0]+'%';p.style.top=coords[i][1]+'%';p.textContent=o.name;el.appendChild(p)})}
+let archiveView='day',archiveMonth=new Date(),selectedDay=dayKey(),journalSearchTerm='';
+const timeFilters={
+ journal:{mode:'all',from:null,to:null},
+ good:{mode:'all',from:null,to:null},
+ urges:{mode:'all',from:null,to:null}
+};
+const sortModes={journal:'desc',good:'desc',urges:'desc'};
+function boundsFor(filter){
+ let now=new Date(),start=null,end=null;
+ if(filter.mode==='today'){
+   start=new Date();start.setHours(0,0,0,0);end=new Date();end.setHours(23,59,59,999)
+ }else if(filter.mode==='7d'){
+   end=new Date();end.setHours(23,59,59,999);start=new Date();start.setDate(start.getDate()-6);start.setHours(0,0,0,0)
+ }else if(filter.mode==='month'){
+   start=new Date(now.getFullYear(),now.getMonth(),1);end=new Date(now.getFullYear(),now.getMonth()+1,0,23,59,59,999)
+ }else if(filter.mode==='prevmonth'){
+   start=new Date(now.getFullYear(),now.getMonth()-1,1);end=new Date(now.getFullYear(),now.getMonth(),0,23,59,59,999)
+ }else if(filter.mode==='custom'&&filter.from&&filter.to){
+   start=new Date(filter.from+'T00:00:00');end=new Date(filter.to+'T23:59:59')
+ }
+ return {start:start?start.getTime():null,end:end?end.getTime():null}
+}
+function inTime(ts,filter){
+ let b=boundsFor(filter);
+ return (b.start===null||ts>=b.start)&&(b.end===null||ts<=b.end)
+}
+function setTimeFilter(target,mode,btn){
+ timeFilters[target].mode=mode;timeFilters[target].from=null;timeFilters[target].to=null;
+ document.querySelectorAll('#'+target+'TimeTabs button').forEach(b=>b.classList.remove('active'));
+ if(btn)btn.classList.add('active');
+ if(target==='journal')renderArchiveJournal();
+ if(target==='good')renderGoodArchive();
+ if(target==='urges')renderUrgeArchive()
+}
+function openDateRange(target){
+ dateRangeTarget.value=target;
+ let now=dayKey();dateFrom.value=now;dateTo.value=now;
+ dateRangeModal.classList.add('show')
+}
+function applyDateRange(){
+ let target=dateRangeTarget.value;if(!dateFrom.value||!dateTo.value)return toast('Elige las dos fechas');
+ let a=dateFrom.value,b=dateTo.value;if(a>b){let t=a;a=b;b=t}
+ timeFilters[target]={mode:'custom',from:a,to:b};
+ document.querySelectorAll('#'+target+'TimeTabs button').forEach(x=>x.classList.remove('active'));
+ closeModal('dateRangeModal');
+ if(target==='journal')renderArchiveJournal();
+ if(target==='good')renderGoodArchive();
+ if(target==='urges')renderUrgeArchive()
+}
+function toggleSort(target){
+ sortModes[target]=sortModes[target]==='desc'?'asc':'desc';
+ let el=document.getElementById(target+'SortLabel');if(el)el.textContent=sortModes[target]==='desc'?'recientes':'antiguos';
+ if(target==='journal')renderArchiveJournal();
+ if(target==='good')renderGoodArchive();
+ if(target==='urges')renderUrgeArchive()
+}
+
+function setArchiveView(v){archiveView=v;document.querySelectorAll('.archive-panel').forEach(x=>x.classList.remove('active'));document.getElementById('panel-'+v).classList.add('active');document.querySelectorAll('.archive-switch button').forEach(x=>x.classList.remove('active'));document.getElementById('av-'+v).classList.add('active');renderArchive()}
+function changeMonth(delta){archiveMonth=new Date(archiveMonth.getFullYear(),archiveMonth.getMonth()+delta,1);renderCalendar(load())}
+function renderCalendar(d){let y=archiveMonth.getFullYear(),m=archiveMonth.getMonth(),first=new Date(y,m,1),last=new Date(y,m+1,0),offset=(first.getDay()+6)%7;calendarTitle.textContent=archiveMonth.toLocaleDateString('es-ES',{month:'long',year:'numeric'});let active=new Set([...Object.keys(d.checkins),...d.journal.map(e=>dayKey(e.ts)),...d.urges.map(e=>dayKey(e.ts)),...d.goodThings.map(e=>dayKey(e.ts))]);let html='';for(let i=0;i<offset;i++)html+='<div></div>';for(let day=1;day<=last.getDate();day++){let dt=new Date(y,m,day),k=dayKey(dt.getTime()),cls='day'+(active.has(k)?' has':'')+(k===dayKey()?' today':'')+(k===selectedDay?' selected':'');html+=`<button class="${cls}" onclick="selectDay('${k}')">${day}</button>`}calendar.innerHTML=html}
+function selectDay(k){selectedDay=k;renderCalendar(load());renderDayDetail(load())}
+function renderDayDetail(d){let dt=new Date(selectedDay+'T12:00:00');selectedDayTitle.textContent=dt.toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'long'});let html='';let pa=d.pointAwards?.[selectedDay];if(pa){let pts=0;if(Array.isArray(pa.events))pts=pa.events.reduce((s,e)=>s+Number(e.amount||0),0);else{if(pa.actions)Object.values(pa.actions).forEach(v=>pts+=Number(v||0));if(pa.limits)Object.values(pa.limits).forEach(v=>pts+=Number(v||0))}html+=`<div class="card stat"><div class="label">puntos ganados este día</div><strong>${pts.toFixed(1).replace('.',',')}</strong></div>`;}let c=d.checkins[selectedDay];if(c)html+=`<div class="card entry-card"><div class="entry-meta"><span class="entry-type">check-in</span></div><p>Estado: ${c.mood}/5${c.need?'<br>Necesitaba: '+esc(c.need):''}${c.forMe?'<br>Por mí: '+esc(c.forMe):''}</p></div>`;d.journal.filter(e=>dayKey(e.ts)===selectedDay).forEach(e=>html+=entryHTML(e));d.goodThings.filter(e=>dayKey(e.ts)===selectedDay).forEach(g=>html+=goodHTML(g));d.urges.filter(e=>dayKey(e.ts)===selectedDay).forEach(u=>html+=urgeHTML(u,d));dayDetail.innerHTML=html||'<div class="empty">No guardaste nada este día.</div>'}
+function entryHTML(e){return `<div class="card entry-card"><div class="entry-meta"><span class="entry-type">${esc(e.type.replaceAll('-',' '))}</span><span>${new Date(e.ts).toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'})}</span></div>${e.title?`<h3>${esc(e.title)}</h3>`:''}<p>${esc(e.text)}</p></div>`}
+function goodHTML(g){return `<div class="card entry-card"><div class="entry-meta"><span class="entry-type">lo que sí pasó</span><span>${new Date(g.ts).toLocaleDateString('es-ES',{day:'2-digit',month:'short'})}</span></div><h3>${esc(g.text)}</h3>${g.meaning?`<p>${esc(g.meaning)}</p>`:''}</div>`}
+function urgeHTML(u,d){let g=d.goals.find(x=>x.id===u.goalId);return `<div class="card entry-card"><div class="entry-meta"><span class="entry-type">${g?esc(g.name):'impulso'}</span><span>${u.survived?'atravesado':'registrado'}</span></div><p>Ansiedad: ${u.intensity}/10${u.hope?'<br>Esperaba: '+esc(u.hope):''}${u.fear?'<br>Temía: '+esc(u.fear):''}</p></div>`}
+function setJournalFilter(f,btn){journalFilter=f;document.querySelectorAll('#archiveJournalTabs button').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderArchiveJournal()}
+function renderArchiveJournal(){
+ let d=load(),q=(journalSearch.value||'').toLowerCase();
+ let arr=d.journal.filter(e=>(journalFilter==='all'||e.type===journalFilter)&&inTime(e.ts,timeFilters.journal)&&(!q||(e.text+' '+(e.title||'')).toLowerCase().includes(q)));
+ arr.sort((a,b)=>sortModes.journal==='desc'?b.ts-a.ts:a.ts-b.ts);
+ journalResultsCount.textContent=arr.length+' resultado'+(arr.length===1?'':'s');
+ archiveJournalList.innerHTML=arr.length?arr.map(entryHTML).join(''):'<div class="empty">No hay entradas que coincidan.</div>'
+}
+function renderGoodArchive(){
+ let d=load(),q=(goodSearch.value||'').toLowerCase();
+ let arr=d.goodThings.filter(g=>inTime(g.ts,timeFilters.good)&&(!q||(g.text+' '+(g.meaning||'')).toLowerCase().includes(q)));
+ arr.sort((a,b)=>sortModes.good==='desc'?b.ts-a.ts:a.ts-b.ts);
+ goodResultsCount.textContent=arr.length+' resultado'+(arr.length===1?'':'s');
+ goodArchiveList.innerHTML=arr.length?arr.map(goodHTML).join(''):'<div class="empty">Todavía no hay nada aquí.</div>'
+}
+function renderUrgeArchive(){
+ let d=load(),f=urgeFilter.value||'all',out=urgeOutcomeFilter.value||'all';
+ let arr=d.urges.filter(u=>(f==='all'||u.goalId===f)&&inTime(u.ts,timeFilters.urges)&&(out==='all'||(out==='survived'&&u.survived)||(out==='registered'&&!u.survived)));
+ arr.sort((a,b)=>sortModes.urges==='desc'?b.ts-a.ts:a.ts-b.ts);
+ urgeResultsCount.textContent=arr.length+' resultado'+(arr.length===1?'':'s');
+ urgeArchiveList.innerHTML=arr.length?arr.map(u=>urgeHTML(u,d)).join(''):'<div class="empty">No hay impulsos que coincidan.</div>'
+}
+function renderArchive(){let d=load();renderCalendar(d);renderDayDetail(d);renderArchiveJournal();renderGoodArchive();urgeFilter.innerHTML='<option value="all">Todos los impulsos</option>'+d.goals.map(g=>`<option value="${g.id}">${esc(g.name)}</option>`).join('');renderUrgeArchive()}
+function render(){let d=accrue(),now=Date.now(),p=prompts[new Date().getDate()%prompts.length];todayDate.textContent=new Date().toLocaleDateString('es-ES',{weekday:'short',day:'numeric',month:'short'});dailyPromptTitle.textContent=p[0];dailyPromptSub.textContent=p[1];let c=d.checkins[dayKey()];if(c){needToday.value=c.need||'';forMeToday.value=c.forMe||'';mood=c.mood||3;document.querySelectorAll('#moodScale button').forEach((b,i)=>b.classList.toggle('sel',i+1===mood))}
+ drawOrbit(d);
+ orbitItems.innerHTML=d.orbit.map(o=>`<div class="card good-card"><div><strong>${esc(o.name)}</strong><small>${esc(o.meaning||'')}</small></div><button class="btn btn-line" onclick="removeOrbit('${o.id}')">Quitar</button></div>`).join('');
+ let todays=d.goodThings.filter(g=>dayKey(g.ts)===dayKey()).slice().reverse();todayGoodThings.innerHTML=todays.length?'<div class="section-head"><h2>Hoy también pasó esto</h2></div>'+todays.map(g=>`<div class="card good-card"><div><strong>${esc(g.text)}</strong><small>${esc(g.meaning||'')}</small></div><button class="btn btn-line" onclick="deleteGood('${g.id}')">Quitar</button></div>`).join(''):'';
+ bank.textContent=Number(d.wallet||0).toFixed(1).replace('.',',');todayPoints.textContent=todayPointsTotal(d).toFixed(1).replace('.',',');bestStreak.textContent=fmt(d.best||0);
+ goals.innerHTML=d.goals.map(g=>{let elapsed=now-g.since,pct=((elapsed%STEP)/STEP)*100;return `<div class="card goal"><div class="goal-top"><div class="goal-icon">${icons[g.icon]||icons.search}</div><div><div class="goal-title">${esc(g.name)}</div><div class="goal-sub">${esc(g.sub)}</div><div class="goal-sub" style="color:var(--wine);margin-top:5px">${nextMilestoneText(g)}</div></div><div class="goal-time"><small>sin comprobar</small><strong>${fmt(elapsed)}</strong></div></div><div class="progressline"><div style="width:${pct}%"></div></div><div class="goal-actions"><button class="btn btn-soft" onclick="openUrge()">Tengo el impulso</button><button class="btn btn-line" onclick="slip('${g.id}')">Lo he incumplido</button></div></div>`}).join('');
+ rewards.innerHTML=d.rewards.map(r=>`<div class="card reward"><div><strong>${esc(r.name)}</strong><small>${r.cost} puntos</small></div><button class="btn ${Number(d.wallet||0)>=r.cost?'btn-main':'btn-soft'}" ${Number(d.wallet||0)>=r.cost?'':'disabled'} onclick="redeem('${r.id}')">${Number(d.wallet||0)>=r.cost?'Canjear':'Aún no'}</button></div>`).join('');
+ renderArchive()
+}
+setInterval(render,60000);render();
+</script>
+</body>
+</html>
