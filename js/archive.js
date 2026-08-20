@@ -1,7 +1,7 @@
 // Archivo, calendario, filtros por fechas, búsqueda y visualización histórica.
 // Extraído desde app.js sin romper compatibilidad.
 
-let archiveView='day',archiveMonth=new Date(),selectedDay=dayKey(),journalSearchTerm='';
+let archiveView='day',archiveMonth=new Date(),selectedDay=(typeof dayKey==='function'?dayKey():new Date().toISOString().split('T')[0]),journalSearchTerm='';
 const timeFilters={
  journal:{mode:'all',from:null,to:null},
  good:{mode:'all',from:null,to:null},
@@ -74,7 +74,13 @@ function renderCalendar(d){
   let y=archiveMonth.getFullYear(),m=archiveMonth.getMonth(),first=new Date(y,m,1),last=new Date(y,m+1,0),offset=(first.getDay()+6)%7;
   let titleEl = document.getElementById('calendarTitle');
   if(titleEl) titleEl.textContent=archiveMonth.toLocaleDateString('es-ES',{month:'long',year:'numeric'});
-  let active=new Set([...Object.keys(d.checkins),...d.journal.map(e=>dayKey(e.ts)),...d.urges.map(e=>dayKey(e.ts)),...d.goodThings.map(e=>dayKey(e.ts))]);
+  
+  let active=new Set();
+  if(d && d.checkins) Object.keys(d.checkins).forEach(k=>active.add(k));
+  if(d && Array.isArray(d.journal)) d.journal.forEach(e=>{if(e&&e.ts) active.add(dayKey(e.ts))});
+  if(d && Array.isArray(d.urges)) d.urges.forEach(e=>{if(e&&e.ts) active.add(dayKey(e.ts))});
+  if(d && Array.isArray(d.goodThings)) d.goodThings.forEach(e=>{if(e&&e.ts) active.add(dayKey(e.ts))});
+
   let html='';
   for(let i=0;i<offset;i++)html+='<div></div>';
   for(let day=1;day<=last.getDate();day++){
@@ -86,7 +92,29 @@ function renderCalendar(d){
 }
 function selectDay(k){selectedDay=k;renderCalendar(load());renderDayDetail(load())}
 
-function renderDayDetail(d){let dt=new Date(selectedDay+'T12:00:00');selectedDayTitle.textContent=dt.toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'long'});let html='';let pa=d.pointAwards?.[selectedDay];if(pa){let pts=0;if(Array.isArray(pa.events))pts=pa.events.reduce((s,e)=>s+Number(e.amount||0),0);else{if(pa.actions)Object.values(pa.actions).forEach(v=>pts+=Number(v||0));if(pa.limits)Object.values(pa.limits).forEach(v=>pts+=Number(v||0))}html+=`<div class="card stat"><div class="label">estrellas ganados este día</div><strong>${pts.toFixed(1).replace('.',',')}</strong></div>`;}let c=d.checkins[selectedDay];if(c)html+=`<div class="card entry-card"><div class="entry-meta"><span class="entry-type">check-in</span></div><p>Estado: ${c.mood}/5${c.need?'<br>Necesitaba: '+esc(c.need):''}${c.forMe?'<br>Por mí: '+esc(c.forMe):''}</p></div>`;d.journal.filter(e=>dayKey(e.ts)===selectedDay).forEach(e=>html+=entryHTML(e));d.goodThings.filter(e=>dayKey(e.ts)===selectedDay).forEach(g=>html+=goodHTML(g));d.urges.filter(e=>dayKey(e.ts)===selectedDay).forEach(u=>html+=urgeHTML(u,d));dayDetail.innerHTML=html||'<div class="empty">No guardaste nada este día.</div>'}
+function renderDayDetail(d){
+  let dt=new Date(selectedDay+'T12:00:00');
+  selectedDayTitle.textContent=dt.toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'long'});
+  let html='';
+  if (d) {
+    let pa=d.pointAwards?.[selectedDay];
+    if(pa){
+      let pts=0;
+      if(Array.isArray(pa.events))pts=pa.events.reduce((s,e)=>s+Number(e.amount||0),0);
+      else{
+        if(pa.actions)Object.values(pa.actions).forEach(v=>pts+=Number(v||0));
+        if(pa.limits)Object.values(pa.limits).forEach(v=>pts+=Number(v||0))
+      }
+      html+=`<div class="card stat"><div class="label">estrellas ganados este día</div><strong>${pts.toFixed(1).replace('.',',')}</strong></div>`;
+    }
+    let c=d.checkins?.[selectedDay];
+    if(c)html+=`<div class="card entry-card"><div class="entry-meta"><span class="entry-type">check-in</span></div><p>Estado: ${c.mood}/5${c.need?'<br>Necesitaba: '+esc(c.need):''}${c.forMe?'<br>Por mí: '+esc(c.forMe):''}</p></div>`;
+    if(Array.isArray(d.journal)) d.journal.filter(e=>e && e.ts && dayKey(e.ts)===selectedDay).forEach(e=>html+=entryHTML(e));
+    if(Array.isArray(d.goodThings)) d.goodThings.filter(g=>g && g.ts && dayKey(g.ts)===selectedDay).forEach(g=>html+=goodHTML(g));
+    if(Array.isArray(d.urges)) d.urges.filter(u=>u && u.ts && dayKey(u.ts)===selectedDay).forEach(u=>html+=urgeHTML(u,d));
+  }
+  dayDetail.innerHTML=html||'<div class="empty">No guardaste nada este día.</div>';
+}
 
 function entryHTML(e){
  let future=e.type==='futuro'&&e.futureDate;

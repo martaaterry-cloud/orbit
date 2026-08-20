@@ -183,9 +183,14 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
 .universe-immersive-page {
   position: fixed;
   inset: 0;
-  background: linear-gradient(150deg, #100d23, #15112e 50%, #080612);
+  background: 
+    radial-gradient(circle at 20% 30%, rgba(133, 70, 80, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 80% 70%, rgba(47, 41, 61, 0.35) 0%, transparent 60%),
+    radial-gradient(circle at 50% 50%, rgba(25, 20, 50, 0.25) 0%, transparent 70%),
+    linear-gradient(160deg, #09070f 0%, #0c0a1a 40%, #05040a 100%);
   z-index: 15;
   display: none;
+  overflow: hidden;
 }
 
 .universe-immersive-page.active {
@@ -204,16 +209,103 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
 .stars-background {
   position: absolute;
   inset: 0;
-  background-image: 
-    radial-gradient(circle at 10% 20%, rgba(255, 255, 255, 0.9) 0 1px, transparent 2px),
-    radial-gradient(circle at 30% 40%, rgba(255, 255, 255, 0.75) 0 1px, transparent 2px),
-    radial-gradient(circle at 50% 60%, rgba(255, 255, 255, 0.8) 0 1px, transparent 2px),
-    radial-gradient(circle at 70% 80%, rgba(255, 255, 255, 0.7) 0 1px, transparent 2px),
-    radial-gradient(circle at 90% 15%, rgba(255, 255, 255, 0.85) 0 1px, transparent 2px),
-    radial-gradient(circle at 20% 70%, rgba(255, 255, 255, 0.8) 0 1px, transparent 2px),
-    radial-gradient(circle at 80% 50%, rgba(255, 255, 255, 0.9) 0 1px, transparent 2px);
-  background-size: cover;
-  opacity: 0.65;
+  pointer-events: none;
+}
+
+.stars-background::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(1px 1px at 15% 12%, rgba(255, 255, 255, 0.3) 100%, transparent),
+    radial-gradient(1px 1px at 25% 45%, rgba(255, 255, 255, 0.25) 100%, transparent),
+    radial-gradient(1px 1px at 35% 82%, rgba(255, 255, 255, 0.35) 100%, transparent),
+    radial-gradient(1.5px 1.5px at 55% 23%, rgba(255, 255, 255, 0.4) 100%, transparent),
+    radial-gradient(1px 1px at 65% 65%, rgba(255, 255, 255, 0.2) 100%, transparent),
+    radial-gradient(1px 1px at 85% 10%, rgba(255, 255, 255, 0.3) 100%, transparent),
+    radial-gradient(1.5px 1.5px at 75% 50%, rgba(255, 255, 255, 0.4) 100%, transparent),
+    radial-gradient(1px 1px at 92% 78%, rgba(255, 255, 255, 0.25) 100%, transparent);
+  background-repeat: repeat;
+  background-size: 300px 300px;
+  opacity: 0.8;
+}
+
+.stars-background::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(2px 2px at 10% 30%, rgba(255, 255, 255, 0.65) 100%, transparent),
+    radial-gradient(2px 2px at 45% 15%, rgba(255, 255, 255, 0.5) 100%, transparent),
+    radial-gradient(2.5px 2.5px at 30% 70%, rgba(255, 255, 255, 0.7) 100%, transparent),
+    radial-gradient(2px 2px at 70% 25%, rgba(255, 255, 255, 0.55) 100%, transparent),
+    radial-gradient(2.5px 2.5px at 85% 60%, rgba(255, 255, 255, 0.6) 100%, transparent),
+    radial-gradient(2px 2px at 60% 85%, rgba(255, 255, 255, 0.5) 100%, transparent),
+    radial-gradient(2px 2px at 90% 90%, rgba(255, 255, 255, 0.65) 100%, transparent);
+  background-repeat: repeat;
+  background-size: 400px 400px;
+  opacity: 0.7;
+}
+
+.cosmic-grid {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.05;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cosmic-grid svg {
+  width: 85%;
+  height: 85%;
+  max-width: 620px;
+  max-height: 620px;
+}
+
+.cosmic-grid .grid-line {
+  stroke: rgba(255, 255, 255, 0.5);
+  stroke-width: 0.5;
+  fill: none;
+}
+
+.cosmic-grid .grid-line.dashed {
+  stroke-dasharray: 2 2;
+}
+
+.ambient-constellation {
+  position: absolute;
+  width: 140px;
+  height: 140px;
+  pointer-events: none;
+  opacity: 0.08;
+  filter: blur(0.2px);
+}
+
+.ambient-constellation.ac1 {
+  top: 15%;
+  right: 12%;
+}
+
+.ambient-constellation.ac2 {
+  bottom: 25%;
+  left: 10%;
+}
+
+.ambient-constellation svg {
+  width: 100%;
+  height: 100%;
+}
+
+.ambient-constellation line {
+  stroke: rgba(255, 255, 255, 0.5);
+  stroke-width: 0.6;
+  fill: none;
+}
+
+.ambient-constellation circle {
+  fill: #fff;
 }
 
 .universe-immersive-page .constellation-stage {
@@ -227,6 +319,7 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
   display: flex;
   align-items: center;
   justify-content: center;
+  z-index: 2;
 }
 
 .universe-immersive-page .constellation-stage svg {
@@ -236,17 +329,18 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
 
 .sky-toolbar {
   position: absolute;
-  bottom: calc(20px + env(safe-area-inset-bottom));
+  bottom: calc(16px + env(safe-area-inset-bottom));
   left: 50%;
   transform: translateX(-50%);
   display: flex;
-  gap: 12px;
-  padding: 8px 12px;
-  background: rgba(16, 13, 35, 0.8);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  gap: 16px;
+  padding: 4px 10px;
+  background: rgba(16, 13, 35, 0.45);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1.5px solid rgba(255, 255, 255, 0.08);
   border-radius: 99px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
   z-index: 20;
 }
 
@@ -254,23 +348,24 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
   background: transparent;
   border: none;
   border-radius: 50%;
-  width: 44px;
-  height: 44px;
+  width: 40px;
+  height: 40px;
   display: grid;
   place-items: center;
-  color: rgba(255, 255, 255, 0.85);
-  transition: all 0.2s ease;
+  color: rgba(255, 255, 255, 0.55);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .tool-btn:hover {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.06);
   color: #fff;
-  transform: scale(1.05);
+  transform: translateY(-2px);
 }
 
 .tool-btn .icon {
-  width: 22px;
-  height: 22px;
+  width: 18px;
+  height: 18px;
+  stroke-width: 1.2;
 }
 
 .shop-balance-bar {
@@ -321,35 +416,36 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
 }
 
 .book-card.locked {
-  opacity: 0.45;
-  background: rgba(255, 255, 255, 0.3);
+  opacity: 0.4;
+  background: rgba(255, 255, 255, 0.01) !important;
+  border: 1px dashed rgba(255, 255, 255, 0.06) !important;
 }
 
 .book-card.locked .mini-const svg {
-  opacity: 0.12;
+  opacity: 0.15;
   filter: grayscale(1) blur(0.5px);
 }
 
 .book-card.discovered {
   opacity: 0.85;
-  border: 1px dashed var(--rose2);
-  background: rgba(255, 253, 251, 0.98);
+  border: 1px dashed var(--rose2) !important;
+  background: rgba(255, 255, 255, 0.03) !important;
 }
 
 .book-card.discovered .mini-const svg {
-  opacity: 0.48;
+  opacity: 0.55;
 }
 
 .book-card.owned {
   opacity: 1;
-  background: linear-gradient(135deg, #fffdfb 0%, #fff6f7 100%);
-  border: 1px solid var(--rose2);
-  box-shadow: 0 8px 24px rgba(141, 76, 87, 0.08);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(165, 89, 102, 0.15) 100%) !important;
+  border: 1px solid var(--rose2) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
 }
 
 .book-card.owned .mini-const svg {
   opacity: 1;
-  filter: drop-shadow(0 0 6px rgba(165, 89, 102, 0.3));
+  filter: drop-shadow(0 0 6px var(--rose2));
 }
 
 .sign-tag {
@@ -370,6 +466,182 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
 
 #universeDetailsStage svg {
   height: 100% !important;
+}
+
+/* Modales Oscuros del Universo (Cristal Ahumado) */
+#shipModal .sheet,
+#constellationBookModal .sheet,
+#universeDetailsModal .sheet,
+#constellationDetailModal .sheet,
+#shopModal .sheet {
+  background: rgba(15, 11, 28, 0.8) !important;
+  backdrop-filter: blur(28px) !important;
+  -webkit-backdrop-filter: blur(28px) !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.06) !important;
+  border-radius: 24px 24px 0 0 !important;
+  box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.5) !important;
+  color: #f7f4eb !important;
+}
+
+#shipModal .sheet h3,
+#constellationBookModal .sheet h3,
+#universeDetailsModal .sheet h3,
+#constellationDetailModal .sheet h3,
+#shopModal .sheet h3,
+#shipModal .sheet h4,
+#constellationBookModal .sheet h4,
+#universeDetailsModal .sheet h4,
+#constellationDetailModal .sheet h4,
+#shopModal .sheet h4 {
+  color: #fff !important;
+}
+
+#shipModal .sheet p,
+#constellationBookModal .sheet p,
+#universeDetailsModal .sheet p,
+#constellationDetailModal .sheet p,
+#shopModal .sheet p,
+#shipModal .sheet small,
+#constellationBookModal .sheet small,
+#universeDetailsModal .sheet small,
+#constellationDetailModal .sheet small,
+#shopModal .sheet small {
+  color: rgba(247, 244, 235, 0.65) !important;
+}
+
+#shipModal .sheet .card,
+#constellationBookModal .sheet .card,
+#universeDetailsModal .sheet .card,
+#constellationDetailModal .sheet .card,
+#shopModal .sheet .card {
+  background: rgba(255, 255, 255, 0.03) !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.05) !important;
+  color: #f7f4eb !important;
+  border-radius: 14px !important;
+}
+
+#shipModal .sheet .card strong,
+#constellationBookModal .sheet .card strong,
+#universeDetailsModal .sheet .card strong,
+#constellationDetailModal .sheet .card strong,
+#shopModal .sheet .card strong {
+  color: #fff !important;
+}
+
+#shipModal .sheet .card small,
+#constellationBookModal .sheet .card small,
+#universeDetailsModal .sheet .card small,
+#constellationDetailModal .sheet .card small,
+#shopModal .sheet .card small {
+  color: rgba(247, 244, 235, 0.55) !important;
+}
+
+#shipModal .sheet .btn,
+#constellationBookModal .sheet .btn,
+#universeDetailsModal .sheet .btn,
+#constellationDetailModal .sheet .btn,
+#shopModal .sheet .btn {
+  border-radius: 8px !important;
+}
+
+#shipModal .sheet .btn-main,
+#constellationBookModal .sheet .btn-main,
+#universeDetailsModal .sheet .btn-main,
+#constellationDetailModal .sheet .btn-main,
+#shopModal .sheet .btn-main {
+  background: var(--wine) !important;
+  color: #fff !important;
+  border: 1px solid var(--rose2) !important;
+}
+
+#shipModal .sheet .btn-main:hover,
+#constellationBookModal .sheet .btn-main:hover,
+#universeDetailsModal .sheet .btn-main:hover,
+#constellationDetailModal .sheet .btn-main:hover,
+#shopModal .sheet .btn-main:hover {
+  background: #aa5966 !important;
+}
+
+#shipModal .sheet .btn-soft,
+#constellationBookModal .sheet .btn-soft,
+#universeDetailsModal .sheet .btn-soft,
+#constellationDetailModal .sheet .btn-soft,
+#shopModal .sheet .btn-soft {
+  background: rgba(255, 255, 255, 0.05) !important;
+  color: #f7f4eb !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+#shipModal .sheet .btn-line,
+#constellationBookModal .sheet .btn-line,
+#universeDetailsModal .sheet .btn-line,
+#constellationDetailModal .sheet .btn-line,
+#shopModal .sheet .btn-line {
+  background: transparent !important;
+  color: #f7f4eb !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+}
+
+#shipModal .sheet .btn-line:hover,
+#constellationBookModal .sheet .btn-line:hover,
+#universeDetailsModal .sheet .btn-line:hover,
+#constellationDetailModal .sheet .btn-line:hover,
+#shopModal .sheet .btn-line:hover {
+  background: rgba(255, 255, 255, 0.04) !important;
+}
+
+/* Tabs */
+.tabs button {
+  background: rgba(255, 255, 255, 0.03) !important;
+  color: rgba(247, 244, 235, 0.6) !important;
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  padding: 6px 12px !important;
+  font-size: 11px !important;
+  border-radius: 8px !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+}
+
+.tabs button.active {
+  background: var(--wine) !important;
+  color: #fff !important;
+  border: 1px solid var(--rose2) !important;
+}
+
+/* Constellation SVG styles in immersive page */
+.constellation-stage svg {
+  overflow: visible;
+}
+
+.constellation-stage .star {
+  fill: #fff !important;
+  opacity: 1 !important;
+  filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.95)) !important;
+}
+
+.constellation-stage .target-star {
+  fill: rgba(255, 255, 255, 0.9) !important;
+  opacity: 0.55 !important;
+  filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.6)) !important;
+}
+
+.constellation-stage .ghost-star {
+  fill: rgba(255, 255, 255, 0.65) !important;
+  opacity: 0.15 !important;
+}
+
+.constellation-stage .line {
+  stroke: rgba(255, 255, 255, 0.7) !important;
+  stroke-width: 0.8 !important;
+  fill: none !important;
+}
+
+.constellation-stage .ghost-line {
+  stroke: rgba(255, 255, 255, 0.4) !important;
+  stroke-width: 0.4 !important;
+  stroke-dasharray: 1 1 !important;
+  opacity: 0.03 !important;
+  fill: none;
 }
 
 

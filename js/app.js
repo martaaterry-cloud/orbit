@@ -32,97 +32,174 @@ function toast(msg){let t=document.getElementById('toast');t.textContent=msg;t.c
 
 function drawOrbit(d){let el=bigOrbit;el.innerHTML='<div class="orbit-circle o1"></div><div class="orbit-circle o2"></div><div class="orbit-circle o3"></div><div class="me">yo</div>';let coords=[[50,18],[80,34],[82,67],[52,83],[19,68],[19,35],[65,25],[67,74]];d.orbit.slice(0,8).forEach((o,i)=>{let p=document.createElement('div');p.className='planet';p.style.left=coords[i][0]+'%';p.style.top=coords[i][1]+'%';p.textContent=o.name;el.appendChild(p)})}
 
-function constellationSvg(def,unlocked,progress){
- let activeCount=unlocked?def.pts.length:Math.max(1,Math.floor(def.pts.length*progress));
- let lines=def.edges.map(([a,b])=>{
-   let cls=(a<activeCount&&b<activeCount)?'line':'ghost-line';
-   return `<line class="${cls}" x1="${def.pts[a][0]}%" y1="${def.pts[a][1]}%" x2="${def.pts[b][0]}%" y2="${def.pts[b][1]}%"/>`
- }).join('');
- let stars=def.pts.map((p,i)=>`<circle class="${i<activeCount?'star':'ghost-star'}" cx="${p[0]}%" cy="${p[1]}%" r="${i<activeCount?3.4:2.4}"/>`).join('');
- return `<svg viewBox="0 0 100 100" preserveAspectRatio="none">${lines}${stars}</svg>`
+function constellationSvg(def, unlocked, progress) {
+  let N = def.pts.length;
+  let achieved = unlocked ? N : Math.floor(N * progress);
+  let nextTarget = unlocked ? -1 : (achieved < N ? achieved : -1);
+  
+  let lines = def.edges.map(([a, b]) => {
+    let active = a < achieved && b < achieved;
+    let cls = active ? 'line' : 'ghost-line';
+    return `<line class="${cls}" x1="${def.pts[a][0]}%" y1="${def.pts[a][1]}%" x2="${def.pts[b][0]}%" y2="${def.pts[b][1]}%"/>`;
+  }).join('');
+  
+  let stars = def.pts.map((p, i) => {
+    let cls = 'ghost-star';
+    let r = 1.8;
+    if (i < achieved) {
+      cls = 'star';
+      r = 2.6;
+    } else if (i === nextTarget) {
+      cls = 'target-star';
+      r = 2.2;
+    }
+    return `<circle class="${cls}" cx="${p[0]}%" cy="${p[1]}%" r="${r}"/>`;
+  }).join('');
+  
+  return `<svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">${lines}${stars}</svg>`;
 }
 function renderUniverse(d){
  let total=Number(d.lifetimeStars||0),wallet=Number(d.wallet||0);
  universeWallet.textContent=wallet.toFixed(1).replace('.',',');
  universeLifetime.textContent=total.toFixed(1).replace('.',',');
- let next=constellationDefs.find(c=>total<c.need);
- let current=next||constellationDefs[constellationDefs.length-1];
- let idx=constellationDefs.indexOf(current);
- let prevNeed=idx>0?constellationDefs[idx-1].need:0;
- let progress=next?Math.max(0,Math.min(1,(total-prevNeed)/(current.need-prevNeed))):1;
- constellationProgressText.textContent=next?`${total.toFixed(1).replace('.',',')} / ${current.need} estrellas`:'Colección actual completada';
- constellationStage.innerHTML=constellationSvg(current,!next,progress);
  
- let detailsStage = document.getElementById('universeDetailsStage');
- if(detailsStage){
-   detailsStage.innerHTML=constellationSvg(current,!next,progress);
- }
- let captionDetails = document.getElementById('constellationDetailsCaption');
- if(captionDetails){
-  captionDetails.innerHTML=`<div class="constellation-caption" style="position:static;color:var(--ink);padding:0;"><strong style="font-size:15px;">${next?'Dibujando '+current.name:current.name+' completada'}</strong><br><small style="color:var(--muted);font-size:12px;">${next?`Faltan ${(current.need-total).toFixed(1).replace('.',',')} estrellas`:current.desc}</small></div>`;
- }
+ // Filter constellationDefs by unlocked regions
+ let allowedCols = [];
+ if (d.unlockedRegions && d.unlockedRegions.includes('cielo-1')) allowedCols.push('norte');
+ if (d.unlockedRegions && d.unlockedRegions.includes('zodiaco')) allowedCols.push('zodiaco');
+ if (d.unlockedRegions && d.unlockedRegions.includes('orion')) allowedCols.push('invierno');
+ if (d.unlockedRegions && d.unlockedRegions.includes('profundo')) allowedCols.push('profundo');
  
- const collections = [
-   { id: 'zodiaco', name: 'Zodiaco', region: 'zodiaco' },
-   { id: 'norte', name: 'Cielo del norte', region: 'cielo-1' },
-   { id: 'invierno', name: 'Cielo de invierno', region: 'orion' },
-   { id: 'profundo', name: 'Espacio profundo', region: 'profundo' }
- ];
+ let available = constellationDefs.filter(c => allowedCols.includes(c.collection));
+ available.sort((a, b) => a.need - b.need);
  
- let bookHtml = '';
- collections.forEach(col => {
-   let colConsts = constellationDefs.filter(c => c.collection === col.id);
-   let isRegionUnlocked = d.unlockedRegions && d.unlockedRegions.includes(col.region);
-   let ownedCount = isRegionUnlocked ? colConsts.filter(c => d.claimed && d.claimed[c.id]).length : 0;
+ let next = available.find(c => total < c.need);
+ if (next) {
+   let current = next;
+   constellationStage.style.display = 'block';
+   constellationStage.style.top = (current.y || 25) + '%';
+   constellationStage.style.left = (current.x || 30) + '%';
+   constellationStage.style.width = (current.size || 180) + 'px';
+   constellationStage.style.height = (current.size || 180) + 'px';
+   constellationStage.style.transform = `rotate(${current.rot || 0}deg)`;
    
-   bookHtml += `
-     <div class="collection-header" style="grid-column: 1 / -1; margin-top: 15px; border-bottom: 1px solid var(--line); padding-bottom: 5px;">
-       <h4 style="margin: 0; font-size: 13px; color: var(--wine); text-transform: uppercase; letter-spacing: 0.05em;">
-         ${col.name} ${isRegionUnlocked ? `(${ownedCount}/${colConsts.length})` : '(Bloqueada)'}
-       </h4>
+   let idx = available.indexOf(current);
+   let prevNeed = idx > 0 ? available[idx - 1].need : 0;
+   let progress = Math.max(0, Math.min(1, (total - prevNeed) / (current.need - prevNeed)));
+   
+   constellationProgressText.textContent = `${total.toFixed(1).replace('.', ',')} / ${current.need} estrellas`;
+   constellationStage.innerHTML = constellationSvg(current, false, progress);
+   
+   let detailsStage = document.getElementById('universeDetailsStage');
+   if (detailsStage) {
+     detailsStage.innerHTML = constellationSvg(current, false, progress);
+   }
+   let captionDetails = document.getElementById('constellationDetailsCaption');
+   if (captionDetails) {
+     captionDetails.innerHTML = `<div class="constellation-caption" style="position:static;color:#fff;padding:0;"><strong style="font-size:15px;color:var(--rose2);">${'Dibujando ' + current.name}</strong><br><small style="color:rgba(255,255,255,0.6);font-size:12px;">Faltan ${(current.need - total).toFixed(1).replace('.', ',')} estrellas: ${current.desc}</small></div>`;
+   }
+ } else {
+   constellationStage.style.display = 'none';
+   constellationProgressText.textContent = 'Has cartografiado todo lo accesible. Desbloquea una nueva región para seguir explorando.';
+   let detailsStage = document.getElementById('universeDetailsStage');
+   if (detailsStage) {
+     detailsStage.innerHTML = '<div class="empty" style="padding:40px;color:rgba(255,255,255,0.4);text-align:center;font-size:12px;">Todo cartografiado</div>';
+   }
+   let captionDetails = document.getElementById('constellationDetailsCaption');
+   if (captionDetails) {
+     captionDetails.innerHTML = `<div class="constellation-caption" style="position:static;color:#fff;padding:0;"><strong style="font-size:14px;color:var(--rose2);">Exploración completa</strong><br><small style="color:rgba(255,255,255,0.5);font-size:11px;">Desbloquea una nueva región en Exploración para seguir descubriendo el universo.</small></div>`;
+   }
+ }
+ 
+ // Render constellation book tabbed navigation
+ const bookTabs = [
+   { id: 'cielo-1', name: 'Primer cielo', region: 'cielo-1', consts: ['lyra', 'cassiopeia', 'ursa-major'] },
+   { id: 'zodiaco', name: 'Zodiaco', region: 'zodiaco', col: 'zodiaco' },
+   { id: 'norte', name: 'Cielo del norte', region: 'cielo-1', consts: ['cygnus'] },
+   { id: 'invierno', name: 'Cielo de invierno', region: 'orion', col: 'invierno' },
+   { id: 'profundo', name: 'Espacio profundo', region: 'profundo', col: 'profundo' }
+ ];
+ if (typeof window.currentBookTab === 'undefined') window.currentBookTab = 'cielo-1';
+ 
+ let tabsHtml = bookTabs.map(tab => {
+   let active = window.currentBookTab === tab.id;
+   let isTabUnlocked = d.unlockedRegions && d.unlockedRegions.includes(tab.region);
+   let label = tab.name + (isTabUnlocked ? '' : ' 🔒');
+   return `<button class="chip ${active ? 'active' : ''}" style="padding:6px 12px; font-size:10px; border-radius:99px; background:${active ? 'var(--wine)' : 'rgba(255,255,255,0.04)'}; border:1px solid ${active ? 'var(--rose2)' : 'rgba(255,255,255,0.1)'}; color:${active ? '#fff' : 'rgba(255,255,255,0.6)'}; cursor:pointer;" onclick="window.currentBookTab='${tab.id}'; render()">${label}</button>`;
+ }).join('');
+ 
+ let activeTab = bookTabs.find(t => t.id === window.currentBookTab) || bookTabs[0];
+ let isTabUnlocked = d.unlockedRegions && d.unlockedRegions.includes(activeTab.region);
+ let tabConsts = [];
+ if (activeTab.consts) {
+   tabConsts = constellationDefs.filter(c => activeTab.consts.includes(c.id));
+ } else if (activeTab.col) {
+   tabConsts = constellationDefs.filter(c => c.collection === activeTab.col);
+ }
+ let ownedCount = isTabUnlocked ? tabConsts.filter(c => d.claimed && d.claimed[c.id]).length : 0;
+ 
+ let headerHtml = `
+   <div class="collection-header" style="grid-column: 1 / -1; margin-bottom: 10px; display:flex; justify-content:space-between; align-items:center;">
+     <h4 style="margin: 0; font-size: 13px; color: var(--rose2); text-transform: uppercase; letter-spacing: 0.05em;">
+       ${activeTab.name} ${isTabUnlocked ? `(${ownedCount}/${tabConsts.length})` : '(Bloqueada)'}
+     </h4>
+   </div>
+ `;
+ 
+ let bodyHtml = '';
+ if (!isTabUnlocked) {
+   let regNames = {
+     'zodiaco': 'Cinturón Zodiacal',
+     'orion': 'Nebulosa de Orión',
+     'profundo': 'Espacio profundo'
+   };
+   let regName = regNames[activeTab.region] || activeTab.region;
+   bodyHtml = `
+     <div class="empty" style="grid-column: 1 / -1; padding: 30px; background: rgba(255,255,255,0.02); border-radius: 12px; text-align: center; border: 1px dashed rgba(255,255,255,0.08);">
+       <p style="margin: 0 0 10px 0; font-size: 11px; color: rgba(247,244,235,0.6);">Requiere desbloquear la región <strong>${regName}</strong> en Exploración.</p>
+       <button class="btn btn-soft" style="padding: 6px 12px; font-size: 10px; border-radius: 8px;" onclick="closeModal('constellationBookModal'); openShipModal(); setShipTab('regiones');">Ir a Regiones</button>
      </div>
    `;
-   
-   if (!isRegionUnlocked) {
-     let regName = col.region === 'zodiaco' ? 'Cinturón Zodiacal' : col.region === 'orion' ? 'Nebulosa de Orión' : 'Espacio profundo';
-     bookHtml += `
-       <div class="empty" style="grid-column: 1 / -1; padding: 20px; background: rgba(0,0,0,0.02); border-radius: 12px; margin-top: 5px; text-align: center;">
-         <p style="margin: 0 0 8px 0; font-size: 11px; color: var(--muted);">Requiere desbloquear la región <strong>${regName}</strong> en Exploración.</p>
-         <button class="btn btn-soft" style="padding: 4px 8px; font-size: 9px; border-radius: 8px;" onclick="closeModal('constellationBookModal'); openShipModal(); setShipTab('regiones');">Ir a Regiones</button>
-       </div>
-     `;
-   } else {
-     bookHtml += colConsts.map(c => {
-       let owned = d.claimed && d.claimed[c.id];
-       let discovered = !owned && total >= c.need;
-       if (owned) {
-         let acqDate = new Date(d.claimed[c.id]).toLocaleDateString('es-ES', {day:'numeric', month:'short'});
-         return `<div class="card book-card owned">
-           <div class="mini-const">${constellationSvg(c, true, 1.0)}</div>
-           <span class="unlock text-owned" style="color: #aa5966; font-weight: bold; font-size: 9px;">En mi universo</span>
-           <h3>${c.name}${c.extra === 'tu signo' ? '<span class="sign-tag">tu signo</span>' : ''}</h3>
-           <p style="font-size: 9px; color: var(--muted); margin-bottom: 6px;">Adquirida: ${acqDate}</p>
-           <button class="btn btn-line" style="padding: 4px 8px; font-size: 9px; border-radius: 8px;" onclick="verFichaConstelacion('${c.id}')">Ficha</button>
-         </div>`;
-       } else if (discovered) {
-         return `<div class="card book-card discovered">
-           <div class="mini-const">${constellationSvg(c, true, 0.5)}</div>
-           <span class="unlock text-discovered" style="color: var(--wine); font-size: 9px;">Descubierta</span>
-           <h3>${c.name}${c.extra === 'tu signo' ? '<span class="sign-tag">tu signo</span>' : ''}</h3>
-           <button class="btn btn-main" style="padding: 4px 8px; font-size: 9px; border-radius: 8px; margin-top: 5px;" onclick="guardarConstelacion('${c.id}', ${c.cost})">Guardar · ${c.cost} ⭐</button>
-         </div>`;
-       } else {
-         return `<div class="card book-card locked">
-           <div class="mini-const">${constellationSvg(c, false, 0.2)}</div>
-           <span class="unlock" style="color: var(--muted); font-size: 9px;">${c.need} hist.</span>
-           <h3>${c.name}</h3>
-           <p style="font-size: 9px; color: var(--muted);">Bloqueada. Necesitas ${c.need} estrellas históricas.</p>
-         </div>`;
-       }
-     }).join('');
-   }
- });
- constellationBook.innerHTML = bookHtml;
+ } else {
+   bodyHtml = tabConsts.map(c => {
+     let owned = d.claimed && d.claimed[c.id];
+     let discovered = !owned && total >= c.need;
+     if (owned) {
+       let acqDate = new Date(d.claimed[c.id]).toLocaleDateString('es-ES', {day:'numeric', month:'short'});
+       return `<div class="card book-card owned">
+         <div class="mini-const">${constellationSvg(c, true, 1.0)}</div>
+         <span class="unlock text-owned" style="color: var(--rose2); font-weight: bold; font-size: 9px;">En mi universo</span>
+         <h3>${c.name}${c.extra === 'tu signo' ? '<span class="sign-tag">tu signo</span>' : ''}</h3>
+         <p style="font-size: 9px; color: rgba(247,244,235,0.5); margin-bottom: 6px;">Adquirida: ${acqDate}</p>
+         <button class="btn btn-line" style="padding: 4px 8px; font-size: 9px; border-radius: 8px;" onclick="verFichaConstelacion('${c.id}')">Ficha</button>
+       </div>`;
+     } else if (discovered) {
+       return `<div class="card book-card discovered">
+         <div class="mini-const">${constellationSvg(c, true, 0.5)}</div>
+         <span class="unlock text-discovered" style="color: #fcc2cd; font-size: 9px;">Descubierta</span>
+         <h3>${c.name}${c.extra === 'tu signo' ? '<span class="sign-tag">tu signo</span>' : ''}</h3>
+         <button class="btn btn-main" style="padding: 4px 8px; font-size: 9px; border-radius: 8px; margin-top: 5px;" onclick="guardarConstelacion('${c.id}', ${c.cost})">Guardar · ${c.cost} estrellas</button>
+       </div>`;
+     } else {
+       return `<div class="card book-card locked">
+         <div class="mini-const">${constellationSvg(c, false, 0.0)}</div>
+         <span class="unlock" style="color: rgba(247,244,235,0.4); font-size: 9px;">${c.need} hist.</span>
+         <h3>${c.name}</h3>
+         <p style="font-size: 9px; color: rgba(247,244,235,0.4);">Bloqueada. Necesitas ${c.need} estrellas históricas.</p>
+       </div>`;
+     }
+   }).join('');
+ }
+ 
+ constellationBook.innerHTML = `
+   <div style="grid-column: 1 / -1; display:flex; flex-direction:column; gap:10px; margin-bottom:10px;">
+     <div class="book-tabs" style="display:flex; gap:6px; overflow-x:auto; padding-bottom:5px; -webkit-overflow-scrolling:touch;">
+       ${tabsHtml}
+     </div>
+   </div>
+   ${headerHtml}
+   ${bodyHtml}
+ `;
  
  // Render Ship Level & Status
  const shipLevels = [
@@ -159,7 +236,7 @@ function renderUniverse(d){
      <h3 style="margin:5px 0; font-family:Georgia,serif; font-size:18px; color:var(--wine);">${shipLevels[currentLvl].name}</h3>
      ${nextLvl ? `
        <p style="font-size:11px; color:var(--muted); margin: 5px 0 10px;">Siguiente nivel: <strong>${nextLvl.name}</strong></p>
-       <button class="btn btn-main btn-wide" onclick="upgradeShip(${nextLvl.level}, ${nextLvl.cost})">Mejorar nave · ${nextLvl.cost} ⭐</button>
+       <button class="btn btn-main btn-wide" onclick="upgradeShip(${nextLvl.level}, ${nextLvl.cost})">Mejorar nave · ${nextLvl.cost} estrellas</button>
      ` : `
        <p style="font-size:11px; color:green; margin:5px 0 0 0; font-weight:700;">Nivel máximo alcanzado</p>
      `}
@@ -197,7 +274,7 @@ function renderUniverse(d){
          ${unlocked ? `
            <span style="font-size:10px; font-weight:700; color:green;">Desbloqueada</span>
          ` : `
-           <button class="btn btn-main" style="padding: 4px 8px; font-size: 9px; border-radius: 8px;" onclick="unlockRegion('${reg.id}', ${reg.cost})">Desbloquear · ${reg.cost} ⭐</button>
+           <button class="btn btn-main" style="padding: 4px 8px; font-size: 9px; border-radius: 8px;" onclick="unlockRegion('${reg.id}', ${reg.cost})">Desbloquear · ${reg.cost} estrellas</button>
          `}
        </div>
        <p style="font-size:10px; color:var(--muted); margin: 0;">${reg.desc}</p>
