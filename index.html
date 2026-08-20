@@ -210,15 +210,30 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
 <section id="return" class="page">
   <div class="card hero"><div class="kicker">volver a mí</div><h1>Cuando algo me arrastra hacia fuera</h1><p>Esta sección existe para ayudarte con los impulsos. No es el centro de Orbit.</p></div>
   <div class="grid2" style="margin-top:12px">
-    <div class="card stat"><div class="label">puntos</div><strong id="bank">0</strong></div>
-    <div class="card stat"><div class="label">mejor racha</div><strong id="bestStreak">0h</strong></div>
+    <div class="card stat"><div class="label">puntos de hoy</div><strong id="todayPoints">0</strong></div>
+    <div class="card stat"><div class="label">cesta</div><strong id="bank">0</strong></div>
   </div>
-  <div class="section-head"><h2>Mis límites</h2><small>+1 punto cada 2 h</small></div>
+  <div class="card stat" style="margin-top:9px"><div class="label">mejor racha</div><strong id="bestStreak">0h</strong></div>
+  <div class="section-head"><h2>Mis límites</h2><small>+1 punto cada 2 h · máx. 3 por límite/día</small></div>
   <div id="goals"></div>
   <button class="btn btn-main btn-wide" onclick="openUrge()">Tengo el impulso</button>
   <div class="section-head"><h2>Premios</h2><small>refuerzo, no exigencia</small></div>
   <div id="rewards"></div>
   <button class="btn btn-dashed btn-wide" onclick="openReward()">Añadir mi propio premio</button>
+
+  <div class="section-head"><h2>Cómo gano puntos</h2><small>los de hoy se reinician mañana</small></div>
+  <div class="card prompt-card">
+    <div class="prompt-sub" style="line-height:1.75">
+      <b>Rachas:</b> 2 h +0,5 · 4 h +0,5 · 8 h +1 · 12 h +1 · 24 h +2 · 48 h +2,5 · 3 días +3 · 7 días +5.
+      <br><b>Check-in:</b> +0,5 una vez al día.
+      <br><b>Escribir:</b> +0,2 por entrada, máximo +1 al día.
+      <br><b>Algo bueno:</b> +0,2 por registro, máximo +1 al día.
+      <br><b>Pausa ante un impulso:</b> +0,5 por detenerte y +0,5 adicional si terminas sin comprobar.
+      <br><br>
+      Los <b>puntos de hoy</b> vuelven a 0 al cambiar de día. Todo lo ganado entra también en tu <b>cesta</b>, que se acumula hasta que canjeas un premio.
+      Si incumples un límite, no pierdes nada: solo se reinicia ese reloj y su racha actual.
+    </div>
+  </div>
   <button class="btn btn-line btn-wide" style="margin-top:9px" onclick="showPage('archive');setArchiveView('urges')">Ver historial de impulsos</button>
 </section>
 
@@ -247,6 +262,14 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
   </div>
 
   <div id="panel-journal" class="archive-panel">
+    <div class="tabs time-tabs" id="journalTimeTabs">
+      <button class="active" onclick="setTimeFilter('journal','all',this)">Todo</button>
+      <button onclick="setTimeFilter('journal','today',this)">Hoy</button>
+      <button onclick="setTimeFilter('journal','7d',this)">7 días</button>
+      <button onclick="setTimeFilter('journal','month',this)">Este mes</button>
+      <button onclick="setTimeFilter('journal','prevmonth',this)">Mes anterior</button>
+      <button onclick="openDateRange('journal')">Elegir fechas</button>
+    </div>
     <div class="tabs" id="archiveJournalTabs">
       <button class="active" onclick="setJournalFilter('all',this)">Todas</button>
       <button onclick="setJournalFilter('libre',this)">Libres</button>
@@ -256,17 +279,40 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
       <button onclick="setJournalFilter('invisible',this)">Invisible</button>
     </div>
     <div class="field"><input id="journalSearch" placeholder="Buscar una palabra..." oninput="renderArchiveJournal()"></div>
-    <div id="archiveJournalList"></div>
+    <div class="entry-meta" style="margin:8px 3px 10px"><span id="journalResultsCount">0 resultados</span><button class="btn btn-line" style="padding:6px 9px" onclick="toggleSort('journal')">Orden: <span id="journalSortLabel">recientes</span></button></div><div id="archiveJournalList"></div>
   </div>
 
   <div id="panel-good" class="archive-panel">
+    <div class="tabs time-tabs" id="goodTimeTabs">
+      <button class="active" onclick="setTimeFilter('good','all',this)">Todo</button>
+      <button onclick="setTimeFilter('good','today',this)">Hoy</button>
+      <button onclick="setTimeFilter('good','7d',this)">7 días</button>
+      <button onclick="setTimeFilter('good','month',this)">Este mes</button>
+      <button onclick="setTimeFilter('good','prevmonth',this)">Mes anterior</button>
+      <button onclick="openDateRange('good')">Elegir fechas</button>
+    </div>
     <div class="field"><input id="goodSearch" placeholder="Buscar algo que recuerdes..." oninput="renderGoodArchive()"></div>
-    <div id="goodArchiveList"></div>
+    <div class="entry-meta" style="margin:8px 3px 10px"><span id="goodResultsCount">0 resultados</span><button class="btn btn-line" style="padding:6px 9px" onclick="toggleSort('good')">Orden: <span id="goodSortLabel">recientes</span></button></div><div id="goodArchiveList"></div>
   </div>
 
   <div id="panel-urges" class="archive-panel">
+    <div class="tabs time-tabs" id="urgesTimeTabs">
+      <button class="active" onclick="setTimeFilter('urges','all',this)">Todo</button>
+      <button onclick="setTimeFilter('urges','today',this)">Hoy</button>
+      <button onclick="setTimeFilter('urges','7d',this)">7 días</button>
+      <button onclick="setTimeFilter('urges','month',this)">Este mes</button>
+      <button onclick="setTimeFilter('urges','prevmonth',this)">Mes anterior</button>
+      <button onclick="openDateRange('urges')">Elegir fechas</button>
+    </div>
     <div class="field"><select id="urgeFilter" onchange="renderUrgeArchive()"></select></div>
-    <div id="urgeArchiveList"></div>
+    <div class="field">
+      <select id="urgeOutcomeFilter" onchange="renderUrgeArchive()">
+        <option value="all">Todos los resultados</option>
+        <option value="survived">Solo atravesados</option>
+        <option value="registered">Solo registrados</option>
+      </select>
+    </div>
+    <div class="entry-meta" style="margin:8px 3px 10px"><span id="urgeResultsCount">0 resultados</span><button class="btn btn-line" style="padding:6px 9px" onclick="toggleSort('urges')">Orden: <span id="urgesSortLabel">recientes</span></button></div><div id="urgeArchiveList"></div>
   </div>
 </section>
 </div>
@@ -313,6 +359,18 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
   <button class="btn btn-main btn-wide" onclick="addOrbitItem()">Añadir</button>
   <button class="btn btn-line btn-wide" style="margin-top:7px" onclick="closeModal('orbitModal')">Cancelar</button>
 </div></div>
+
+<div class="modal" id="dateRangeModal"><div class="sheet">
+  <h3>Elegir fechas</h3><p>Solo se mostrarán registros dentro de este periodo.</p>
+  <input type="hidden" id="dateRangeTarget">
+  <div class="grid2">
+    <div class="field"><label>Desde</label><input id="dateFrom" type="date"></div>
+    <div class="field"><label>Hasta</label><input id="dateTo" type="date"></div>
+  </div>
+  <button class="btn btn-main btn-wide" onclick="applyDateRange()">Aplicar</button>
+  <button class="btn btn-line btn-wide" style="margin-top:7px" onclick="closeModal('dateRangeModal')">Cancelar</button>
+</div></div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -327,7 +385,7 @@ function uid(){return Math.random().toString(36).slice(2,10)}
 function dayKey(ts=Date.now()){let d=new Date(ts);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
 function defaults(){
  const n=Date.now();
- return {v:5,bank:0,claimed:{},best:0,
+ return {v:7,wallet:0,bank:0,claimed:{},best:0,pointAwards:{},
  goals:[
  {id:'msg',icon:'chat',name:'No comprobar si me ha escrito',sub:'No abrir el chat solo para buscar una señal',since:n},
  {id:'insta',icon:'insta',name:'No comprobar cambios en Instagram',sub:'No mirar seguidores, seguidos o cambios para calmar la ansiedad',since:n},
@@ -349,12 +407,12 @@ function defaults(){
 }
 function load(){
  let d;
- try{d=JSON.parse(localStorage.getItem('orbitV5'))}catch{}
+ try{d=JSON.parse(localStorage.getItem('orbitV7'))}catch{}
  if(!d){
-  let old;try{old=JSON.parse(localStorage.getItem('orbitV4'))}catch{}
+  let old;try{old=JSON.parse(localStorage.getItem('orbitV6'))}catch{}
   d=defaults();
   if(old){
-   ['bank','claimed','best','goals','rewards','urges','slips','journal','checkins','orbit'].forEach(k=>{if(old[k]!==undefined)d[k]=old[k]});
+   ['bank','claimed','best','pointAwards','goals','rewards','urges','slips','journal','checkins','orbit'].forEach(k=>{if(old[k]!==undefined)d[k]=old[k]});
    if(old.goodThings)d.goodThings=old.goodThings
   }else{
    try{old=JSON.parse(localStorage.getItem('orbitV3'))}catch{}
@@ -366,61 +424,216 @@ function load(){
  }
  const insta=d.goals?.find(g=>g.id==='insta');if(insta){insta.name='No comprobar cambios en Instagram';insta.sub='No mirar seguidores, seguidos o cambios para calmar la ansiedad'}
  if(!d.goodThings)d.goodThings=[];
+ if(!d.pointAwards)d.pointAwards={};
+ if(d.wallet===undefined||d.wallet===null)d.wallet=Number(d.bank||0);
+ d.bank=d.wallet;
  save(d);return d
 }
-function save(d){localStorage.setItem('orbitV5',JSON.stringify(d))}
+function save(d){localStorage.setItem('orbitV7',JSON.stringify(d))}
 function esc(s){return String(s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
 function fmt(ms){let h=Math.floor(ms/HOUR),m=Math.floor((ms%HOUR)/60000);if(h>=24)return Math.floor(h/24)+'d '+(h%24)+'h';return h+'h '+String(m).padStart(2,'0')+'m'}
-function accrue(){let d=load(),now=Date.now(),added=0;d.goals.forEach(g=>{let total=Math.floor((now-g.since)/STEP),prev=d.claimed[g.id]||0;if(total>prev){let diff=total-prev;d.claimed[g.id]=total;d.bank+=diff;added+=diff}d.best=Math.max(d.best||0,now-g.since)});save(d);if(added)toast('+'+added+' punto'+(added>1?'s':'')+' por mantener tus límites');return d}
+function addPoints(d,amount,kind,label){
+ amount=Number(amount||0);
+ if(amount<=0)return;
+ d.wallet=Number(d.wallet||0)+amount;
+ d.bank=d.wallet;
+ let k=dayKey();
+ if(!d.pointAwards[k])d.pointAwards[k]={limits:{},actions:{},events:[]};
+ if(!d.pointAwards[k].events)d.pointAwards[k].events=[];
+ d.pointAwards[k].events.push({ts:Date.now(),amount,kind,label});
+}
+function todayPointsTotal(d){
+ let p=d.pointAwards?.[dayKey()];
+ if(!p)return 0;
+ if(Array.isArray(p.events))return p.events.reduce((s,e)=>s+Number(e.amount||0),0);
+ let total=0;
+ if(p.actions)Object.values(p.actions).forEach(v=>total+=Number(v||0));
+ if(p.limits)Object.values(p.limits).forEach(v=>total+=Number(v||0));
+ return total
+}
+function accrue(){
+ let d=load(),now=Date.now(),added=0;
+ const milestones=[
+   {ms:2*HOUR,pts:.5,key:'2h'},
+   {ms:4*HOUR,pts:.5,key:'4h'},
+   {ms:8*HOUR,pts:1,key:'8h'},
+   {ms:12*HOUR,pts:1,key:'12h'},
+   {ms:24*HOUR,pts:2,key:'24h'},
+   {ms:48*HOUR,pts:2.5,key:'48h'},
+   {ms:72*HOUR,pts:3,key:'72h'},
+   {ms:168*HOUR,pts:5,key:'168h'}
+ ];
+ d.goals.forEach(g=>{
+   if(!g.awardedMilestones)g.awardedMilestones=[];
+   let elapsed=now-g.since;
+   milestones.forEach(m=>{
+     if(elapsed>=m.ms&&!g.awardedMilestones.includes(m.key)){
+       g.awardedMilestones.push(m.key);
+       addPoints(d,m.pts,'racha',g.name+' · '+m.key);
+       added+=m.pts
+     }
+   });
+   d.best=Math.max(d.best||0,elapsed)
+ });
+ save(d);
+ if(added)toast('+'+String(added).replace('.',',')+' puntos por tus rachas');
+ return d
+}
 function showPage(id){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.querySelectorAll('.bottom button').forEach(b=>b.classList.remove('active'));document.getElementById(id).classList.add('active');document.getElementById('nav-'+id).classList.add('active');window.scrollTo({top:0,behavior:'smooth'});render()}
 let mood=3;
 for(let i=1;i<=5;i++){let b=document.createElement('button');b.textContent=i;b.onclick=()=>{mood=i;document.querySelectorAll('#moodScale button').forEach(x=>x.classList.remove('sel'));b.classList.add('sel')};if(i===3)b.classList.add('sel');moodScale.appendChild(b)}
-function saveCheckin(){let d=load();d.checkins[dayKey()]={ts:Date.now(),mood,need:needToday.value.trim(),forMe:forMeToday.value.trim()};save(d);toast('Día guardado');render()}
+
+function awardDailyAction(action,points,dailyCap,label){
+ let d=load(),k=dayKey();
+ if(!d.pointAwards[k])d.pointAwards[k]={limits:{},actions:{},events:[]};
+ if(!d.pointAwards[k].actions)d.pointAwards[k].actions={};
+ let already=Number(d.pointAwards[k].actions[action]||0);
+ let remaining=Math.max(0,Number(dailyCap)-already);
+ let grant=Math.min(Number(points),remaining);
+ if(grant<=0)return 0;
+ d.pointAwards[k].actions[action]=already+grant;
+ addPoints(d,grant,'accion',label||action);
+ save(d);
+ return grant
+}
+
+function saveCheckin(){let d=load();d.checkins[dayKey()]={ts:Date.now(),mood,need:needToday.value.trim(),forMe:forMeToday.value.trim()};save(d);let got=awardDailyAction('checkin',.5,.5,'Check-in');toast(got?'Día guardado · +0,5':'Día actualizado');render()}
 const prompts=[['Lo que pesa hoy','Una frase basta.'],['Algo que hoy sí fue mío','Puede ser pequeño o cotidiano.'],['Lo que no necesito resolver esta noche','Déjalo aquí.'],['Una cosa que me sorprendió de mí','Sin juzgarla.'],['Qué sigue orbitando','Algo que todavía está, aunque haya cambiado.']];
-function saveQuickEntry(){let t=quickText.value.trim();if(!t)return toast('Escribe aunque sea una línea');let d=load(),p=prompts[new Date().getDate()%prompts.length];d.journal.push({id:uid(),ts:Date.now(),type:'rapida',title:p[0],text:t});save(d);quickText.value='';toast('Guardado');render()}
+function saveQuickEntry(){let t=quickText.value.trim();if(!t)return toast('Escribe aunque sea una línea');let d=load(),p=prompts[new Date().getDate()%prompts.length];d.journal.push({id:uid(),ts:Date.now(),type:'rapida',title:p[0],text:t});save(d);quickText.value='';let got=awardDailyAction('journal',.2,1,'Escribir');toast(got?'Guardado · +0,2':'Guardado');render()}
 let journalType='libre',journalFilter='all';
 const journalCopy={libre:['¿Qué quieres dejar aquí?','No hace falta que tenga principio ni final.'],'no-enviado':['Lo que no envié','Puedes escribir exactamente lo que te saldría mandar.'],'futuro':['Para mi yo futuro','Desde quien eres hoy hacia una versión de ti que todavía no conoces.'],aprendi:['Lo que aprendí','Sobre lo que ahora sabes.'],invisible:['Cómo se ve lo invisible','Aquello que no puede tocarse, pero sigue teniendo peso.']};
 function setJournalType(type,btn){journalType=type;document.querySelectorAll('#journalTabs button').forEach(b=>b.classList.remove('active'));btn.classList.add('active');journalPrompt.textContent=journalCopy[type][0];journalHint.textContent=journalCopy[type][1]}
-function saveJournalEntry(){let text=entryText.value.trim();if(!text)return toast('No hay nada que guardar todavía');let d=load();d.journal.push({id:uid(),ts:Date.now(),type:journalType,title:entryTitle.value.trim(),text});save(d);entryTitle.value='';entryText.value='';toast('Entrada guardada');render()}
+function saveJournalEntry(){let text=entryText.value.trim();if(!text)return toast('No hay nada que guardar todavía');let d=load();d.journal.push({id:uid(),ts:Date.now(),type:journalType,title:entryTitle.value.trim(),text});save(d);entryTitle.value='';entryText.value='';let got=awardDailyAction('journal',.2,1,'Escribir');toast(got?'Entrada guardada · +0,2':'Entrada guardada');render()}
 function openOrbitItem(){orbitModal.classList.add('show')}
 function addOrbitItem(){let n=orbitName.value.trim();if(!n)return toast('Ponle un nombre');let d=load();d.orbit.push({id:uid(),name:n,meaning:orbitMeaning.value.trim()});save(d);orbitName.value='';orbitMeaning.value='';closeModal('orbitModal');render()}
 function removeOrbit(id){let d=load();d.orbit=d.orbit.filter(x=>x.id!==id);save(d);render()}
-function addGoodThing(){let t=goodThing.value.trim();if(!t)return toast('Escribe algo que quieras guardar');let d=load();d.goodThings.push({id:uid(),ts:Date.now(),text:t,meaning:goodMeaning.value.trim()});save(d);goodThing.value='';goodMeaning.value='';toast('Guardado en tu órbita de hoy');render()}
+function addGoodThing(){let t=goodThing.value.trim();if(!t)return toast('Escribe algo que quieras guardar');let d=load();d.goodThings.push({id:uid(),ts:Date.now(),text:t,meaning:goodMeaning.value.trim()});save(d);goodThing.value='';goodMeaning.value='';let got=awardDailyAction('goodThing',.2,1,'Algo bueno');toast(got?'Guardado · +0,2':'Guardado en tu órbita de hoy');render()}
 function deleteGood(id){let d=load();d.goodThings=d.goodThings.filter(x=>x.id!==id);save(d);render()}
 function openUrge(){let d=load();urgeGoal.innerHTML=d.goals.map(g=>`<option value="${g.id}">${esc(g.name)}</option>`).join('');urgeModal.classList.add('show')}
 let timer=null,left=600,activeUrge=null;
-function startUrgeTimer(){let d=load(),u={id:uid(),ts:Date.now(),goalId:urgeGoal.value,hope:urgeHope.value.trim(),fear:urgeFear.value.trim(),alternative:urgeAlternative.value.trim(),intensity:+urgeIntensity.value,survived:false};d.urges.push(u);save(d);activeUrge=u.id;left=600;updateTimer();clearInterval(timer);startTimerBtn.disabled=true;surviveBtn.disabled=true;timer=setInterval(()=>{left--;updateTimer();if(left<=0){clearInterval(timer);timer=null;surviveBtn.disabled=false;startTimerBtn.disabled=false;toast('Ya han pasado 10 minutos')}},1000);render()}
+function startUrgeTimer(){let d=load(),u={id:uid(),ts:Date.now(),goalId:urgeGoal.value,hope:urgeHope.value.trim(),fear:urgeFear.value.trim(),alternative:urgeAlternative.value.trim(),intensity:+urgeIntensity.value,survived:false};d.urges.push(u);addPoints(d,.5,'impulso','Me detuve antes de comprobar');save(d);activeUrge=u.id;left=600;updateTimer();clearInterval(timer);startTimerBtn.disabled=true;surviveBtn.disabled=true;timer=setInterval(()=>{left--;updateTimer();if(left<=0){clearInterval(timer);timer=null;surviveBtn.disabled=false;startTimerBtn.disabled=false;toast('Ya han pasado 10 minutos')}},1000);render()}
 function updateTimer(){document.getElementById('timer').textContent=String(Math.floor(left/60)).padStart(2,'0')+':'+String(left%60).padStart(2,'0')}
-function surviveUrge(){if(!activeUrge)return;let d=load(),u=d.urges.find(x=>x.id===activeUrge);if(u&&!u.survived){u.survived=true;d.bank+=1;save(d)}activeUrge=null;urgeHope.value='';urgeFear.value='';urgeAlternative.value='';closeModal('urgeModal');toast('+1 punto por atravesar el impulso');render()}
+function surviveUrge(){if(!activeUrge)return;let d=load(),u=d.urges.find(x=>x.id===activeUrge);if(u&&!u.survived){u.survived=true;addPoints(d,.5,'impulso','Atravesé el impulso sin comprobar');save(d)}activeUrge=null;urgeHope.value='';urgeFear.value='';urgeAlternative.value='';closeModal('urgeModal');toast('+0,5 por detenerte · +0,5 por atravesarlo');render()}
 function slip(id){slipGoalId.value=id;slipNote.value='';slipModal.classList.add('show')}
-function confirmSlip(){let d=load(),g=d.goals.find(x=>x.id===slipGoalId.value);if(g){g.since=Date.now();d.claimed[g.id]=0;d.slips.push({ts:Date.now(),goalId:g.id,note:slipNote.value.trim()});save(d)}closeModal('slipModal');toast('Contador reiniciado. Lo anterior sigue contando.');render()}
+function confirmSlip(){let d=load(),g=d.goals.find(x=>x.id===slipGoalId.value);if(g){g.since=Date.now();g.awardedMilestones=[];d.slips.push({ts:Date.now(),goalId:g.id,note:slipNote.value.trim()});save(d)}closeModal('slipModal');toast('Contador reiniciado. Lo anterior sigue contando.');render()}
 function openReward(){rewardModal.classList.add('show')}
 function addReward(){let n=rewardName.value.trim(),c=+rewardCost.value;if(!n||!c)return toast('Completa el premio');let d=load();d.rewards.push({id:uid(),name:n,cost:c});save(d);rewardName.value='';closeModal('rewardModal');render()}
-function redeem(id){let d=load(),r=d.rewards.find(x=>x.id===id);if(r&&d.bank>=r.cost){d.bank-=r.cost;save(d);toast('Premio canjeado');render()}}
+function redeem(id){let d=load(),r=d.rewards.find(x=>x.id===id);if(r&&Number(d.wallet||0)>=r.cost){d.wallet=Number(d.wallet||0)-r.cost;d.bank=d.wallet;save(d);toast('Premio canjeado');render()}}}
 function closeModal(id){document.getElementById(id).classList.remove('show')}
 function toast(msg){let t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(window.toastTimeout);window.toastTimeout=setTimeout(()=>t.classList.remove('show'),1900)}
+
+function nextMilestoneText(g){
+ const m=[
+  {ms:2*HOUR,pts:.5,label:'2 h'},
+  {ms:4*HOUR,pts:.5,label:'4 h'},
+  {ms:8*HOUR,pts:1,label:'8 h'},
+  {ms:12*HOUR,pts:1,label:'12 h'},
+  {ms:24*HOUR,pts:2,label:'24 h'},
+  {ms:48*HOUR,pts:2.5,label:'48 h'},
+  {ms:72*HOUR,pts:3,label:'3 días'},
+  {ms:168*HOUR,pts:5,label:'7 días'}
+ ];
+ let elapsed=Date.now()-g.since;
+ let n=m.find(x=>elapsed<x.ms);
+ return n?`Próximo: ${n.label} · +${String(n.pts).replace('.',',')}`:'Racha de 7 días completada'
+}
+
 function drawOrbit(d){let el=bigOrbit;el.innerHTML='<div class="orbit-circle o1"></div><div class="orbit-circle o2"></div><div class="orbit-circle o3"></div><div class="me">yo</div>';let coords=[[50,18],[80,34],[82,67],[52,83],[19,68],[19,35],[65,25],[67,74]];d.orbit.slice(0,8).forEach((o,i)=>{let p=document.createElement('div');p.className='planet';p.style.left=coords[i][0]+'%';p.style.top=coords[i][1]+'%';p.textContent=o.name;el.appendChild(p)})}
 let archiveView='day',archiveMonth=new Date(),selectedDay=dayKey(),journalSearchTerm='';
+const timeFilters={
+ journal:{mode:'all',from:null,to:null},
+ good:{mode:'all',from:null,to:null},
+ urges:{mode:'all',from:null,to:null}
+};
+const sortModes={journal:'desc',good:'desc',urges:'desc'};
+function boundsFor(filter){
+ let now=new Date(),start=null,end=null;
+ if(filter.mode==='today'){
+   start=new Date();start.setHours(0,0,0,0);end=new Date();end.setHours(23,59,59,999)
+ }else if(filter.mode==='7d'){
+   end=new Date();end.setHours(23,59,59,999);start=new Date();start.setDate(start.getDate()-6);start.setHours(0,0,0,0)
+ }else if(filter.mode==='month'){
+   start=new Date(now.getFullYear(),now.getMonth(),1);end=new Date(now.getFullYear(),now.getMonth()+1,0,23,59,59,999)
+ }else if(filter.mode==='prevmonth'){
+   start=new Date(now.getFullYear(),now.getMonth()-1,1);end=new Date(now.getFullYear(),now.getMonth(),0,23,59,59,999)
+ }else if(filter.mode==='custom'&&filter.from&&filter.to){
+   start=new Date(filter.from+'T00:00:00');end=new Date(filter.to+'T23:59:59')
+ }
+ return {start:start?start.getTime():null,end:end?end.getTime():null}
+}
+function inTime(ts,filter){
+ let b=boundsFor(filter);
+ return (b.start===null||ts>=b.start)&&(b.end===null||ts<=b.end)
+}
+function setTimeFilter(target,mode,btn){
+ timeFilters[target].mode=mode;timeFilters[target].from=null;timeFilters[target].to=null;
+ document.querySelectorAll('#'+target+'TimeTabs button').forEach(b=>b.classList.remove('active'));
+ if(btn)btn.classList.add('active');
+ if(target==='journal')renderArchiveJournal();
+ if(target==='good')renderGoodArchive();
+ if(target==='urges')renderUrgeArchive()
+}
+function openDateRange(target){
+ dateRangeTarget.value=target;
+ let now=dayKey();dateFrom.value=now;dateTo.value=now;
+ dateRangeModal.classList.add('show')
+}
+function applyDateRange(){
+ let target=dateRangeTarget.value;if(!dateFrom.value||!dateTo.value)return toast('Elige las dos fechas');
+ let a=dateFrom.value,b=dateTo.value;if(a>b){let t=a;a=b;b=t}
+ timeFilters[target]={mode:'custom',from:a,to:b};
+ document.querySelectorAll('#'+target+'TimeTabs button').forEach(x=>x.classList.remove('active'));
+ closeModal('dateRangeModal');
+ if(target==='journal')renderArchiveJournal();
+ if(target==='good')renderGoodArchive();
+ if(target==='urges')renderUrgeArchive()
+}
+function toggleSort(target){
+ sortModes[target]=sortModes[target]==='desc'?'asc':'desc';
+ let el=document.getElementById(target+'SortLabel');if(el)el.textContent=sortModes[target]==='desc'?'recientes':'antiguos';
+ if(target==='journal')renderArchiveJournal();
+ if(target==='good')renderGoodArchive();
+ if(target==='urges')renderUrgeArchive()
+}
+
 function setArchiveView(v){archiveView=v;document.querySelectorAll('.archive-panel').forEach(x=>x.classList.remove('active'));document.getElementById('panel-'+v).classList.add('active');document.querySelectorAll('.archive-switch button').forEach(x=>x.classList.remove('active'));document.getElementById('av-'+v).classList.add('active');renderArchive()}
 function changeMonth(delta){archiveMonth=new Date(archiveMonth.getFullYear(),archiveMonth.getMonth()+delta,1);renderCalendar(load())}
 function renderCalendar(d){let y=archiveMonth.getFullYear(),m=archiveMonth.getMonth(),first=new Date(y,m,1),last=new Date(y,m+1,0),offset=(first.getDay()+6)%7;calendarTitle.textContent=archiveMonth.toLocaleDateString('es-ES',{month:'long',year:'numeric'});let active=new Set([...Object.keys(d.checkins),...d.journal.map(e=>dayKey(e.ts)),...d.urges.map(e=>dayKey(e.ts)),...d.goodThings.map(e=>dayKey(e.ts))]);let html='';for(let i=0;i<offset;i++)html+='<div></div>';for(let day=1;day<=last.getDate();day++){let dt=new Date(y,m,day),k=dayKey(dt.getTime()),cls='day'+(active.has(k)?' has':'')+(k===dayKey()?' today':'')+(k===selectedDay?' selected':'');html+=`<button class="${cls}" onclick="selectDay('${k}')">${day}</button>`}calendar.innerHTML=html}
 function selectDay(k){selectedDay=k;renderCalendar(load());renderDayDetail(load())}
-function renderDayDetail(d){let dt=new Date(selectedDay+'T12:00:00');selectedDayTitle.textContent=dt.toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'long'});let html='';let c=d.checkins[selectedDay];if(c)html+=`<div class="card entry-card"><div class="entry-meta"><span class="entry-type">check-in</span></div><p>Estado: ${c.mood}/5${c.need?'<br>Necesitaba: '+esc(c.need):''}${c.forMe?'<br>Por mí: '+esc(c.forMe):''}</p></div>`;d.journal.filter(e=>dayKey(e.ts)===selectedDay).forEach(e=>html+=entryHTML(e));d.goodThings.filter(e=>dayKey(e.ts)===selectedDay).forEach(g=>html+=goodHTML(g));d.urges.filter(e=>dayKey(e.ts)===selectedDay).forEach(u=>html+=urgeHTML(u,d));dayDetail.innerHTML=html||'<div class="empty">No guardaste nada este día.</div>'}
+function renderDayDetail(d){let dt=new Date(selectedDay+'T12:00:00');selectedDayTitle.textContent=dt.toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'long'});let html='';let pa=d.pointAwards?.[selectedDay];if(pa){let pts=0;if(Array.isArray(pa.events))pts=pa.events.reduce((s,e)=>s+Number(e.amount||0),0);else{if(pa.actions)Object.values(pa.actions).forEach(v=>pts+=Number(v||0));if(pa.limits)Object.values(pa.limits).forEach(v=>pts+=Number(v||0))}html+=`<div class="card stat"><div class="label">puntos ganados este día</div><strong>${pts.toFixed(1).replace('.',',')}</strong></div>`;}let c=d.checkins[selectedDay];if(c)html+=`<div class="card entry-card"><div class="entry-meta"><span class="entry-type">check-in</span></div><p>Estado: ${c.mood}/5${c.need?'<br>Necesitaba: '+esc(c.need):''}${c.forMe?'<br>Por mí: '+esc(c.forMe):''}</p></div>`;d.journal.filter(e=>dayKey(e.ts)===selectedDay).forEach(e=>html+=entryHTML(e));d.goodThings.filter(e=>dayKey(e.ts)===selectedDay).forEach(g=>html+=goodHTML(g));d.urges.filter(e=>dayKey(e.ts)===selectedDay).forEach(u=>html+=urgeHTML(u,d));dayDetail.innerHTML=html||'<div class="empty">No guardaste nada este día.</div>'}
 function entryHTML(e){return `<div class="card entry-card"><div class="entry-meta"><span class="entry-type">${esc(e.type.replaceAll('-',' '))}</span><span>${new Date(e.ts).toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'})}</span></div>${e.title?`<h3>${esc(e.title)}</h3>`:''}<p>${esc(e.text)}</p></div>`}
 function goodHTML(g){return `<div class="card entry-card"><div class="entry-meta"><span class="entry-type">lo que sí pasó</span><span>${new Date(g.ts).toLocaleDateString('es-ES',{day:'2-digit',month:'short'})}</span></div><h3>${esc(g.text)}</h3>${g.meaning?`<p>${esc(g.meaning)}</p>`:''}</div>`}
 function urgeHTML(u,d){let g=d.goals.find(x=>x.id===u.goalId);return `<div class="card entry-card"><div class="entry-meta"><span class="entry-type">${g?esc(g.name):'impulso'}</span><span>${u.survived?'atravesado':'registrado'}</span></div><p>Ansiedad: ${u.intensity}/10${u.hope?'<br>Esperaba: '+esc(u.hope):''}${u.fear?'<br>Temía: '+esc(u.fear):''}</p></div>`}
 function setJournalFilter(f,btn){journalFilter=f;document.querySelectorAll('#archiveJournalTabs button').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderArchiveJournal()}
-function renderArchiveJournal(){let d=load(),q=(journalSearch.value||'').toLowerCase();let arr=d.journal.filter(e=>(journalFilter==='all'||e.type===journalFilter)&&(!q||(e.text+' '+(e.title||'')).toLowerCase().includes(q))).slice().reverse();archiveJournalList.innerHTML=arr.length?arr.map(entryHTML).join(''):'<div class="empty">No hay entradas que coincidan.</div>'}
-function renderGoodArchive(){let d=load(),q=(goodSearch.value||'').toLowerCase();let arr=d.goodThings.filter(g=>!q||(g.text+' '+(g.meaning||'')).toLowerCase().includes(q)).slice().reverse();goodArchiveList.innerHTML=arr.length?arr.map(goodHTML).join(''):'<div class="empty">Todavía no hay nada aquí.</div>'}
-function renderUrgeArchive(){let d=load(),f=urgeFilter.value||'all';let arr=d.urges.filter(u=>f==='all'||u.goalId===f).slice().reverse();urgeArchiveList.innerHTML=arr.length?arr.map(u=>urgeHTML(u,d)).join(''):'<div class="empty">No hay impulsos que coincidan.</div>'}
+function renderArchiveJournal(){
+ let d=load(),q=(journalSearch.value||'').toLowerCase();
+ let arr=d.journal.filter(e=>(journalFilter==='all'||e.type===journalFilter)&&inTime(e.ts,timeFilters.journal)&&(!q||(e.text+' '+(e.title||'')).toLowerCase().includes(q)));
+ arr.sort((a,b)=>sortModes.journal==='desc'?b.ts-a.ts:a.ts-b.ts);
+ journalResultsCount.textContent=arr.length+' resultado'+(arr.length===1?'':'s');
+ archiveJournalList.innerHTML=arr.length?arr.map(entryHTML).join(''):'<div class="empty">No hay entradas que coincidan.</div>'
+}
+function renderGoodArchive(){
+ let d=load(),q=(goodSearch.value||'').toLowerCase();
+ let arr=d.goodThings.filter(g=>inTime(g.ts,timeFilters.good)&&(!q||(g.text+' '+(g.meaning||'')).toLowerCase().includes(q)));
+ arr.sort((a,b)=>sortModes.good==='desc'?b.ts-a.ts:a.ts-b.ts);
+ goodResultsCount.textContent=arr.length+' resultado'+(arr.length===1?'':'s');
+ goodArchiveList.innerHTML=arr.length?arr.map(goodHTML).join(''):'<div class="empty">Todavía no hay nada aquí.</div>'
+}
+function renderUrgeArchive(){
+ let d=load(),f=urgeFilter.value||'all',out=urgeOutcomeFilter.value||'all';
+ let arr=d.urges.filter(u=>(f==='all'||u.goalId===f)&&inTime(u.ts,timeFilters.urges)&&(out==='all'||(out==='survived'&&u.survived)||(out==='registered'&&!u.survived)));
+ arr.sort((a,b)=>sortModes.urges==='desc'?b.ts-a.ts:a.ts-b.ts);
+ urgeResultsCount.textContent=arr.length+' resultado'+(arr.length===1?'':'s');
+ urgeArchiveList.innerHTML=arr.length?arr.map(u=>urgeHTML(u,d)).join(''):'<div class="empty">No hay impulsos que coincidan.</div>'
+}
 function renderArchive(){let d=load();renderCalendar(d);renderDayDetail(d);renderArchiveJournal();renderGoodArchive();urgeFilter.innerHTML='<option value="all">Todos los impulsos</option>'+d.goals.map(g=>`<option value="${g.id}">${esc(g.name)}</option>`).join('');renderUrgeArchive()}
 function render(){let d=accrue(),now=Date.now(),p=prompts[new Date().getDate()%prompts.length];todayDate.textContent=new Date().toLocaleDateString('es-ES',{weekday:'short',day:'numeric',month:'short'});dailyPromptTitle.textContent=p[0];dailyPromptSub.textContent=p[1];let c=d.checkins[dayKey()];if(c){needToday.value=c.need||'';forMeToday.value=c.forMe||'';mood=c.mood||3;document.querySelectorAll('#moodScale button').forEach((b,i)=>b.classList.toggle('sel',i+1===mood))}
  drawOrbit(d);
  orbitItems.innerHTML=d.orbit.map(o=>`<div class="card good-card"><div><strong>${esc(o.name)}</strong><small>${esc(o.meaning||'')}</small></div><button class="btn btn-line" onclick="removeOrbit('${o.id}')">Quitar</button></div>`).join('');
  let todays=d.goodThings.filter(g=>dayKey(g.ts)===dayKey()).slice().reverse();todayGoodThings.innerHTML=todays.length?'<div class="section-head"><h2>Hoy también pasó esto</h2></div>'+todays.map(g=>`<div class="card good-card"><div><strong>${esc(g.text)}</strong><small>${esc(g.meaning||'')}</small></div><button class="btn btn-line" onclick="deleteGood('${g.id}')">Quitar</button></div>`).join(''):'';
- bank.textContent=d.bank;bestStreak.textContent=fmt(d.best||0);
- goals.innerHTML=d.goals.map(g=>{let elapsed=now-g.since,pct=((elapsed%STEP)/STEP)*100;return `<div class="card goal"><div class="goal-top"><div class="goal-icon">${icons[g.icon]||icons.search}</div><div><div class="goal-title">${esc(g.name)}</div><div class="goal-sub">${esc(g.sub)}</div></div><div class="goal-time"><small>sin comprobar</small><strong>${fmt(elapsed)}</strong></div></div><div class="progressline"><div style="width:${pct}%"></div></div><div class="goal-actions"><button class="btn btn-soft" onclick="openUrge()">Tengo el impulso</button><button class="btn btn-line" onclick="slip('${g.id}')">Lo he incumplido</button></div></div>`}).join('');
- rewards.innerHTML=d.rewards.map(r=>`<div class="card reward"><div><strong>${esc(r.name)}</strong><small>${r.cost} puntos</small></div><button class="btn ${d.bank>=r.cost?'btn-main':'btn-soft'}" ${d.bank>=r.cost?'':'disabled'} onclick="redeem('${r.id}')">${d.bank>=r.cost?'Canjear':'Aún no'}</button></div>`).join('');
+ bank.textContent=Number(d.wallet||0).toFixed(1).replace('.',',');todayPoints.textContent=todayPointsTotal(d).toFixed(1).replace('.',',');bestStreak.textContent=fmt(d.best||0);
+ goals.innerHTML=d.goals.map(g=>{let elapsed=now-g.since,pct=((elapsed%STEP)/STEP)*100;return `<div class="card goal"><div class="goal-top"><div class="goal-icon">${icons[g.icon]||icons.search}</div><div><div class="goal-title">${esc(g.name)}</div><div class="goal-sub">${esc(g.sub)}</div><div class="goal-sub" style="color:var(--wine);margin-top:5px">${nextMilestoneText(g)}</div></div><div class="goal-time"><small>sin comprobar</small><strong>${fmt(elapsed)}</strong></div></div><div class="progressline"><div style="width:${pct}%"></div></div><div class="goal-actions"><button class="btn btn-soft" onclick="openUrge()">Tengo el impulso</button><button class="btn btn-line" onclick="slip('${g.id}')">Lo he incumplido</button></div></div>`}).join('');
+ rewards.innerHTML=d.rewards.map(r=>`<div class="card reward"><div><strong>${esc(r.name)}</strong><small>${r.cost} puntos</small></div><button class="btn ${Number(d.wallet||0)>=r.cost?'btn-main':'btn-soft'}" ${Number(d.wallet||0)>=r.cost?'':'disabled'} onclick="redeem('${r.id}')">${Number(d.wallet||0)>=r.cost?'Canjear':'Aún no'}</button></div>`).join('');
  renderArchive()
 }
 setInterval(render,60000);render();
