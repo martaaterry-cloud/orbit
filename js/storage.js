@@ -1,6 +1,8 @@
 // Persistencia, migraciones de versión, exportación y futuras copias de seguridad.
 // Extraído desde app.js sin romper compatibilidad.
 
+function dayKey(ts=Date.now()){let d=new Date(ts);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+
 function defaults(){
  const n=Date.now();
  return {v:9,wallet:0,lifetimeStars:0,bank:0,claimed:{},best:0,pointAwards:{},returnToMe:{since:n,awardedMilestones:[],best:0},
