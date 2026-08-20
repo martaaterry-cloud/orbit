@@ -1,0 +1,341 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f3e1e4">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Orbit">
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+<link rel="manifest" href="manifest.webmanifest">
+<title>Orbit</title>
+
+  <link rel="stylesheet" href="css/orbit.css">
+</head>
+<body>
+<div class="app">
+<header>
+  <button class="icon-button" onclick="showPage('today')"><svg class="icon" viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 16 0A8 8 0 1 0 4 12"/><path d="M12 8v4l2.5 1.5"/></svg></button>
+  <div class="brand">ORBIT<span class="brand-mark"></span></div>
+  <button class="icon-button" onclick="toast('Tus textos y registros se guardan solo en este dispositivo')"><svg class="icon" viewBox="0 0 24 24"><path d="M12 3 5 6v5c0 4.5 2.6 7.7 7 10 4.4-2.3 7-5.5 7-10V6z"/><path d="m9.5 12 1.7 1.7L15 10"/></svg></button>
+</header>
+
+<section id="today" class="page active">
+  <div class="card hero">
+    <div class="kicker">hoy</div>
+    <h1>Un lugar para volver a ti</h1>
+    <p>Escribe, guarda pequeñas cosas y entra en las partes que necesites. No tienes que usarlo todo cada día.</p>
+  </div>
+
+  <div class="section-head"><h2>Cómo estoy hoy</h2><small id="todayDate"></small></div>
+  <div class="card checkin">
+    <div class="kicker">estado</div>
+    <div class="scale" id="moodScale"></div>
+    <div class="field"><label>Una cosa que necesito hoy</label><input id="needToday" placeholder="Espacio, descanso, compañía, movimiento..."></div>
+    <div class="field"><label>Una cosa que quiero hacer por mí</label><input id="forMeToday" placeholder="Algo pequeño también cuenta"></div>
+    <button class="btn btn-main btn-wide" onclick="saveCheckin()">Guardar mi día</button>
+  </div>
+
+  <div class="section-head"><h2>Entrar en Orbit</h2><small>elige solo lo que necesites</small></div>
+  <div class="grid2">
+    <div class="card nav-card" onclick="showPage('journal')">
+      <div class="mini-icon"><svg class="icon" viewBox="0 0 24 24"><path d="M6 4h10a2 2 0 0 1 2 2v14H8a2 2 0 0 1-2-2z"/><path d="M9 8h6M9 12h6"/></svg></div>
+      <div><h3>Escribir</h3><p>Entrada libre, cartas, lo que no envié o lo que aprendí.</p></div>
+    </div>
+    <div class="card nav-card" onclick="showPage('orbit')">
+      <div class="mini-icon"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="2"/><ellipse cx="12" cy="12" rx="9" ry="4" transform="rotate(-28 12 12)"/></svg></div>
+      <div><h3>Mi órbita</h3><p>Lo que me sostiene y las pequeñas cosas buenas de hoy.</p></div>
+    </div>
+    <div class="card nav-card" onclick="showPage('return')">
+      <div class="mini-icon"><svg class="icon" viewBox="0 0 24 24"><path d="M9 7H5v-4"/><path d="M5 7a8 8 0 1 1-1 8"/></svg></div>
+      <div><h3>Volver a mí</h3><p>Cuando aparece la necesidad de comprobar o buscar señales.</p></div>
+    </div>
+    <div class="card nav-card" onclick="showPage('archive')">
+      <div class="mini-icon"><svg class="icon" viewBox="0 0 24 24"><path d="M5 5h14v14H5z"/><path d="M8 3v4M16 3v4M5 9h14"/></svg></div>
+      <div><h3>Archivo</h3><p>Volver a días, entradas, impulsos y cosas que sí pasaron.</p></div>
+    </div>
+  </div>
+
+  <div class="section-head"><h2>Una línea para hoy</h2><small>opcional</small></div>
+  <div class="card prompt-card">
+    <div class="prompt-title" id="dailyPromptTitle"></div>
+    <div class="prompt-sub" id="dailyPromptSub"></div>
+    <textarea id="quickText" placeholder="Hoy..."></textarea>
+    <button class="btn btn-soft btn-wide" style="margin-top:8px" onclick="saveQuickEntry()">Guardar</button>
+  </div>
+
+  <div class="quote">“Lo invisible también deja gravedad.”<small>Hay cosas que no se ven y aun así forman parte de lo que somos.</small></div>
+</section>
+
+<section id="journal" class="page">
+  <div class="card hero"><div class="kicker">diario</div><h1>Escribir sin tener que contarlo todo</h1><p>Una página en blanco, una carta o una pregunta. Tú eliges la forma.</p></div>
+  <div class="tabs" id="journalTabs">
+    <button class="active" onclick="setJournalType('libre',this)">Entrada libre</button>
+    <button onclick="setJournalType('no-enviado',this)">Lo que no envié</button>
+    <button onclick="setJournalType('futuro',this)">Para mi yo futuro</button>
+    <button onclick="setJournalType('aprendi',this)">Lo que aprendí</button>
+    <button onclick="setJournalType('invisible',this)">Lo invisible</button>
+  </div>
+  <div class="card prompt-card">
+    <div class="prompt-title" id="journalPrompt">¿Qué quieres dejar aquí?</div>
+    <div class="prompt-sub" id="journalHint">No hace falta que tenga principio ni final.</div>
+    <div class="field"><label>Título opcional</label><input id="entryTitle" placeholder="Una palabra también vale"></div>
+    <div id="futureDateWrap" class="field" style="display:none">
+      <label>¿Cuándo quiero volver a encontrarla? (opcional)</label>
+      <input id="futureDate" type="date">
+      <div class="prompt-sub" style="margin-top:5px">Hasta entonces aparecerá guardada como una carta cerrada.</div>
+    </div>
+    <textarea id="entryText" style="min-height:200px" placeholder="Escribe..."></textarea>
+    <button class="btn btn-main btn-wide" style="margin-top:9px" onclick="saveJournalEntry()">Guardar entrada</button>
+  </div>
+  <button class="btn btn-line btn-wide" onclick="showPage('archive');setArchiveView('journal')">Ver mis entradas anteriores</button>
+</section>
+
+<section id="orbit" class="page">
+  <div class="card hero"><div class="kicker">mi órbita</div><h1>Lo que también forma parte de mi vida</h1><p>Algunas cosas permanecen como pilares. Otras aparecen porque hoy pasó algo bonito, tranquilo o simplemente mío.</p></div>
+
+  <div class="card orbit-wrap" style="margin-top:14px">
+    <div class="orbit-scene" id="bigOrbit"></div>
+    <div class="orbit-note">Los pilares se quedan. Las pequeñas cosas del día van formando una memoria de lo que sí estuvo ahí.</div>
+  </div>
+
+  <div class="section-head"><h2>Mis pilares</h2><small>cosas que quiero mantener cerca</small></div>
+  <div id="orbitItems"></div>
+  <button class="btn btn-dashed btn-wide" onclick="openOrbitItem()">Añadir un pilar</button>
+
+  <div class="section-head"><h2>Algo bueno de hoy</h2><small>por pequeño que sea</small></div>
+  <div class="card prompt-card">
+    <div class="field"><label>¿Qué quiero recordar de hoy?</label><input id="goodThing" placeholder="Me reí, avancé algo, entrené, estuve tranquila..."></div>
+    <div class="field"><label>¿Por qué quiero guardarlo? (opcional)</label><input id="goodMeaning" placeholder="Me hizo sentir capaz, acompañada, ligera..."></div>
+    <button class="btn btn-main btn-wide" onclick="addGoodThing()">Guardar en mi órbita de hoy</button>
+  </div>
+  <div id="todayGoodThings"></div>
+  <button class="btn btn-line btn-wide" onclick="showPage('archive');setArchiveView('good')">Ver todas las cosas que sí pasaron</button>
+</section>
+
+<section id="return" class="page">
+  <div class="card hero"><div class="kicker">volver a mí</div><h1>Cuando algo me arrastra hacia fuera</h1><p>Esta sección existe para ayudarte con los impulsos. No es el centro de Orbit.</p></div>
+  <div class="grid2" style="margin-top:12px">
+    <div class="card stat"><div class="label">estrellas de hoy</div><strong id="todayPoints">0</strong></div>
+    <div class="card stat"><div class="label">cesta</div><strong id="bank">0</strong></div>
+  </div>
+  <div class="card stat" style="margin-top:9px"><div class="label">mejor racha</div><strong id="bestStreak">0h</strong></div>
+  <div class="section-head"><h2>Mi racha</h2><small>una sola racha para todo</small></div>
+  <div class="card goal" id="sharedStreakCard">
+    <div class="goal-top">
+      <div class="goal-icon"><svg class="icon" viewBox="0 0 24 24"><path d="M9 7H5v-4"/><path d="M5 7a8 8 0 1 1-1 8"/></svg></div>
+      <div>
+        <div class="goal-title">Tiempo sin ir a buscar información sobre él</div>
+        <div class="goal-sub" id="sharedNextMilestone"></div>
+      </div>
+      <div class="goal-time"><small>racha actual</small><strong id="sharedStreak">0h</strong></div>
+    </div>
+    <div class="progressline"><div id="sharedProgress" style="width:0%"></div></div>
+  </div>
+
+  <div class="section-head"><h2>Qué estoy evitando comprobar</h2><small>todas reinician la misma racha</small></div>
+  <div id="goals"></div>
+  <button class="btn btn-main btn-wide" onclick="openUrge()">Tengo ganas de mirar</button>
+  <div class="section-head"><h2>Mis estrellas</h2><small>todo lo relacionado con recompensas</small></div>
+  <div class="shop-summary">
+    <div class="card stat"><div class="label">estrellas disponibles</div><strong id="shopWallet">0</strong></div>
+    <div class="card stat"><div class="label">estrellas de mi historia</div><strong id="shopLifetime">0</strong></div>
+  </div>
+  <button class="btn btn-main btn-wide" style="margin-bottom:12px" onclick="showPage('universe')">Entrar en mi universo</button>
+
+  <div class="section-head"><h2>Tienda de recompensas</h2><small>extras, nunca permisos</small></div>
+  <div id="rewards"></div>
+  <button class="btn btn-dashed btn-wide" onclick="openReward()">Añadir mi propio premio</button>
+
+  <div class="section-head"><h2>Cómo gano estrellas</h2><small>las de hoy se reinician mañana</small></div>
+  <div class="card prompt-card">
+    <div class="prompt-sub" style="line-height:1.75">
+      <b>Racha común:</b> 2 h +0,2 · 4 h +0,3 · 8 h +0,5 · 12 h +0,5 · 24 h +1 · 48 h +1,5 · 3 días +2 · 7 días +3. Cualquier comprobación reinicia esta única racha.
+      <br><b>Check-in:</b> +0,2 una vez al día.
+      <br><b>Escribir:</b> +0,1 por entrada, máximo +0,5 al día.
+      <br><b>Algo bueno:</b> +0,1 por registro, máximo +0,5 al día.
+      <br><b>Pausa ante un impulso:</b> +0,2 por detenerte y +0,3 adicional si terminas sin comprobar.
+      <br><br>
+      Los <b>estrellas de hoy</b> vuelven a 0 al cambiar de día. Todo lo ganado entra también en tu <b>cesta</b>, que se acumula hasta que canjeas un premio.
+      Si incumples un límite, no pierdes nada: solo se reinicia ese reloj y su racha actual.
+    </div>
+  </div>
+  <button class="btn btn-line btn-wide" style="margin-top:9px" onclick="showPage('archive');setArchiveView('urges')">Ver historial de impulsos</button>
+</section>
+
+<section id="archive" class="page">
+  <div class="card hero"><div class="kicker">archivo</div><h1>Volver a un día concreto</h1><p>No hay una lista infinita. Puedes entrar por fecha o por tipo de recuerdo.</p></div>
+
+  <div class="archive-switch">
+    <button id="av-day" class="active" onclick="setArchiveView('day')">Por día</button>
+    <button id="av-journal" onclick="setArchiveView('journal')">Diario</button>
+    <button id="av-good" onclick="setArchiveView('good')">Lo que sí pasó</button>
+    <button id="av-urges" onclick="setArchiveView('urges')">Impulsos</button>
+  </div>
+
+  <div id="panel-day" class="archive-panel active">
+    <div class="section-head"><h2 id="calendarTitle"></h2><small>toca un día</small></div>
+    <div class="card calendar">
+      <div class="cal-head"><span>L</span><span>M</span><span>X</span><span>J</span><span>V</span><span>S</span><span>D</span></div>
+      <div class="cal-grid" id="calendar"></div>
+    </div>
+    <div class="archive-tools">
+      <button class="btn btn-line" onclick="changeMonth(-1)">Mes anterior</button>
+      <button class="btn btn-line" onclick="changeMonth(1)">Mes siguiente</button>
+    </div>
+    <div class="section-head"><h2 id="selectedDayTitle">Hoy</h2><small>todo lo registrado</small></div>
+    <div id="dayDetail"></div>
+  </div>
+
+  <div id="panel-journal" class="archive-panel">
+    <div class="field">
+      <label>Periodo</label>
+      <select id="journalPeriod" onchange="setTimeFilterFromSelect('journal',this)">
+        <option value="all">Todo</option>
+        <option value="today">Hoy</option>
+        <option value="7d">Últimos 7 días</option>
+        <option value="month">Este mes</option>
+        <option value="prevmonth">Mes anterior</option>
+        <option value="custom">Elegir fechas…</option>
+      </select>
+    </div>
+    <div class="tabs" id="archiveJournalTabs">
+      <button class="active" onclick="setJournalFilter('all',this)">Todas</button>
+      <button onclick="setJournalFilter('libre',this)">Libres</button>
+      <button onclick="setJournalFilter('no-enviado',this)">No envié</button>
+      <button onclick="setJournalFilter('futuro',this)">Yo futuro</button>
+      <button onclick="setJournalFilter('aprendi',this)">Aprendí</button>
+      <button onclick="setJournalFilter('invisible',this)">Invisible</button>
+    </div>
+    <div class="field"><input id="journalSearch" placeholder="Buscar una palabra..." oninput="renderArchiveJournal()"></div>
+    <div class="entry-meta" style="margin:8px 3px 10px"><span id="journalResultsCount">0 resultados</span><button class="btn btn-line" style="padding:6px 9px" onclick="toggleSort('journal')">Orden: <span id="journalSortLabel">recientes</span></button></div><div id="archiveJournalList"></div>
+  </div>
+
+  <div id="panel-good" class="archive-panel">
+    <div class="field">
+      <label>Periodo</label>
+      <select id="goodPeriod" onchange="setTimeFilterFromSelect('good',this)">
+        <option value="all">Todo</option>
+        <option value="today">Hoy</option>
+        <option value="7d">Últimos 7 días</option>
+        <option value="month">Este mes</option>
+        <option value="prevmonth">Mes anterior</option>
+        <option value="custom">Elegir fechas…</option>
+      </select>
+    </div>
+    <div class="field"><input id="goodSearch" placeholder="Buscar algo que recuerdes..." oninput="renderGoodArchive()"></div>
+    <div class="entry-meta" style="margin:8px 3px 10px"><span id="goodResultsCount">0 resultados</span><button class="btn btn-line" style="padding:6px 9px" onclick="toggleSort('good')">Orden: <span id="goodSortLabel">recientes</span></button></div><div id="goodArchiveList"></div>
+  </div>
+
+  <div id="panel-urges" class="archive-panel">
+    <div class="field">
+      <label>Periodo</label>
+      <select id="urgesPeriod" onchange="setTimeFilterFromSelect('urges',this)">
+        <option value="all">Todo</option>
+        <option value="today">Hoy</option>
+        <option value="7d">Últimos 7 días</option>
+        <option value="month">Este mes</option>
+        <option value="prevmonth">Mes anterior</option>
+        <option value="custom">Elegir fechas…</option>
+      </select>
+    </div>
+    <div class="field"><select id="urgeFilter" onchange="renderUrgeArchive()"></select></div>
+    <div class="field">
+      <select id="urgeOutcomeFilter" onchange="renderUrgeArchive()">
+        <option value="all">Todos los resultados</option>
+        <option value="survived">Solo atravesados</option>
+        <option value="registered">Solo registrados</option>
+      </select>
+    </div>
+    <div class="entry-meta" style="margin:8px 3px 10px"><span id="urgeResultsCount">0 resultados</span><button class="btn btn-line" style="padding:6px 9px" onclick="toggleSort('urges')">Orden: <span id="urgesSortLabel">recientes</span></button></div><div id="urgeArchiveList"></div>
+  </div>
+</section>
+
+<section id="universe" class="page">
+  <div class="universe-hero">
+    <div class="kicker">mi universo</div>
+    <h1 style="font-family:Georgia,serif;font-weight:500;margin:5px 0 7px">Las estrellas que voy reuniendo</h1>
+    <p style="font-size:12px;line-height:1.5;margin:0">Las estrellas que gastas siguen formando parte de tu historia. Las constelaciones desbloqueadas no desaparecen.</p>
+    <div class="star-balance">
+      <div class="star-chip"><small>disponibles</small><strong id="universeWallet">0</strong></div>
+      <div class="star-chip"><small>conseguidas</small><strong id="universeLifetime">0</strong></div>
+    </div>
+  </div>
+
+  <div class="section-head"><h2>Constelación en curso</h2><small id="constellationProgressText"></small></div>
+  <div class="constellation-stage" id="constellationStage"></div>
+
+  <div class="section-head"><h2>Libro de constelaciones</h2><small>mi colección</small></div>
+  <div class="book-grid" id="constellationBook"></div>
+</section>
+
+</div>
+
+<nav class="bottom">
+<button id="nav-today" class="active" onclick="showPage('today')"><svg class="icon" viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 16 0A8 8 0 1 0 4 12"/><circle cx="12" cy="12" r="2"/></svg>Hoy</button>
+<button id="nav-journal" onclick="showPage('journal')"><svg class="icon" viewBox="0 0 24 24"><path d="M6 4h10a2 2 0 0 1 2 2v14H8a2 2 0 0 1-2-2z"/><path d="M9 8h6M9 12h6"/></svg>Diario</button>
+<button id="nav-orbit" onclick="showPage('orbit')"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="2"/><ellipse cx="12" cy="12" rx="9" ry="4" transform="rotate(-28 12 12)"/></svg>Órbita</button>
+<button id="nav-return" onclick="showPage('return')"><svg class="icon" viewBox="0 0 24 24"><path d="M9 7H5v-4"/><path d="M5 7a8 8 0 1 1-1 8"/></svg>Volver a mí</button>
+<button id="nav-archive" onclick="showPage('archive')"><svg class="icon" viewBox="0 0 24 24"><path d="M5 5h14v14H5z"/><path d="M8 3v4M16 3v4M5 9h14"/></svg>Archivo</button>
+</nav>
+
+<div class="modal" id="urgeModal"><div class="sheet">
+  <h3>Antes de comprobar</h3><p>Solo necesitamos crear un poco de espacio entre el impulso y lo que haces.</p>
+  <div class="field"><label>¿Qué quiero comprobar?</label><select id="urgeGoal"></select></div>
+  <div class="field"><label>¿Qué espero encontrar?</label><textarea id="urgeHope" placeholder="Lo que mi cabeza cree que me tranquilizaría..."></textarea></div>
+  <div class="field"><label>¿Qué temo encontrar?</label><textarea id="urgeFear" placeholder="Lo que me da miedo ver..."></textarea></div>
+  <div class="field"><label>Ansiedad ahora: <span id="urgeIntensityLabel">6</span>/10</label><input type="range" min="1" max="10" value="6" id="urgeIntensity" oninput="urgeIntensityLabel.textContent=this.value"></div>
+  <div class="field"><label>Durante 10 minutos puedo...</label><input id="urgeAlternative" placeholder="Seguir trabajando, salir un momento, escribir..."></div>
+  <div class="pause"><div class="kicker">pausa</div><div class="timer" id="timer">10:00</div><button class="btn btn-main" id="startTimerBtn" onclick="startUrgeTimer()">Empezar 10 minutos</button> <button class="btn btn-soft" id="surviveBtn" onclick="surviveUrge()" disabled>Lo he atravesado</button></div>
+  <button class="btn btn-line btn-wide" style="margin-top:9px" onclick="closeModal('urgeModal')">Cerrar</button>
+</div></div>
+
+<div class="modal" id="slipModal"><div class="sheet">
+  <h3>Lo he comprobado</h3><p>No se borra lo que ya habías conseguido. Solo reiniciamos este contador desde ahora.</p>
+  <input type="hidden" id="slipGoalId">
+  <div class="field"><label>¿Qué estaba pasando justo antes? (opcional)</label><textarea id="slipNote"></textarea></div>
+  <button class="btn btn-main btn-wide" onclick="confirmSlip()">Reiniciar contador</button>
+  <button class="btn btn-line btn-wide" style="margin-top:7px" onclick="closeModal('slipModal')">Cancelar</button>
+</div></div>
+
+<div class="modal" id="rewardModal"><div class="sheet">
+  <h3>Un premio para mí</h3><p>Puede ser tiempo, un plan o un pequeño gesto.</p>
+  <div class="field"><label>Premio</label><input id="rewardName"></div>
+  <div class="field"><label>Coste en estrellas</label><input id="rewardCost" type="number" min="1" value="10"></div>
+  <button class="btn btn-main btn-wide" onclick="addReward()">Guardar</button>
+  <button class="btn btn-line btn-wide" style="margin-top:7px" onclick="closeModal('rewardModal')">Cancelar</button>
+</div></div>
+
+<div class="modal" id="orbitModal"><div class="sheet">
+  <h3>Añadir un pilar</h3><p>Algo que quieras recordar que forma parte de ti y de tu vida.</p>
+  <div class="field"><label>Nombre</label><input id="orbitName"></div>
+  <div class="field"><label>Qué me aporta</label><input id="orbitMeaning"></div>
+  <button class="btn btn-main btn-wide" onclick="addOrbitItem()">Añadir</button>
+  <button class="btn btn-line btn-wide" style="margin-top:7px" onclick="closeModal('orbitModal')">Cancelar</button>
+</div></div>
+
+<div class="modal" id="dateRangeModal"><div class="sheet">
+  <h3>Elegir fechas</h3><p>Solo se mostrarán registros dentro de este periodo.</p>
+  <input type="hidden" id="dateRangeTarget">
+  <div class="grid2">
+    <div class="field"><label>Desde</label><input id="dateFrom" type="date"></div>
+    <div class="field"><label>Hasta</label><input id="dateTo" type="date"></div>
+  </div>
+  <button class="btn btn-main btn-wide" onclick="applyDateRange()">Aplicar</button>
+  <button class="btn btn-line btn-wide" style="margin-top:7px" onclick="closeModal('dateRangeModal')">Cancelar</button>
+</div></div>
+
+<div class="toast" id="toast"></div>
+
+
+  <script src="js/storage.js"></script>
+  <script src="js/stars.js"></script>
+  <script src="js/streak.js"></script>
+  <script src="js/journal.js"></script>
+  <script src="js/archive.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

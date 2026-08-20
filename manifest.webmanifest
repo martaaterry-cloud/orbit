@@ -1,0 +1,9 @@
+{
+  "name": "Orbit",
+  "short_name": "Orbit",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#f8f1ef",
+  "theme_color": "#7a5360",
+  "icons": []
+}
