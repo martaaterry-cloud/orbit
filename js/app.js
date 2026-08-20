@@ -52,59 +52,160 @@ function renderUniverse(d){
  let progress=next?Math.max(0,Math.min(1,(total-prevNeed)/(current.need-prevNeed))):1;
  constellationProgressText.textContent=next?`${total.toFixed(1).replace('.',',')} / ${current.need} estrellas`:'Colección actual completada';
  constellationStage.innerHTML=constellationSvg(current,!next,progress);
+ 
+ let detailsStage = document.getElementById('universeDetailsStage');
+ if(detailsStage){
+   detailsStage.innerHTML=constellationSvg(current,!next,progress);
+ }
  let captionDetails = document.getElementById('constellationDetailsCaption');
  if(captionDetails){
-  captionDetails.innerHTML=`<div class="constellation-caption"><strong>${next?'Dibujando '+current.name:current.name+' completada'}</strong><small>${next?`Faltan ${(current.need-total).toFixed(1).replace('.',',')} estrellas`:current.desc}</small></div>`;
+  captionDetails.innerHTML=`<div class="constellation-caption" style="position:static;color:var(--ink);padding:0;"><strong style="font-size:15px;">${next?'Dibujando '+current.name:current.name+' completada'}</strong><br><small style="color:var(--muted);font-size:12px;">${next?`Faltan ${(current.need-total).toFixed(1).replace('.',',')} estrellas`:current.desc}</small></div>`;
  }
  
  const collections = [
-   { id: 'zodiaco', name: 'Zodiaco' },
-   { id: 'norte', name: 'Cielo del norte' },
-   { id: 'invierno', name: 'Cielo de invierno' },
-   { id: 'profundo', name: 'Espacio profundo' }
+   { id: 'zodiaco', name: 'Zodiaco', region: 'zodiaco' },
+   { id: 'norte', name: 'Cielo del norte', region: 'cielo-1' },
+   { id: 'invierno', name: 'Cielo de invierno', region: 'orion' },
+   { id: 'profundo', name: 'Espacio profundo', region: 'profundo' }
  ];
  
  let bookHtml = '';
  collections.forEach(col => {
    let colConsts = constellationDefs.filter(c => c.collection === col.id);
-   let ownedCount = colConsts.filter(c => d.claimed && d.claimed[c.id]).length;
+   let isRegionUnlocked = d.unlockedRegions && d.unlockedRegions.includes(col.region);
+   let ownedCount = isRegionUnlocked ? colConsts.filter(c => d.claimed && d.claimed[c.id]).length : 0;
+   
    bookHtml += `
      <div class="collection-header" style="grid-column: 1 / -1; margin-top: 15px; border-bottom: 1px solid var(--line); padding-bottom: 5px;">
        <h4 style="margin: 0; font-size: 13px; color: var(--wine); text-transform: uppercase; letter-spacing: 0.05em;">
-         ${col.name} (${ownedCount}/${colConsts.length})
+         ${col.name} ${isRegionUnlocked ? `(${ownedCount}/${colConsts.length})` : '(Bloqueada)'}
        </h4>
      </div>
    `;
-   bookHtml += colConsts.map(c => {
-     let owned = d.claimed && d.claimed[c.id];
-     let discovered = !owned && total >= c.need;
-     if (owned) {
-       let acqDate = new Date(d.claimed[c.id]).toLocaleDateString('es-ES', {day:'numeric', month:'short'});
-       return `<div class="card book-card owned">
-         <div class="mini-const">${constellationSvg(c, true, 1.0)}</div>
-         <span class="unlock text-owned" style="color: #aa5966; font-weight: bold; font-size: 9px;">En mi universo</span>
-         <h3>${c.name}${c.extra === 'tu signo' ? '<span class="sign-tag">tu signo</span>' : ''}</h3>
-         <p style="font-size: 9px; color: var(--muted); margin-bottom: 6px;">Adquirida: ${acqDate}</p>
-         <button class="btn btn-line" style="padding: 4px 8px; font-size: 9px; border-radius: 8px;" onclick="verFichaConstelacion('${c.id}')">Ficha</button>
-       </div>`;
-     } else if (discovered) {
-       return `<div class="card book-card discovered">
-         <div class="mini-const">${constellationSvg(c, true, 0.5)}</div>
-         <span class="unlock text-discovered" style="color: var(--wine); font-size: 9px;">Descubierta</span>
-         <h3>${c.name}${c.extra === 'tu signo' ? '<span class="sign-tag">tu signo</span>' : ''}</h3>
-         <button class="btn btn-main" style="padding: 4px 8px; font-size: 9px; border-radius: 8px; margin-top: 5px;" onclick="guardarConstelacion('${c.id}', ${c.cost})">Guardar · ${c.cost} ⭐</button>
-       </div>`;
-     } else {
-       return `<div class="card book-card locked">
-         <div class="mini-const">${constellationSvg(c, false, 0.2)}</div>
-         <span class="unlock" style="color: var(--muted); font-size: 9px;">${c.need} hist.</span>
-         <h3>${c.name}</h3>
-         <p style="font-size: 9px; color: var(--muted);">Bloqueada. Necesitas ${c.need} estrellas históricas.</p>
-       </div>`;
-     }
-   }).join('');
+   
+   if (!isRegionUnlocked) {
+     let regName = col.region === 'zodiaco' ? 'Cinturón Zodiacal' : col.region === 'orion' ? 'Nebulosa de Orión' : 'Espacio profundo';
+     bookHtml += `
+       <div class="empty" style="grid-column: 1 / -1; padding: 20px; background: rgba(0,0,0,0.02); border-radius: 12px; margin-top: 5px; text-align: center;">
+         <p style="margin: 0 0 8px 0; font-size: 11px; color: var(--muted);">Requiere desbloquear la región <strong>${regName}</strong> en Exploración.</p>
+         <button class="btn btn-soft" style="padding: 4px 8px; font-size: 9px; border-radius: 8px;" onclick="closeModal('constellationBookModal'); openShipModal(); setShipTab('regiones');">Ir a Regiones</button>
+       </div>
+     `;
+   } else {
+     bookHtml += colConsts.map(c => {
+       let owned = d.claimed && d.claimed[c.id];
+       let discovered = !owned && total >= c.need;
+       if (owned) {
+         let acqDate = new Date(d.claimed[c.id]).toLocaleDateString('es-ES', {day:'numeric', month:'short'});
+         return `<div class="card book-card owned">
+           <div class="mini-const">${constellationSvg(c, true, 1.0)}</div>
+           <span class="unlock text-owned" style="color: #aa5966; font-weight: bold; font-size: 9px;">En mi universo</span>
+           <h3>${c.name}${c.extra === 'tu signo' ? '<span class="sign-tag">tu signo</span>' : ''}</h3>
+           <p style="font-size: 9px; color: var(--muted); margin-bottom: 6px;">Adquirida: ${acqDate}</p>
+           <button class="btn btn-line" style="padding: 4px 8px; font-size: 9px; border-radius: 8px;" onclick="verFichaConstelacion('${c.id}')">Ficha</button>
+         </div>`;
+       } else if (discovered) {
+         return `<div class="card book-card discovered">
+           <div class="mini-const">${constellationSvg(c, true, 0.5)}</div>
+           <span class="unlock text-discovered" style="color: var(--wine); font-size: 9px;">Descubierta</span>
+           <h3>${c.name}${c.extra === 'tu signo' ? '<span class="sign-tag">tu signo</span>' : ''}</h3>
+           <button class="btn btn-main" style="padding: 4px 8px; font-size: 9px; border-radius: 8px; margin-top: 5px;" onclick="guardarConstelacion('${c.id}', ${c.cost})">Guardar · ${c.cost} ⭐</button>
+         </div>`;
+       } else {
+         return `<div class="card book-card locked">
+           <div class="mini-const">${constellationSvg(c, false, 0.2)}</div>
+           <span class="unlock" style="color: var(--muted); font-size: 9px;">${c.need} hist.</span>
+           <h3>${c.name}</h3>
+           <p style="font-size: 9px; color: var(--muted);">Bloqueada. Necesitas ${c.need} estrellas históricas.</p>
+         </div>`;
+       }
+     }).join('');
+   }
  });
  constellationBook.innerHTML = bookHtml;
+ 
+ // Render Ship Level & Status
+ const shipLevels = [
+   { level: 0, name: 'Navegación orbital', cost: 0 },
+   { level: 1, name: 'Sistema de aproximación', cost: 5 },
+   { level: 2, name: 'Cartografía estelar', cost: 10 },
+   { level: 3, name: 'Navegación profunda', cost: 15 },
+   { level: 4, name: 'Salto interestelar', cost: 20 }
+ ];
+ 
+ const destinations = [
+   { name: 'Luna', reqLevel: 0, desc: 'Satélite natural terrestre.' },
+   { name: 'Venus', reqLevel: 1, desc: 'Atmósfera densa e infierno de calor.' },
+   { name: 'Marte', reqLevel: 1, desc: 'El planeta rojo y desértico.' },
+   { name: 'Júpiter', reqLevel: 2, desc: 'Gigante gaseoso con su gran mancha roja.' },
+   { name: 'Saturno', reqLevel: 2, desc: 'Señor de los anillos.' },
+   { name: 'Europa', reqLevel: 3, desc: 'Luna helada con océano subterráneo.' },
+   { name: 'Titán', reqLevel: 4, desc: 'Luna con lagos de metano líquido.' }
+ ];
+ 
+ const regions = [
+   { id: 'cielo-1', name: 'Primer cielo', cost: 0, desc: 'El cielo visible a simple vista.' },
+   { id: 'zodiaco', name: 'Cinturón Zodiacal', cost: 5, desc: 'Camino solar que cruzan las 12 constelaciones.' },
+   { id: 'orion', name: 'Nebulosa de Orión', cost: 10, desc: 'Cuna de estrellas en el brazo de Orión.' },
+   { id: 'exterior', name: 'Sistema exterior', cost: 15, desc: 'Estrellas lejanas en las afueras de la galaxia.' },
+   { id: 'profundo', name: 'Espacio profundo', cost: 20, desc: 'Galaxias externas y horizontes lejanos.' }
+ ];
+ 
+ let currentLvl = d.shipLevel || 0;
+ let nextLvl = shipLevels.find(l => l.level === currentLvl + 1);
+ let shipHtml = `
+   <div class="card" style="padding:15px; background:var(--soft); border:1px solid var(--rose2);">
+     <small style="text-transform:uppercase; font-size:9px; color:var(--muted); font-weight:700; letter-spacing:0.05em;">Rango de la nave</small>
+     <h3 style="margin:5px 0; font-family:Georgia,serif; font-size:18px; color:var(--wine);">${shipLevels[currentLvl].name}</h3>
+     ${nextLvl ? `
+       <p style="font-size:11px; color:var(--muted); margin: 5px 0 10px;">Siguiente nivel: <strong>${nextLvl.name}</strong></p>
+       <button class="btn btn-main btn-wide" onclick="upgradeShip(${nextLvl.level}, ${nextLvl.cost})">Mejorar nave · ${nextLvl.cost} ⭐</button>
+     ` : `
+       <p style="font-size:11px; color:green; margin:5px 0 0 0; font-weight:700;">Nivel máximo alcanzado</p>
+     `}
+   </div>
+ `;
+ let shipLevelStatusEl = document.getElementById('shipLevelStatus');
+ if (shipLevelStatusEl) shipLevelStatusEl.innerHTML = shipHtml;
+ 
+ let destHtml = '<h4 style="margin: 15px 3px 10px; font-size: 11px; text-transform: uppercase; color:var(--wine); letter-spacing:0.05em;">Destinos orbitales</h4>';
+ destinations.forEach(dest => {
+   let unlocked = currentLvl >= dest.reqLevel;
+   destHtml += `
+     <div class="card" style="padding:12px; margin-bottom:8px; opacity: ${unlocked ? 1 : 0.6}; border: 1px solid ${unlocked ? 'var(--line)' : 'dashed var(--muted)'}; display: flex; flex-direction: column; gap: 4px;">
+       <div style="display:flex; justify-content:space-between; align-items:center;">
+         <strong style="font-size:13px; color:${unlocked ? 'var(--ink)' : 'var(--muted)'};">${dest.name}</strong>
+         <span style="font-size:9px; font-weight:700; color:${unlocked ? 'green' : 'var(--wine)'};">
+           ${unlocked ? 'Disponible' : 'Requiere ' + shipLevels[dest.reqLevel].name}
+         </span>
+       </div>
+       <p style="font-size:10px; color:var(--muted); margin: 0;">${dest.desc}</p>
+     </div>
+   `;
+ });
+ let shipDestinationsEl = document.getElementById('shipDestinations');
+ if (shipDestinationsEl) shipDestinationsEl.innerHTML = destHtml;
+ 
+ // Render Regions
+ let regHtml = '';
+ regions.forEach(reg => {
+   let unlocked = d.unlockedRegions && d.unlockedRegions.includes(reg.id);
+   regHtml += `
+     <div class="card" style="padding:12px; margin-bottom:8px; border: 1px solid ${unlocked ? 'var(--line)' : 'dashed var(--rose2)'}; display: flex; flex-direction: column; gap: 4px;">
+       <div style="display:flex; justify-content:space-between; align-items:center;">
+         <strong style="font-size:13px; color:var(--ink);">${reg.name}</strong>
+         ${unlocked ? `
+           <span style="font-size:10px; font-weight:700; color:green;">Desbloqueada</span>
+         ` : `
+           <button class="btn btn-main" style="padding: 4px 8px; font-size: 9px; border-radius: 8px;" onclick="unlockRegion('${reg.id}', ${reg.cost})">Desbloquear · ${reg.cost} ⭐</button>
+         `}
+       </div>
+       <p style="font-size:10px; color:var(--muted); margin: 0;">${reg.desc}</p>
+     </div>
+   `;
+ });
+ let skyRegionsEl = document.getElementById('skyRegions');
+ if (skyRegionsEl) skyRegionsEl.innerHTML = regHtml;
 }
 
 function guardarConstelacion(id, cost){
@@ -129,6 +230,54 @@ function verFichaConstelacion(id){
   document.getElementById('constellationDetailModal').classList.add('show');
 }
 
+function setShipTab(tab){
+  let secNave = document.getElementById('shipSecNave');
+  let secRegiones = document.getElementById('shipSecRegiones');
+  let btnTabNave = document.getElementById('btnTabNave');
+  let btnTabRegiones = document.getElementById('btnTabRegiones');
+  if(secNave) secNave.style.display = tab === 'nave' ? 'block' : 'none';
+  if(secRegiones) secRegiones.style.display = tab === 'regiones' ? 'block' : 'none';
+  if(btnTabNave) btnTabNave.classList.toggle('active', tab === 'nave');
+  if(btnTabRegiones) btnTabRegiones.classList.toggle('active', tab === 'regiones');
+}
+
+function upgradeShip(level, cost){
+  let d = load();
+  if (Number(d.wallet || 0) < cost) {
+    return toast('No tienes suficientes estrellas en tu cesta.');
+  }
+  d.wallet = Number(d.wallet || 0) - cost;
+  d.bank = d.wallet;
+  d.shipLevel = level;
+  save(d);
+  const shipNames = ['Navegación orbital', 'Sistema de aproximación', 'Cartografía estelar', 'Navegación profunda', 'Salto interestelar'];
+  toast(`Nave mejorada a ${shipNames[level] || level}`);
+  render();
+}
+
+function unlockRegion(id, cost){
+  let d = load();
+  if (Number(d.wallet || 0) < cost) {
+    return toast('No tienes suficientes estrellas en tu cesta.');
+  }
+  d.wallet = Number(d.wallet || 0) - cost;
+  d.bank = d.wallet;
+  if (!d.unlockedRegions) d.unlockedRegions = ['cielo-1'];
+  if (!d.unlockedRegions.includes(id)) {
+    d.unlockedRegions.push(id);
+  }
+  save(d);
+  const regionNames = {
+    'zodiaco': 'Cinturón Zodiacal',
+    'orion': 'Nebulosa de Orión',
+    'exterior': 'Sistema exterior',
+    'profundo': 'Espacio profundo'
+  };
+  toast(`Región ${regionNames[id] || id} desbloqueada.`);
+  render();
+}
+
+
 function render(){let d=accrue(),now=Date.now(),p=prompts[new Date().getDate()%prompts.length];todayDate.textContent=new Date().toLocaleDateString('es-ES',{weekday:'short',day:'numeric',month:'short'});dailyPromptTitle.textContent=p[0];dailyPromptSub.textContent=p[1];let c=d.checkins[dayKey()];if(c){needToday.value=c.need||'';forMeToday.value=c.forMe||'';mood=c.mood||3;document.querySelectorAll('#moodScale button').forEach((b,i)=>b.classList.toggle('sel',i+1===mood))}
  drawOrbit(d);
  orbitItems.innerHTML=d.orbit.map(o=>`<div class="card good-card"><div><strong>${esc(o.name)}</strong><small>${esc(o.meaning||'')}</small></div><button class="btn btn-line" onclick="removeOrbit('${o.id}')">Quitar</button></div>`).join('');
@@ -149,7 +298,8 @@ function render(){let d=accrue(),now=Date.now(),p=prompts[new Date().getDate()%p
  sharedNextMilestone.textContent=sm.text;
  sharedProgress.style.width=sm.pct+'%';
  rewards.innerHTML=d.rewards.map(r=>`<div class="card reward"><div><strong>${esc(r.name)}</strong><small>${r.cost} estrellas</small></div><button class="btn ${Number(d.wallet||0)>=r.cost?'btn-main':'btn-soft'}" ${Number(d.wallet||0)>=r.cost?'':'disabled'} onclick="redeem('${r.id}')">${Number(d.wallet||0)>=r.cost?'Canjear':'Aún no'}</button></div>`).join('');
- renderArchive()
+ renderArchive();
+ renderUniverse(d);
 }
 setInterval(render,60000);render();
 

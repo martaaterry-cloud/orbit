@@ -54,6 +54,8 @@ function load(){
    let sharedSince=starts.length?Math.max(...starts):Date.now();
    d.returnToMe={since:sharedSince,awardedMilestones:[],best:Number(d.best||0)}
  }
+ if(d.shipLevel===undefined)d.shipLevel=0;
+ if(!d.unlockedRegions)d.unlockedRegions=['cielo-1'];
  save(d);return d
 }
 

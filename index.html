@@ -377,20 +377,28 @@
 </div></div>
 
 <!-- Modal de Nave / Exploración -->
-<div class="modal" id="shipModal"><div class="sheet">
-  <h3>Nave Espacial</h3>
-  <p class="prompt-sub">Navegación y aproximación orbital</p>
-  <div class="ship-status-box" style="border: 1px dashed var(--accent); padding: 15px; border-radius: 8px; margin: 15px 0; text-align: left; font-size: 13px; font-family: monospace;">
-    SYSTEMS: READY<br>
-    PROPULSION: ION DRIVE STABLE<br>
-    DESTINATION: ORBITAL DEPARTURE<br>
-    APPROACH SPEED: 0.00 km/s
+<div class="modal" id="shipModal"><div class="sheet" style="max-height: 90vh; overflow-y: auto;">
+  <h3>Exploración Espacial</h3>
+  
+  <div class="tabs" style="margin-top: 10px; margin-bottom: 15px; display: flex; gap: 7px;">
+    <button class="active" id="btnTabNave" onclick="setShipTab('nave')">Mi Nave</button>
+    <button id="btnTabRegiones" onclick="setShipTab('regiones')">Regiones</button>
   </div>
-  <p style="font-size:12px;">Explora destinos como la Luna, Marte, Venus, Júpiter y más allá para desbloquear nuevas constelaciones e hitos de bitácora.</p>
-  <div class="card nav-card" style="margin-top:12px; cursor: default;">
-    <div><h3>Próximamente</h3><p>La integración con destinos y mejoras espaciales estará lista en la siguiente fase.</p></div>
+
+  <!-- Sección Mi Nave -->
+  <div id="shipSecNave">
+    <p class="prompt-sub">Nivel actual de la nave espacial y destinos accesibles.</p>
+    <div id="shipLevelStatus" style="margin-top:15px"></div>
+    <div id="shipDestinations" style="margin-top:20px"></div>
   </div>
-  <button class="btn btn-line btn-wide" style="margin-top:15px" onclick="closeModal('shipModal')">Cerrar</button>
+
+  <!-- Sección Regiones -->
+  <div id="shipSecRegiones" style="display:none">
+    <p class="prompt-sub">Desbloquea regiones del cielo para ampliar tu campo de visión.</p>
+    <div id="skyRegions" style="margin-top:15px"></div>
+  </div>
+
+  <button class="btn btn-line btn-wide" style="margin-top:20px" onclick="closeModal('shipModal')">Cerrar</button>
 </div></div>
 
 <!-- Modal del Libro de Constelaciones -->
@@ -409,6 +417,7 @@
     <div class="star-chip" style="flex:1; border:1px solid var(--line); background:var(--soft); border-radius:16px; padding:11px;"><small style="display:block; font-size:9px; text-transform:uppercase; color:var(--muted);">conseguidas</small><strong id="universeLifetime" style="font-family:Georgia,serif; font-size:24px; font-weight:500;">0</strong></div>
   </div>
   <div class="section-head"><h2>Constelación en curso</h2><small id="constellationProgressText"></small></div>
+  <div class="constellation-stage" id="universeDetailsStage" style="min-height:200px; height:200px; margin: 15px 0;"></div>
   <div id="constellationDetailsCaption" style="margin-top:10px;"></div>
   <button class="btn btn-line btn-wide" style="margin-top:20px" onclick="closeModal('universeDetailsModal')">Cerrar</button>
 </div></div>

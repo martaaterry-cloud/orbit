@@ -368,4 +368,9 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
   font-family: Georgia, serif;
 }
 
+#universeDetailsStage svg {
+  height: 100% !important;
+}
+
+
 
