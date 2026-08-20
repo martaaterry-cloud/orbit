@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f4dfe2">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Orbit">
+<title>Orbit</title>
+
+<link rel="apple-touch-icon" sizes="180x180" href="/orbit-icon-v2-180.png?v=2">
+<link rel="icon" type="image/png" sizes="192x192" href="/orbit-icon-v2-192.png?v=2">
+<link rel="icon" type="image/png" sizes="512x512" href="/orbit-icon-v2-512.png?v=2">
+<link rel="shortcut icon" href="/orbit-icon-v2-192.png?v=2">
+<link rel="manifest" href="/manifest-v2.webmanifest?v=2">
+
+<style>
+:root{
+  --bg:#fbf7f5; --paper:#fffdfb; --ink:#282323; --muted:#8e8384;
+  --rose:#f4d9dd; --rose2:#efc6cd; --wine:#8d3f4b; --line:#eee2e3;
+  --soft:#f7ebed; --shadow:0 14px 40px rgba(91,62,66,.08);
+}
+*{box-sizing:border-box}
+body{margin:0;background:linear-gradient(180deg,#f9eeee 0,#fbf8f6 28%,#fbf8f6 100%);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",sans-serif;min-height:100vh}
+.app{max-width:620px;margin:auto;padding:calc(18px + env(safe-area-inset-top)) 16px calc(92px + env(safe-area-inset-bottom))}
+header{display:flex;align-items:center;justify-content:space-between;margin:4px 4px 16px}
+.brand{font-family:Georgia,serif;font-size:25px;letter-spacing:.18em}.spark{font-size:17px;color:var(--wine);vertical-align:top}
+.icon-btn{border:0;background:transparent;font-size:22px;color:var(--wine);padding:6px}
+.card{background:rgba(255,253,251,.93);border:1px solid var(--line);border-radius:22px;box-shadow:var(--shadow)}
+.welcome{padding:18px;background:linear-gradient(135deg,#fffafa,#f6d8dd);margin-bottom:12px}
+.welcome h2{font-size:20px;margin:0 0 6px}.welcome p{margin:0;color:#61585a;font-size:13px;line-height:1.45}
+.stats{display:grid;grid-template-columns:1fr 1fr;overflow:hidden;margin-bottom:18px}.stat{padding:16px;text-align:center}.stat+.stat{border-left:1px solid var(--line)}.stat b{font-size:29px;font-family:Georgia,serif;font-weight:500}.stat span{display:block;font-size:10px;letter-spacing:.06em;color:var(--muted);margin-bottom:6px}
+.section-title{display:flex;justify-content:space-between;align-items:end;margin:18px 4px 10px}.section-title h3{margin:0;font-size:16px}.section-title small{color:var(--muted);font-size:11px}
+.goal{padding:13px 14px;margin-bottom:9px;display:grid;grid-template-columns:40px 1fr auto;gap:11px;align-items:center}
+.gicon{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:var(--soft);font-size:17px}
+.gtitle{font-size:13.5px;font-weight:700;line-height:1.25}.gsub{font-size:11px;color:var(--muted);margin-top:3px}
+.gtime{text-align:right}.gtime b{font-size:18px;font-weight:600}.gtime small{display:block;color:var(--muted);font-size:10px;margin-bottom:3px}
+.ring{width:34px;height:34px;border-radius:50%;background:conic-gradient(var(--wine) var(--p),#efdadd 0);position:relative;margin-left:auto;margin-top:5px}.ring:after{content:"";position:absolute;inset:4px;background:var(--paper);border-radius:50%}
+.actions{grid-column:2/4;display:flex;gap:7px;margin-top:2px}
+button{font:inherit}
+.btn{border:0;border-radius:12px;padding:10px 12px;font-size:12px;font-weight:700}
+.btn-main{background:linear-gradient(135deg,#b75b69,#8d3f4b);color:#fff}.btn-soft{background:var(--soft);color:#76535a}.btn-line{background:white;border:1px dashed #dfb9c0;color:#a55b67}
+.quick{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:13px}.quick .btn{padding:13px}
+.page{display:none}.page.active{display:block}
+.bottom{position:fixed;bottom:10px;left:50%;transform:translateX(-50%);width:min(590px,calc(100% - 24px));padding:7px;background:rgba(255,252,251,.94);backdrop-filter:blur(15px);border:1px solid var(--line);border-radius:20px;display:grid;grid-template-columns:repeat(4,1fr);gap:5px;box-shadow:var(--shadow);z-index:10}
+.bottom button{border:0;background:transparent;border-radius:13px;padding:8px 4px;font-size:10px;color:var(--muted)}.bottom button strong{display:block;font-size:17px;margin-bottom:2px}.bottom button.active{background:var(--soft);color:var(--wine)}
+.urge{padding:18px}.urge h2{margin:0 0 5px;font-size:20px}.urge>p{margin:0 0 14px;color:var(--muted);font-size:13px}
+.field{margin:12px 0}.field label{display:block;font-size:12px;font-weight:700;margin-bottom:6px}
+textarea,select,input{width:100%;border:1px solid var(--line);border-radius:14px;background:white;padding:12px;color:var(--ink);outline:none}textarea{min-height:74px;resize:vertical}
+.anxiety{display:flex;gap:6px;flex-wrap:wrap}.anxiety button{width:31px;height:31px;border-radius:50%;border:1px solid var(--line);background:white;font-size:11px}.anxiety button.sel{background:var(--rose2);border-color:var(--rose2)}
+.pause{text-align:center;padding:18px;background:linear-gradient(145deg,#fff9f8,#f8e4e7);border-radius:18px;margin-top:15px}.pause small{color:var(--muted);font-size:10px;letter-spacing:.08em}.timer{font-family:Georgia,serif;font-size:39px;margin:5px 0 8px}
+.reward{padding:13px 14px;margin-bottom:9px;display:grid;grid-template-columns:40px 1fr auto;gap:10px;align-items:center}.reward .cost{font-size:11px;color:var(--muted)}.reward .name{font-size:13px;font-weight:700}
+.history-item{padding:12px 14px;margin-bottom:8px}.history-item small{color:var(--muted)}.history-item p{font-size:12px;line-height:1.4;margin:6px 0 0}
+.empty{color:var(--muted);font-size:13px;padding:12px}
+.modal{position:fixed;inset:0;background:rgba(49,37,39,.35);display:none;align-items:flex-end;z-index:20}.modal.show{display:flex}.sheet{width:min(620px,100%);margin:auto;background:var(--paper);border-radius:24px 24px 0 0;padding:20px 16px calc(24px + env(safe-area-inset-bottom));max-height:85vh;overflow:auto}.sheet h3{margin:0 0 10px}.sheet p{font-size:12px;color:var(--muted);line-height:1.45}
+.toast{position:fixed;left:50%;bottom:92px;transform:translateX(-50%) translateY(20px);background:#3c3032;color:white;padding:10px 14px;border-radius:99px;opacity:0;transition:.25s;font-size:12px;z-index:40}.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+<meta name="orbit-build" content="iconfix-v2">
+</head>
+<body>
+<div class="app">
+  <header><button class="icon-btn" onclick="toast('Todo se guarda solo en este dispositivo')">⚙︎</button><div class="brand">ORBIT<span class="spark">✦</span></div><button class="icon-btn" onclick="showPage('stats')">⌁</button></header>
+
+  <section id="home" class="page active">
+    <div class="card welcome"><h2>Hola ✨</h2><p>Cada elección te acerca un poco más a estar en paz contigo.</p></div>
+    <div class="card stats"><div class="stat"><span>PUNTOS TOTALES</span><b id="bank">0</b> ✦</div><div class="stat"><span>MEJOR RACHA</span><b id="best">0h</b></div></div>
+    <div class="section-title"><h3>Resumen de hoy</h3><small id="todayLabel"></small></div>
+    <div id="goals"></div>
+    <div class="quick"><button class="btn btn-main" onclick="showPage('urge')">⚡ TENGO EL IMPULSO</button><button class="btn btn-soft" onclick="showPage('rewards')">🎁 TIENDA DE PREMIOS</button></div>
+  </section>
+
+  <section id="urge" class="page">
+    <div class="card urge">
+      <h2>Para un momento y escribe.</h2><p>No tienes que actuar ahora.</p>
+      <div class="field"><label>🎯 ¿Qué quiero comprobar?</label><select id="urgeGoal"></select></div>
+      <div class="field"><label>☆ ¿Qué espero encontrar?</label><textarea id="hope" placeholder="Ej. que me haya escrito, que ya no la siga..."></textarea></div>
+      <div class="field"><label>☁︎ ¿Qué me da miedo encontrar?</label><textarea id="fear" placeholder="Ej. que todo siga igual y volver a sentirme mal..."></textarea></div>
+      <div class="field"><label>♡ ¿Cuánta ansiedad siento ahora?</label><div class="anxiety" id="anxietyBtns"></div></div>
+      <div class="field"><label>❧ ¿Qué puedo hacer 10 minutos en vez de comprobar?</label><input id="alternative" placeholder="Trabajar, caminar, agua, música..."></div>
+      <div class="pause"><small>PAUSA CONSCIENTE</small><div class="timer" id="timer">10:00</div><p style="font-size:12px;color:var(--muted)">Respira. Esto también pasará.</p><button class="btn btn-main" id="startPause" onclick="startUrge()">▶ INICIAR PAUSA DE 10 MINUTOS</button><button class="btn btn-soft" id="survived" onclick="survivedUrge()" disabled>Lo he atravesado ✓</button></div>
+    </div>
+  </section>
+
+  <section id="rewards" class="page">
+    <div class="card welcome" style="text-align:center"><div style="font-size:10px;letter-spacing:.08em">TUS PUNTOS</div><div style="font-family:Georgia,serif;font-size:36px" id="bank2">0 ✦</div></div>
+    <div class="section-title"><h3>Tienda de premios</h3><small>elige algo para ti</small></div>
+    <div id="rewardList"></div>
+    <button class="btn btn-line" style="width:100%;padding:13px" onclick="openReward()">＋ Añadir mi propio premio</button>
+  </section>
+
+  <section id="stats" class="page">
+    <div class="section-title"><h3>Tu progreso</h3><small>sin exigirte perfección</small></div>
+    <div class="card welcome"><h2 id="weekSummary">0 impulsos atravesados</h2><p>Lo importante no es no caer nunca, sino tardar menos en volver a elegirte.</p></div>
+    <div class="section-title"><h3>Últimos impulsos</h3></div>
+    <div id="history"></div>
+  </section>
+</div>
+
+<nav class="bottom">
+<button id="n-home" class="active" onclick="showPage('home')"><strong>⌂</strong>Hoy</button>
+<button id="n-stats" onclick="showPage('stats')"><strong>◫</strong>Historial</button>
+<button id="n-urge" onclick="showPage('urge')"><strong>＋</strong>Impulso</button>
+<button id="n-rewards" onclick="showPage('rewards')"><strong>☆</strong>Premios</button>
+</nav>
+
+<div class="modal" id="slipModal"><div class="sheet"><h3>Lo he comprobado</h3><p>No borramos nada de lo conseguido. Solo reiniciamos este contador desde ahora.</p><input type="hidden" id="slipId"><div class="field"><label>¿Qué estaba pasando justo antes? (opcional)</label><textarea id="slipNote" placeholder="Ansiedad, aburrimiento, curiosidad, vi algo..."></textarea></div><button class="btn btn-main" style="width:100%" onclick="confirmSlip()">Reiniciar contador</button><button class="btn btn-soft" style="width:100%;margin-top:7px" onclick="closeModal('slipModal')">Cancelar</button></div></div>
+
+<div class="modal" id="rewardModal"><div class="sheet"><h3>Mi premio</h3><div class="field"><label>Qué me quiero regalar</label><input id="rewardName" placeholder="Flores, un café, un libro..."></div><div class="field"><label>Puntos</label><input id="rewardCost" type="number" min="1" value="10"></div><button class="btn btn-main" style="width:100%" onclick="addReward()">Guardar premio</button><button class="btn btn-soft" style="width:100%;margin-top:7px" onclick="closeModal('rewardModal')">Cancelar</button></div></div>
+
+<div class="toast" id="toast"></div>
+<script>
+const HOUR=3600000, STEP=2*HOUR;
+function uid(){return Math.random().toString(36).slice(2,9)}
+function dk(t=Date.now()){let d=new Date(t);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function defaults(){
+ const n=Date.now(); return {v:3,bank:0,goals:[
+ {id:'msg',icon:'💬',name:'No comprobar si me ha escrito',sub:'No abrir el chat solo para buscar una señal',since:n},
+ {id:'insta',icon:'◎',name:'No revisar Instagram / seguidos / esa chica',sub:'No buscar cambios para calmar la ansiedad',since:n},
+ {id:'hevy',icon:'🏋🏻‍♀️',name:'No entrar a Hevy a ver si ha entrenado',sub:'No usar su actividad como información sobre él',since:n},
+ {id:'signals',icon:'◉̸',name:'No buscar señales indirectas sobre él',sub:'Historias, actividad, pistas o comprobaciones',since:n}],
+ urges:[],slips:[],rewards:[
+ {id:'a',icon:'🧁',name:'Café o bebida que me guste',cost:5},
+ {id:'b',icon:'🌷',name:'Flores para mí',cost:10},
+ {id:'c',icon:'📖',name:'Libro nuevo',cost:15},
+ {id:'d',icon:'🛍️',name:'Pequeño capricho',cost:20},
+ {id:'e',icon:'✈️',name:'Plan que me ilusione',cost:40}
+ ],claimed:{},best:0}
+}
+function load(){let d;try{d=JSON.parse(localStorage.getItem('orbitV3'))}catch{}if(!d){d=defaults();save(d)}return d}
+function save(d){localStorage.setItem('orbitV3',JSON.stringify(d))}
+function accrue(){
+ let d=load(), now=Date.now(), added=0;
+ d.goals.forEach(g=>{
+   let intervals=Math.floor((now-g.since)/STEP), prev=d.claimed[g.id]||0;
+   if(intervals>prev){let diff=intervals-prev;d.claimed[g.id]=intervals;d.bank+=diff;added+=diff}
+   d.best=Math.max(d.best,now-g.since);
+ });
+ save(d); if(added) toast('+'+added+' punto'+(added>1?'s':'')+' ✦'); return d
+}
+function dur(ms){let h=Math.floor(ms/HOUR),m=Math.floor((ms%HOUR)/60000);if(h>=24)return Math.floor(h/24)+'d '+(h%24)+'h';return h+'h '+String(m).padStart(2,'0')+'m'}
+function render(){
+ let d=accrue(),now=Date.now();bank.textContent=d.bank;bank2.textContent=d.bank+' ✦';best.textContent=dur(d.best);
+ todayLabel.textContent=new Date().toLocaleDateString('es-ES',{day:'numeric',month:'short'});
+ goals.innerHTML='';
+ d.goals.forEach(g=>{
+  let elapsed=now-g.since,next=STEP-(elapsed%STEP),p=Math.min(100,(elapsed%STEP)/STEP*100);
+  let x=document.createElement('div');x.className='card goal';x.innerHTML=
+  `<div class="gicon">${g.icon}</div><div><div class="gtitle">${esc(g.name)}</div><div class="gsub">${esc(g.sub)}</div></div>
+   <div class="gtime"><small>+1 punto cada 2h</small><b>${dur(elapsed)}</b><div class="ring" style="--p:${p}%"></div></div>
+   <div class="actions"><button class="btn btn-soft" onclick="impulse('${g.id}')">Tengo el impulso</button><button class="btn btn-line" onclick="slip('${g.id}')">Lo he incumplido</button></div>`;
+  goals.appendChild(x)
+ });
+ urgeGoal.innerHTML=d.goals.map(g=>`<option value="${g.id}">${esc(g.name)}</option>`).join('');
+ rewardList.innerHTML=d.rewards.map(r=>`<div class="card reward"><div class="gicon">${r.icon||'🎁'}</div><div><div class="name">${esc(r.name)}</div><div class="cost">${r.cost} puntos</div></div><button class="btn ${d.bank>=r.cost?'btn-main':'btn-soft'}" ${d.bank>=r.cost?'':'disabled'} onclick="redeem('${r.id}')">${d.bank>=r.cost?'Canjear':'Aún no'}</button></div>`).join('');
+ let week=Date.now()-7*24*HOUR, passed=d.urges.filter(u=>u.ts>=week&&u.survived).length;weekSummary.textContent=passed+' impulso'+(passed===1?'':'s')+' atravesado'+(passed===1?'':'s')+' esta semana';
+ let recent=d.urges.slice(-10).reverse();history.innerHTML=recent.length?recent.map(u=>`<div class="card history-item"><small>${new Date(u.ts).toLocaleString('es-ES',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})} · ${u.intensity}/10 ${u.survived?'· ✓':''}</small><p>${u.hope?'<b>Esperaba:</b> '+esc(u.hope):''}${u.fear?'<br><b>Temía:</b> '+esc(u.fear):''}</p></div>`).join(''):'<div class="empty">Todavía no has registrado ningún impulso.</div>'
+}
+function esc(s){return String(s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
+function showPage(id){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.getElementById(id).classList.add('active');document.querySelectorAll('.bottom button').forEach(b=>b.classList.remove('active'));let n=document.getElementById('n-'+id);if(n)n.classList.add('active');scrollTo(0,0);render()}
+function impulse(id){showPage('urge');urgeGoal.value=id}
+function slip(id){slipId.value=id;slipNote.value='';slipModal.classList.add('show')}
+function confirmSlip(){let d=load(),g=d.goals.find(x=>x.id===slipId.value);if(g){g.since=Date.now();d.claimed[g.id]=0;d.slips.push({ts:Date.now(),goalId:g.id,note:slipNote.value.trim()});save(d)}closeModal('slipModal');toast('Contador reiniciado. No pierdes lo ganado.');render()}
+function openReward(){rewardModal.classList.add('show')}
+function addReward(){let n=rewardName.value.trim(),c=+rewardCost.value;if(!n||!c)return;let d=load();d.rewards.push({id:uid(),icon:'🎁',name:n,cost:c});save(d);rewardName.value='';closeModal('rewardModal');render()}
+function redeem(id){let d=load(),r=d.rewards.find(x=>x.id===id);if(r&&d.bank>=r.cost){d.bank-=r.cost;save(d);toast('Premio canjeado ✦');render()}}
+function closeModal(id){document.getElementById(id).classList.remove('show')}
+function toast(t){let e=document.getElementById('toast');e.textContent=t;e.classList.add('show');clearTimeout(window.tt);window.tt=setTimeout(()=>e.classList.remove('show'),1800)}
+let intensity=6;for(let i=1;i<=10;i++){let b=document.createElement('button');b.textContent=i;b.onclick=()=>{intensity=i;document.querySelectorAll('.anxiety button').forEach(x=>x.classList.remove('sel'));b.classList.add('sel')};if(i===6)b.classList.add('sel');anxietyBtns.appendChild(b)}
+let timer=null,left=600,activeUrge=null;
+function updateTimer(){document.getElementById('timer').textContent=String(Math.floor(left/60)).padStart(2,'0')+':'+String(left%60).padStart(2,'0')}
+function startUrge(){
+ let d=load(),u={id:uid(),ts:Date.now(),goalId:urgeGoal.value,hope:hope.value.trim(),fear:fear.value.trim(),alternative:alternative.value.trim(),intensity,survived:false};d.urges.push(u);save(d);activeUrge=u.id;left=600;updateTimer();clearInterval(timer);survived.disabled=true;startPause.disabled=true;
+ timer=setInterval(()=>{left--;updateTimer();if(left<=0){clearInterval(timer);survived.disabled=false;startPause.disabled=false;toast('Ya han pasado 10 minutos ♡')}},1000);render()
+}
+function survivedUrge(){if(!activeUrge)return;let d=load(),u=d.urges.find(x=>x.id===activeUrge);if(u&&!u.survived){u.survived=true;d.bank+=1;save(d)}activeUrge=null;hope.value='';fear.value='';alternative.value='';survived.disabled=true;startPause.disabled=false;toast('+1 punto por atravesarlo ✦');showPage('home')}
+setInterval(render,60000);render();
+</script>
+</body>
+</html>
