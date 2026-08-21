@@ -706,18 +706,34 @@ function initAtlasPageTurn(carouselEl) {
     if (!pages.length) return;
     let carouselRect = carouselEl.getBoundingClientRect();
     let carouselCenter = carouselRect.left + carouselRect.width / 2;
+    let width = carouselRect.width || 360;
     
-    pages.forEach(page => {
+    pages.forEach((page) => {
       let pageRect = page.getBoundingClientRect();
       let pageCenter = pageRect.left + pageRect.width / 2;
-      let diff = (pageCenter - carouselCenter) / (carouselRect.width || 360);
+      let diff = (pageCenter - carouselCenter) / width;
       let clamped = Math.max(-1, Math.min(1, diff));
       
-      // Rotación en Y sutil que simula el levantar y pasar la hoja física sobre el lomo
-      let rotY = clamped * -16;
-      let transZ = -Math.abs(clamped) * 24;
+      // Cuando la página activa se desplaza hacia la izquierda (pasando a la siguiente):
+      // la esquina inferior derecha se levanta y se curva hacia el interior
+      let isPassingNext = clamped < 0;
+      let p = Math.abs(clamped);
       
-      page.style.transform = `perspective(1000px) rotateY(${rotY.toFixed(2)}deg) translateZ(${transZ.toFixed(1)}px)`;
+      let rotY = clamped * -18;
+      let rotZ = isPassingNext ? (p * -4.8) : (p * 2.0);
+      let transZ = -p * 28;
+      let curlSize = isPassingNext ? Math.round(p * 80) : 0;
+      
+      page.style.transformOrigin = isPassingNext ? 'left 85%' : 'left center';
+      page.style.transform = `perspective(1100px) rotateY(${rotY.toFixed(2)}deg) rotateZ(${rotZ.toFixed(2)}deg) translateZ(${transZ.toFixed(1)}px)`;
+      
+      if (isPassingNext && p > 0.04) {
+        page.style.setProperty('--curl-shadow', `inset -${curlSize}px -${curlSize}px ${Math.round(curlSize * 0.75)}px -${Math.round(curlSize * 0.25)}px rgba(0,0,0,0.85), inset -${Math.round(curlSize * 0.35)}px -${Math.round(curlSize * 0.35)}px ${Math.round(curlSize * 0.45)}px rgba(45, 30, 75, 0.45)`);
+        page.classList.add('curling');
+      } else {
+        page.style.removeProperty('--curl-shadow');
+        page.classList.remove('curling');
+      }
     });
   }
 

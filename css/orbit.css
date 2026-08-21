@@ -834,13 +834,39 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
   transform-style: preserve-3d !important;
   transform-origin: left center !important;
   will-change: transform;
-  /* Lomo cosido a la izquierda, hojas apiladas a la derecha y sombra de volumen */
+  /* Lomo cosido a la izquierda, hojas apiladas a la derecha, sombra de volumen y curl dinámico */
   box-shadow: 
+    var(--curl-shadow, none),
     inset 16px 0 22px -8px rgba(0, 0, 0, 0.9),
     inset -6px 0 14px -6px rgba(0, 0, 0, 0.5),
     2px 0 0 rgba(255, 255, 255, 0.04),
     4px 0 0 rgba(8, 5, 16, 0.85),
     0 12px 32px rgba(0, 0, 0, 0.65) !important;
+  overflow: hidden !important;
+}
+
+/* Reverso de la esquina inferior derecha al levantarse la hoja */
+.atlas-page.atlas-folio::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+  border-style: solid;
+  border-width: 0;
+  border-color: transparent transparent rgba(38, 26, 60, 0.95) transparent;
+  filter: drop-shadow(-3px -3px 5px rgba(0, 0, 0, 0.65));
+  border-radius: 0 0 18px 0;
+  opacity: 0;
+  transition: opacity 0.1s ease;
+  z-index: 10;
+}
+
+.atlas-page.atlas-folio.curling::after {
+  opacity: 1;
+  border-width: 0 0 52px 52px;
 }
 
 .atlas-folio-header {
