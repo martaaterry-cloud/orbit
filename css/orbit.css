@@ -590,8 +590,12 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
   background: rgba(255, 255, 255, 0.04) !important;
 }
 
-/* Tabs */
-.tabs button {
+/* Modal Tabs */
+#shipModal .sheet .tabs button,
+#constellationBookModal .sheet .tabs button,
+#universeDetailsModal .sheet .tabs button,
+#constellationDetailModal .sheet .tabs button,
+#shopModal .sheet .tabs button {
   background: rgba(255, 255, 255, 0.03) !important;
   color: rgba(247, 244, 235, 0.6) !important;
   border: 1px solid rgba(255, 255, 255, 0.06) !important;
@@ -602,7 +606,11 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
   transition: all 0.2s ease !important;
 }
 
-.tabs button.active {
+#shipModal .sheet .tabs button.active,
+#constellationBookModal .sheet .tabs button.active,
+#universeDetailsModal .sheet .tabs button.active,
+#constellationDetailModal .sheet .tabs button.active,
+#shopModal .sheet .tabs button.active {
   background: var(--wine) !important;
   color: #fff !important;
   border: 1px solid var(--rose2) !important;
