@@ -249,6 +249,16 @@
     </div>
     <div class="entry-meta" style="margin:8px 3px 10px"><span id="urgeResultsCount">0 resultados</span><button class="btn btn-line" style="padding:6px 9px" onclick="toggleSort('urges')">Orden: <span id="urgesSortLabel">recientes</span></button></div><div id="urgeArchiveList"></div>
   </div>
+
+  <div class="card" style="margin-top:20px; text-align:center; padding:18px;">
+    <div style="font-size:14px; font-weight:600; margin-bottom:4px;">Copia de seguridad</div>
+    <p style="font-size:12px; color:var(--muted); margin-bottom:12px;">Guarda tus datos en un archivo o restáuralos en otro navegador o dispositivo.</p>
+    <div style="display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
+      <button class="btn btn-line" onclick="exportBackup()"><svg class="icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>Exportar datos</button>
+      <button class="btn btn-line" onclick="triggerImportBackup()"><svg class="icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>Importar datos</button>
+    </div>
+    <input type="file" id="backupFileInput" accept=".json,application/json" style="display:none" onchange="handleBackupFile(event)">
+  </div>
 </section>
 
 <section id="universe" class="page universe-immersive-page">

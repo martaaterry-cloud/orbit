@@ -1,5 +1,11 @@
-// Persistencia, migraciones de versión, exportación y futuras copias de seguridad.
-// Extraído desde app.js sin romper compatibilidad.
+// Persistencia, migraciones de versión, exportación y copias de seguridad.
+// Extraído y centralizado para disponibilidad inmediata en todos los módulos.
+
+const HOUR=3600000, STEP=2*HOUR;
+function uid(){return Math.random().toString(36).slice(2,10)}
+function esc(s){return String(s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
+function fmt(ms){let h=Math.floor(ms/HOUR),m=Math.floor((ms%HOUR)/60000);if(h>=24)return Math.floor(h/24)+'d '+(h%24)+'h';return h+'h '+String(m).padStart(2,'0')+'m'}
+function toast(msg){let t=document.getElementById('toast');if(t){t.textContent=msg;t.classList.add('show');clearTimeout(window.toastTimeout);window.toastTimeout=setTimeout(()=>t.classList.remove('show'),1900)}}
 
 function dayKey(ts=Date.now()){let d=new Date(ts);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
 
@@ -60,3 +66,69 @@ function load(){
 }
 
 function save(d){localStorage.setItem('orbitV9',JSON.stringify(d))}
+
+function exportBackup(){
+ let mainData=null;
+ try{mainData=JSON.parse(localStorage.getItem('orbitV9'))}catch(e){mainData=load()}
+ if(!mainData)mainData=load();
+ let timerData=null;
+ try{timerData=JSON.parse(localStorage.getItem('orbitTimer'))}catch(e){}
+ let backupPayload={
+  app:'orbit',
+  version:1,
+  schemaVersion:mainData.v||9,
+  exportedAt:Date.now(),
+  dateString:new Date().toISOString(),
+  orbitData:mainData,
+  orbitTimer:timerData||null
+ };
+ let jsonStr=JSON.stringify(backupPayload,null,2);
+ let blob=new Blob([jsonStr],{type:'application/json'});
+ let url=URL.createObjectURL(blob);
+ let a=document.createElement('a');
+ let d=new Date();
+ let dateStr=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+ a.href=url;
+ a.download=`orbit-backup-${dateStr}.json`;
+ document.body.appendChild(a);
+ a.click();
+ document.body.removeChild(a);
+ URL.revokeObjectURL(url);
+ toast('Copia de seguridad descargada');
+}
+
+function triggerImportBackup(){
+ let input=document.getElementById('backupFileInput');
+ if(input){input.value='';input.click()}
+}
+
+function handleBackupFile(e){
+ let file=e.target.files&&e.target.files[0];
+ if(!file)return;
+ let reader=new FileReader();
+ reader.onload=function(evt){
+  try{
+   let content=evt.target.result;
+   let parsed=JSON.parse(content);
+   let orbitData=parsed.orbitData||(parsed.v&&parsed.goals?parsed:null);
+   if(!orbitData||typeof orbitData!=='object'||!Array.isArray(orbitData.goals)){
+    toast('El archivo no tiene un formato válido de Orbit');
+    return;
+   }
+   let dateInfo=parsed.exportedAt?new Date(parsed.exportedAt).toLocaleDateString('es-ES',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}):'reciente';
+   let ok=confirm(`¿Restaurar copia de seguridad de ${dateInfo}?\n\nSe reemplazarán los datos actuales de Orbit.`);
+   if(!ok)return;
+   localStorage.setItem('orbitV9',JSON.stringify(orbitData));
+   if(parsed.orbitTimer){
+    localStorage.setItem('orbitTimer',JSON.stringify(parsed.orbitTimer));
+   }else{
+    localStorage.removeItem('orbitTimer');
+   }
+   toast('Copia restaurada correctamente');
+   setTimeout(()=>{location.reload()},400);
+  }catch(err){
+   toast('Error al leer el archivo de copia');
+  }
+ };
+ reader.readAsText(file);
+}
