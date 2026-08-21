@@ -23,7 +23,7 @@ function accrue(){
    if(elapsed>=x.ms&&!r.awardedMilestones.includes(x.key)){
      r.awardedMilestones.push(x.key);
      let milestoneReachedTs=Number(r.since)+x.ms;
-     let boostResult=applyStarBoost(d,x.pts,'racha');
+     let boostResult=applyStarBoost(d,x.pts,'racha',{eventTs:milestoneReachedTs});
      addPoints(d,boostResult.total,'racha','Volver a mí · '+(x.label||x.key),null,milestoneReachedTs,boostResult.boosterId?boostResult:null);
      added+=boostResult.total;
 
@@ -33,19 +33,21 @@ function accrue(){
        if(!d.boosters.progress)d.boosters.progress={};
        if(d.boosters.progress.lastNightOfConstancyStreakTs!==r.since){
          d.boosters.progress.lastNightOfConstancyStreakTs=r.since;
-         let expiry=now+24*HOUR;
-         if(!Array.isArray(d.boosters.active))d.boosters.active=[];
-         d.boosters.active.push({
-           id:'constancy-night',
-           name:'Noche de Constancia',
-           multiplier:1.5,
-           startedAt:now,
-           expiresAt:expiry,
-           maxExtraStars:3.0,
-           extraStarsGenerated:0.0,
-           scope:['impulso','racha']
-         });
-         toast('✦ ¡Noche de Constancia activada! (x1.5 por 24h)');
+         let expiry=milestoneReachedTs+24*HOUR;
+         if(expiry>now){
+           if(!Array.isArray(d.boosters.active))d.boosters.active=[];
+           d.boosters.active.push({
+             id:'constancy-night',
+             name:'Noche de Constancia',
+             multiplier:1.5,
+             startedAt:milestoneReachedTs,
+             expiresAt:expiry,
+             maxExtraStars:3.0,
+             extraStarsGenerated:0.0,
+             scope:['impulso','racha']
+           });
+           toast('✦ ¡Noche de Constancia activada! (x1.5 por el tiempo restante)');
+         }
        }
      }
    }
@@ -242,21 +244,14 @@ function deleteUrge(id,askConfirm=true){
  }
  
  if(!foundRef){
-  ptsToRevert=u.survived?0.8:0.4;
-  let k=dayKey(u.ts);
-  if(d.pointAwards&&d.pointAwards[k]&&Array.isArray(d.pointAwards[k].events)){
-   let idx04=d.pointAwards[k].events.findIndex(e=>e.kind==='impulso'&&(Number(e.amount)===0.4||Number(e.amount)===0.2));
-   if(idx04!==-1)d.pointAwards[k].events.splice(idx04,1);
-   if(u.survived){
-    let idx08=d.pointAwards[k].events.findIndex(e=>e.kind==='impulso'&&(Number(e.amount)===0.4||Number(e.amount)===0.3));
-    if(idx08!==-1)d.pointAwards[k].events.splice(idx08,1);
-   }
-  }
+  // Fallback legacy seguro: si no hay eventos vinculados por refId (datos de versiones antiguas),
+  // se revierten conservadoramente las cantidades históricas conocidas (0.2 o 0.5) sin tocar eventos de terceros.
+  ptsToRevert=u.survived?0.5:0.2;
  }
  
  if(ptsToRevert>0){
-  d.wallet=Math.max(0,Number(d.wallet||0)-ptsToRevert);
-  d.lifetimeStars=Math.max(0,Number(d.lifetimeStars||0)-ptsToRevert);
+  d.wallet=Math.max(0,Math.round((Number(d.wallet||0)-ptsToRevert)*100)/100);
+  d.lifetimeStars=Math.max(0,Math.round((Number(d.lifetimeStars||0)-ptsToRevert)*100)/100);
   d.bank=d.wallet;
  }
  
@@ -299,9 +294,30 @@ function surviveUrge(){
   let d=load(),u=d.urges.find(x=>x.id===uId);
   if(u&&!u.survived){
    u.survived=true;
-   let boostResult=applyStarBoost(d,0.4,'impulso-timer',{isTimer:true});
-   addPoints(d,boostResult.total,'impulso','Atravesé el impulso con temporizador',uId,null,boostResult.boosterId?boostResult:null);
-   gainedTotal=Math.round((0.4+boostResult.total)*100)/100;
+   
+   // Calcular cuánto se concedió previamente a este impulso
+   let alreadyGranted=0;
+   if(d.pointAwards){
+     Object.keys(d.pointAwards).forEach(k=>{
+       let dayObj=d.pointAwards[k];
+       if(dayObj&&Array.isArray(dayObj.events)){
+         dayObj.events.forEach(e=>{
+           if(e&&e.refId===uId){
+             alreadyGranted+=Number(e.amount||0);
+           }
+         });
+       }
+     });
+   }
+   alreadyGranted=Math.round(alreadyGranted*100)/100;
+   
+   // Evaluar multiplicador sobre la acción completa de base 0.8 respetando No-Stacking
+   let boostResult=applyStarBoost(d,0.8,'impulso-timer',{isTimer:true,eventTs:Date.now(),alreadyGranted:alreadyGranted});
+   let grantAmt=boostResult.grantAmount;
+   if(grantAmt>0){
+     addPoints(d,grantAmt,'impulso','Atravesé el impulso con temporizador',uId,null,boostResult.boosterId?boostResult:null);
+   }
+   gainedTotal=Math.round((alreadyGranted+grantAmt)*100)/100;
    
    // Booster B: Impulso Valiente (cada 3 impulsos superados con temporizador: 3, 6, 9...)
    if(!d.boosters)d.boosters={active:[],inventory:[],progress:{}};

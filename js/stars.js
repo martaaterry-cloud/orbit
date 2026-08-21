@@ -25,12 +25,14 @@ function cleanExpiredBoosters(d){
 
 function applyStarBoost(d,baseAmount,kind,context={}){
   baseAmount=Number(baseAmount||0);
-  if(baseAmount<=0)return {base:0,multiplier:1,extra:0,total:0,boosterId:null,boosterName:null};
+  if(baseAmount<=0)return {base:0,multiplier:1,extra:0,total:0,grantAmount:0,boosterId:null,boosterName:null};
   
   // Acciones rutinarias NUNCA se multiplican
   const nonBoostable=['journal','goodThing','checkin','accion'];
   if(nonBoostable.includes(kind)||context.noBoost){
-    return {base:baseAmount,multiplier:1,extra:0,total:baseAmount,boosterId:null,boosterName:null};
+    let already=Number(context.alreadyGranted||0);
+    let grantAmt=Math.max(0,Math.round((baseAmount-already)*100)/100);
+    return {base:baseAmount,multiplier:1,extra:0,total:baseAmount,grantAmount:grantAmt,boosterId:null,boosterName:null};
   }
   
   if(!d.boosters){
@@ -38,12 +40,17 @@ function applyStarBoost(d,baseAmount,kind,context={}){
   }
   cleanExpiredBoosters(d);
   
+  let eventTs=Number(context.eventTs||Date.now());
   let candidates=[];
   
   // 1. Boosters activos (ej. Ventana Estelar x1.5, Noche de Constancia x1.5)
   if(Array.isArray(d.boosters.active)){
     d.boosters.active.forEach(b=>{
       if(!b)return;
+      // Solo elegible si el evento ocurrió dentro de la vigencia del booster
+      let isTimeEligible=(b.startedAt<=eventTs&&(!b.expiresAt||eventTs<b.expiresAt));
+      if(!isTimeEligible)return;
+      
       let matchScope=!b.scope||b.scope.includes(kind)||(kind.startsWith('impulso')&&b.scope.includes('impulso'));
       if(matchScope){
         candidates.push({booster:b,isInventory:false});
@@ -67,8 +74,11 @@ function applyStarBoost(d,baseAmount,kind,context={}){
     });
   }
   
+  let alreadyGranted=Number(context.alreadyGranted||0);
+  
   if(!candidates.length){
-    return {base:baseAmount,multiplier:1,extra:0,total:baseAmount,boosterId:null,boosterName:null};
+    let grantAmt=Math.max(0,Math.round((baseAmount-alreadyGranted)*100)/100);
+    return {base:baseAmount,multiplier:1,extra:0,total:baseAmount,grantAmount:grantAmt,boosterId:null,boosterName:null};
   }
   
   // Criterio No-Stacking: Elegir el de MAYOR multiplicador; si empatan, el que expire antes o el más antiguo
@@ -94,8 +104,9 @@ function applyStarBoost(d,baseAmount,kind,context={}){
   
   actualExtra=Math.max(0,Math.round(actualExtra*100)/100);
   let totalAmount=Math.round((baseAmount+actualExtra)*100)/100;
+  let grantAmount=Math.max(0,Math.round((totalAmount-alreadyGranted)*100)/100);
   
-  // Actualizar consumo del booster
+  // Actualizar consumo del booster elegido
   b.extraStarsGenerated=Math.round((Number(b.extraStarsGenerated||0)+actualExtra)*100)/100;
   if(chosen.isInventory){
     b.usesRemaining=Math.max(0,Number(b.usesRemaining||1)-1);
@@ -108,6 +119,7 @@ function applyStarBoost(d,baseAmount,kind,context={}){
     multiplier:mult,
     extra:actualExtra,
     total:totalAmount,
+    grantAmount:grantAmount,
     boosterId:b.id,
     boosterName:b.name
   };
