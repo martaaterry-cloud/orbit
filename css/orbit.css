@@ -835,6 +835,121 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
     0 10px 28px rgba(0, 0, 0, 0.6);
 }
 
+/* ==========================================================================
+   PÁGINA PILOTO ATLAS: LIRA (LÁMINA ASTRONÓMICA)
+   ========================================================================== */
+.atlas-page.atlas-folio-lyra {
+  background: linear-gradient(135deg, rgba(22, 16, 38, 0.96) 0%, rgba(13, 9, 23, 0.98) 100%) !important;
+  border-radius: 4px 18px 18px 4px !important;
+  padding: 14px 16px 14px 20px !important;
+  box-sizing: border-box !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: space-between !important;
+  align-items: stretch !important;
+  text-align: center !important;
+  min-height: 410px !important;
+  box-shadow: 
+    inset 16px 0 22px -8px rgba(0, 0, 0, 0.9),
+    inset -6px 0 14px -6px rgba(0, 0, 0, 0.5),
+    2px 0 0 rgba(255, 255, 255, 0.04),
+    4px 0 0 rgba(8, 5, 16, 0.85),
+    0 12px 32px rgba(0, 0, 0, 0.65) !important;
+}
+
+.atlas-folio-header {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  font-size: 9px !important;
+  letter-spacing: 0.14em !important;
+  text-transform: uppercase !important;
+  color: rgba(225, 218, 255, 0.6) !important;
+  padding-bottom: 6px !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+
+.atlas-folio-chapter {
+  font-family: Georgia, serif !important;
+  font-size: 9.5px !important;
+  letter-spacing: 0.12em !important;
+}
+
+.atlas-folio-num {
+  font-family: monospace !important;
+  font-size: 9px !important;
+  color: rgba(225, 218, 255, 0.45) !important;
+}
+
+/* Cielo rectangular abierto (170-190px) */
+.atlas-folio-lyra .atlas-sky-canvas {
+  width: 100% !important;
+  height: 180px !important;
+  min-height: 180px !important;
+  margin: 6px 0 !important;
+  position: relative !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: radial-gradient(ellipse at 46% 40%, rgba(46, 30, 74, 0.35) 0%, transparent 75%) !important;
+  border-radius: 14px !important;
+  overflow: hidden !important;
+}
+
+.atlas-folio-lyra .atlas-sky-canvas svg {
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 260px !important;
+  max-height: 180px !important;
+  display: block !important;
+  overflow: visible !important;
+}
+
+.atlas-folio-body {
+  margin: 2px 0 6px 0 !important;
+}
+
+.atlas-folio-name {
+  font-family: Georgia, serif !important;
+  font-size: 19px !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.28em !important;
+  color: #ffffff !important;
+  text-shadow: 0 0 14px rgba(255, 255, 255, 0.4) !important;
+  margin-bottom: 4px !important;
+  padding-left: 0.28em !important;
+}
+
+.atlas-folio-desc {
+  font-family: Georgia, serif !important;
+  font-style: italic !important;
+  font-size: 11.5px !important;
+  line-height: 1.55 !important;
+  color: rgba(247, 244, 235, 0.75) !important;
+  margin: 0 auto !important;
+  max-width: 290px !important;
+}
+
+.atlas-folio-footer {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 5px !important;
+  padding-top: 6px !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+
+.atlas-folio-footer .atlas-status {
+  margin: 0 !important;
+  font-size: 9.5px !important;
+}
+
+.atlas-folio-action {
+  width: 100% !important;
+  display: flex !important;
+  justify-content: center !important;
+}
+
 .atlas-page-header {
   width: 100%;
   display: flex;

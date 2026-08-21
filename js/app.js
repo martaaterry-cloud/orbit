@@ -430,6 +430,33 @@ function renderUniverse(d){
        actionMarkup = `<div class="atlas-req">Requiere ${c.need} estrellas históricas</div>`;
      }
 
+     // Página Piloto de Lira: lámina de atlas astronómico encuadernado
+     if (c.id === 'lyra') {
+       let lyraNameSpaced = 'L I R A';
+       return `
+         <div class="atlas-page atlas-folio atlas-folio-lyra ${owned ? 'owned' : (discovered ? 'discovered' : (isTarget ? 'in-progress' : 'locked'))}">
+           <div class="atlas-folio-header">
+             <span class="atlas-folio-chapter">I · ${esc(activeTab.name).toUpperCase()}</span>
+             <span class="atlas-folio-num">FOLIO ${pageNum}</span>
+           </div>
+           
+           <div class="atlas-sky-canvas">
+             ${svgMarkup}
+           </div>
+
+           <div class="atlas-folio-body">
+             <div class="atlas-folio-name">${lyraNameSpaced}</div>
+             <p class="atlas-folio-desc">${esc(c.desc || 'Una primera señal de que algo nuevo empieza a dibujarse.')}</p>
+           </div>
+
+           <div class="atlas-folio-footer">
+             <div class="atlas-folio-status-badge">${statusMarkup}</div>
+             ${actionMarkup ? `<div class="atlas-folio-action">${actionMarkup}</div>` : ''}
+           </div>
+         </div>
+       `;
+     }
+
      return `
         <div class="atlas-page ${owned ? 'owned' : (discovered ? 'discovered' : 'locked')}">
           <div class="atlas-page-header">
