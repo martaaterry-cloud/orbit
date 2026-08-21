@@ -434,10 +434,12 @@
 </div></div>
 
 <div class="modal" id="orbitModal"><div class="sheet">
-  <h3>Añadir un pilar</h3><p>Algo que quieras recordar que forma parte de ti y de tu vida.</p>
-  <div class="field"><label>Nombre</label><input id="orbitName"></div>
-  <div class="field"><label>Qué me aporta</label><input id="orbitMeaning"></div>
-  <button class="btn btn-main btn-wide" onclick="addOrbitItem()">Añadir</button>
+  <h3 id="orbitModalTitle">Añadir un pilar</h3>
+  <p id="orbitModalSub">Algo que quieras recordar que forma parte de ti y de tu vida.</p>
+  <input type="hidden" id="orbitEditId" value="">
+  <div class="field"><label>Nombre</label><input id="orbitName" placeholder="Ej: Mi espacio, Amigos, Creatividad..."></div>
+  <div class="field"><label>Qué me aporta</label><input id="orbitMeaning" placeholder="Ej: Me conecta conmigo, me da calma..."></div>
+  <button class="btn btn-main btn-wide" id="orbitSubmitBtn" onclick="saveOrbitItem()">Añadir</button>
   <button class="btn btn-line btn-wide" style="margin-top:7px" onclick="closeModal('orbitModal')">Cancelar</button>
 </div></div>
 

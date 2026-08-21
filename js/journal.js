@@ -55,9 +55,87 @@ function saveJournalEntry(){
  render();
 }
 
-function openOrbitItem(){orbitModal.classList.add('show')}
-function addOrbitItem(){let n=orbitName.value.trim();if(!n)return toast('Ponle un nombre');let d=load();d.orbit.push({id:uid(),name:n,meaning:orbitMeaning.value.trim()});save(d);orbitName.value='';orbitMeaning.value='';closeModal('orbitModal');render()}
-function removeOrbit(id){let d=load();d.orbit=d.orbit.filter(x=>x.id!==id);save(d);render()}
+function openOrbitItem(){
+ let titleEl=document.getElementById('orbitModalTitle');
+ let btnEl=document.getElementById('orbitSubmitBtn');
+ let idInput=document.getElementById('orbitEditId');
+ if(titleEl)titleEl.textContent='Añadir un pilar';
+ if(btnEl)btnEl.textContent='Añadir';
+ if(idInput)idInput.value='';
+ orbitName.value='';
+ orbitMeaning.value='';
+ orbitModal.classList.add('show');
+}
+
+function openEditOrbitItem(id){
+ if(!id)return;
+ let d=load();
+ let p=(d.orbit||[]).find(x=>x.id===id);
+ if(!p)return;
+ let titleEl=document.getElementById('orbitModalTitle');
+ let btnEl=document.getElementById('orbitSubmitBtn');
+ let idInput=document.getElementById('orbitEditId');
+ if(titleEl)titleEl.textContent='Editar pilar';
+ if(btnEl)btnEl.textContent='Guardar cambios';
+ if(idInput)idInput.value=id;
+ orbitName.value=p.name||'';
+ orbitMeaning.value=p.meaning||'';
+ orbitModal.classList.add('show');
+}
+
+function saveOrbitItem(){
+ let n=orbitName.value.trim();
+ if(!n)return toast('Ponle un nombre al pilar');
+ let m=orbitMeaning.value.trim();
+ let d=load();
+ if(!d.orbit)d.orbit=[];
+ let idInput=document.getElementById('orbitEditId');
+ let editId=idInput?idInput.value:'';
+
+ if(editId){
+  let p=d.orbit.find(x=>x.id===editId);
+  if(p){
+   p.name=n;
+   p.meaning=m;
+  }
+  toast('Pilar actualizado');
+ }else{
+  d.orbit.push({id:'o_'+uid(),name:n,meaning:m});
+  toast('Pilar añadido a tu órbita');
+ }
+ save(d);
+ orbitName.value='';
+ orbitMeaning.value='';
+ if(idInput)idInput.value='';
+ closeModal('orbitModal');
+ render();
+}
+
+function removeOrbit(id){
+ if(!id)return;
+ let d=load();
+ let p=(d.orbit||[]).find(x=>x.id===id);
+ if(!p)return;
+ let linked=(d.goodThings||[]).filter(g=>g&&g.pillarId===id);
+ let msg=`¿Eliminar el pilar "${p.name}"?`;
+ if(linked.length>0){
+  msg+=`\n\nEste pilar tiene ${linked.length} recuerdo(s) asociado(s). Los recuerdos NO se borrarán, sino que pasarán a quedar "Sin asociar".`;
+ }
+ let ok=confirm(msg);
+ if(!ok)return;
+
+ if(Array.isArray(d.goodThings)){
+  d.goodThings.forEach(g=>{
+   if(g&&g.pillarId===id){
+    g.pillarId=null;
+   }
+  });
+ }
+ d.orbit=(d.orbit||[]).filter(x=>x.id!==id);
+ save(d);
+ toast(`Pilar "${p.name}" eliminado`);
+ render();
+}
 
 function addGoodThing(){
  let t=goodThing.value.trim();

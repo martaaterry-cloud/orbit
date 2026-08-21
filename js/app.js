@@ -53,12 +53,31 @@ function drawOrbit(d){
   let el=bigOrbit;
   if(!el)return;
   el.innerHTML='<div class="orbit-circle o1"></div><div class="orbit-circle o2"></div><div class="orbit-circle o3"></div><div class="me">yo</div>';
-  let coords=[[50,18],[80,34],[82,67],[52,83],[19,68],[19,35],[65,25],[67,74]];
-  (d.orbit||[]).slice(0,8).forEach((o,i)=>{
+  
+  let pillars=Array.isArray(d.orbit)?d.orbit:[];
+  let N=pillars.length;
+  if(N===0){
+    let emptyHint=document.createElement('div');
+    emptyHint.className='orbit-empty-hint';
+    emptyHint.style.cssText='position:absolute; bottom:16px; left:50%; transform:translateX(-50%); font-size:11px; color:var(--muted); white-space:nowrap;';
+    emptyHint.textContent='Añade pilares para ver tu órbita';
+    el.appendChild(emptyHint);
+    return;
+  }
+
+  // Distribución dinámica sobre la órbita adaptada a cualquier cantidad N de pilares
+  let rx=37;
+  let ry=36;
+
+  pillars.forEach((o,i)=>{
     let p=document.createElement('div');
     p.className='planet';
-    p.style.left=coords[i][0]+'%';
-    p.style.top=coords[i][1]+'%';
+    let angle=(i/N)*2*Math.PI-(Math.PI/2);
+    let x=50+rx*Math.cos(angle);
+    let y=50+ry*Math.sin(angle);
+
+    p.style.left=x.toFixed(1)+'%';
+    p.style.top=y.toFixed(1)+'%';
 
     let memories=(d.goodThings||[]).filter(g=>g&&g.pillarId===o.id).slice(-3);
     let html=`<span class="planet-name">${esc(o.name)}</span>`;
@@ -449,7 +468,7 @@ function unlockRegion(id, cost){
 function render(){let d=accrue(),now=Date.now(),p=prompts[new Date().getDate()%prompts.length];todayDate.textContent=new Date().toLocaleDateString('es-ES',{weekday:'short',day:'numeric',month:'short'});dailyPromptTitle.textContent=p[0];dailyPromptSub.textContent=p[1];let c=d.checkins[dayKey()];if(c){needToday.value=c.need||'';forMeToday.value=c.forMe||'';mood=c.mood||3;document.querySelectorAll('#moodScale button').forEach((b,i)=>b.classList.toggle('sel',i+1===mood))}
  drawOrbit(d);
  populatePillarSelect(d);
- orbitItems.innerHTML=d.orbit.map(o=>`<div class="card good-card"><div><strong>${esc(o.name)}</strong><small>${esc(o.meaning||'')}</small></div><button class="btn btn-line" onclick="removeOrbit('${o.id}')">Quitar</button></div>`).join('');
+ orbitItems.innerHTML=(d.orbit||[]).length?d.orbit.map(o=>`<div class="card good-card"><div><strong>${esc(o.name)}</strong><small>${esc(o.meaning||'')}</small></div><div style="display:flex; gap:6px;"><button class="btn btn-line btn-sm" onclick="openEditOrbitItem('${o.id}')">Editar</button><button class="btn btn-line btn-sm" onclick="removeOrbit('${o.id}')">Eliminar</button></div></div>`).join(''):'<div class="empty" style="padding:14px; text-align:center; font-size:12px; color:var(--muted);">No tienes pilares guardados todavía.</div>';
  let todays=d.goodThings.filter(g=>dayKey(g.ts)===dayKey()).slice().reverse();todayGoodThings.innerHTML=todays.length?'<div class="section-head"><h2>Hoy también pasó esto</h2></div>'+todays.map(g=>{
    let p=g.pillarId?(d.orbit||[]).find(o=>o&&o.id===g.pillarId):null;
    return `<div class="card good-card"><div><strong>${esc(g.text)}</strong>${p?`<small style="color:var(--wine); font-weight:600; margin-bottom:2px;">✦ ${esc(p.name)}</small>`:''}<small>${esc(g.meaning||'')}</small></div><button class="btn btn-line" onclick="deleteGood('${g.id}')">Quitar</button></div>`;
