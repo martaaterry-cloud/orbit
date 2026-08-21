@@ -286,8 +286,18 @@
           <span style="display:inline-block; width:7px; height:7px; border-radius:50%; background:#2e7d32;"></span>
           <span>Nube conectada</span>
         </div>
-        <div style="font-size:11px; color:var(--muted); margin-bottom:10px;" id="cloudUserEmail"></div>
-        <button class="btn btn-line btn-sm" onclick="handleCloudLogout()" style="font-size:11px; padding:5px 12px;" id="cloudLogoutBtn">Cerrar sesión</button>
+        <div style="font-size:11px; color:var(--muted); margin-bottom:12px;" id="cloudUserEmail"></div>
+        <div style="display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin-bottom:12px;">
+          <button class="btn btn-main" style="font-size:11px; padding:8px 12px; display:inline-flex; align-items:center; gap:6px;" id="cloudUploadBtn" onclick="uploadToCloud()">
+            <svg class="icon" viewBox="0 0 24 24" style="width:14px; height:14px; stroke:currentColor;"><path d="M12 3v12M17 8l-5-5-5 5M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/></svg>
+            <span>Subir datos a la nube</span>
+          </button>
+          <button class="btn btn-line" style="font-size:11px; padding:8px 12px; display:inline-flex; align-items:center; gap:6px;" id="cloudRestoreBtn" onclick="restoreFromCloud()">
+            <svg class="icon" viewBox="0 0 24 24" style="width:14px; height:14px; stroke:currentColor;"><path d="M12 15V3M7 10l5 5 5-5M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/></svg>
+            <span>Recuperar datos de la nube</span>
+          </button>
+        </div>
+        <button class="btn btn-line btn-sm" onclick="handleCloudLogout()" style="font-size:10px; padding:4px 10px; opacity:0.75;" id="cloudLogoutBtn">Cerrar sesión</button>
       </div>
     </div>
   </div>
