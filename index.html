@@ -13,7 +13,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <title>Orbit</title>
 
-  <link rel="stylesheet" href="css/orbit.css?v=1.2.16">
+  <link rel="stylesheet" href="css/orbit.css?v=1.2.17">
 </head>
 <body>
 <!-- Pantalla de Acceso Inicial -->
@@ -312,6 +312,24 @@
     <p>Tu Orbit, tus datos y tus áreas.</p>
   </div>
 
+  <!-- PERFIL -->
+  <div class="section-head"><h2>Perfil</h2></div>
+  <div class="card" style="padding:16px;">
+    <div class="field" style="margin-top:0;">
+      <label for="profileDisplayName">Nombre</label>
+      <input id="profileDisplayName" type="text" placeholder="Cómo quieres que te llame Orbit" style="width:100%; box-sizing:border-box; padding:10px 12px; font-size:14px; border-radius:12px; border:1px solid var(--line); background:#fffdfb;">
+    </div>
+    <div class="field">
+      <label for="profileUsername">Usuario o apodo</label>
+      <input id="profileUsername" type="text" placeholder="Tu nombre dentro de Orbit" style="width:100%; box-sizing:border-box; padding:10px 12px; font-size:14px; border-radius:12px; border:1px solid var(--line); background:#fffdfb;">
+    </div>
+    <div class="field">
+      <label for="profileBirthDate">Fecha de nacimiento</label>
+      <input id="profileBirthDate" type="date" style="width:100%; box-sizing:border-box; padding:10px 12px; font-size:14px; border-radius:12px; border:1px solid var(--line); background:#fffdfb;">
+    </div>
+    <button class="btn btn-main btn-wide" onclick="saveProfile()" style="margin-top:6px;">Guardar perfil</button>
+  </div>
+
   <!-- A. ÁREAS QUE ESTOY TRABAJANDO -->
   <div class="section-head"><h2>Áreas que estoy trabajando</h2></div>
   <div class="card" style="padding:16px;">
@@ -365,7 +383,7 @@
     <button class="btn btn-line" onclick="handleCloudLogout()" style="font-size:12px; padding:8px 16px; color:var(--wine);" id="cloudLogoutBtn">
       Cerrar sesión
     </button>
-    <div style="font-size:11px; color:var(--muted); opacity:0.6; margin-top:14px;">Orbit v1.2.16</div>
+    <div style="font-size:11px; color:var(--muted); opacity:0.6; margin-top:14px;">Orbit v1.2.17</div>
   </div>
 </section>
 
@@ -670,14 +688,14 @@
 <div class="toast" id="toast"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="data/templates.js?v=1.2.16"></script>
-  <script src="data/constellations.js?v=1.2.16"></script>
-  <script src="js/storage.js?v=1.2.16"></script>
-  <script src="js/supabase.js?v=1.2.16"></script>
-  <script src="js/stars.js?v=1.2.16"></script>
-  <script src="js/streak.js?v=1.2.16"></script>
-  <script src="js/journal.js?v=1.2.16"></script>
-  <script src="js/archive.js?v=1.2.16"></script>
-  <script src="js/app.js?v=1.2.16"></script>
+  <script src="data/templates.js?v=1.2.17"></script>
+  <script src="data/constellations.js?v=1.2.17"></script>
+  <script src="js/storage.js?v=1.2.17"></script>
+  <script src="js/supabase.js?v=1.2.17"></script>
+  <script src="js/stars.js?v=1.2.17"></script>
+  <script src="js/streak.js?v=1.2.17"></script>
+  <script src="js/journal.js?v=1.2.17"></script>
+  <script src="js/archive.js?v=1.2.17"></script>
+  <script src="js/app.js?v=1.2.17"></script>
 </body>
 </html>

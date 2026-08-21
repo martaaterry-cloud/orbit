@@ -718,6 +718,7 @@ function render(){let d=accrue(),now=Date.now(),p=prompts[new Date().getDate()%p
   renderShopBoosters(d);
   renderActiveBoosterBadge(d);
   renderFocusAreas(d);
+  renderProfile(d);
   renderArchive();
   renderUniverse(d);
 }
@@ -926,6 +927,30 @@ function activateFocusArea(areaId){
   let name=(typeof orbitTemplates!=='undefined'&&orbitTemplates[areaId]?.name)||areaId;
   toast(`Área activada: ${name}`);
   render();
+}
+
+function renderProfile(d){
+  if(!d) d=load();
+  let dn=document.getElementById('profileDisplayName');
+  let un=document.getElementById('profileUsername');
+  let bd=document.getElementById('profileBirthDate');
+  if(dn && document.activeElement !== dn) dn.value = d.profile?.displayName || '';
+  if(un && document.activeElement !== un) un.value = d.profile?.username || '';
+  if(bd && document.activeElement !== bd) bd.value = d.profile?.birthDate || '';
+}
+
+function saveProfile(){
+  let d=load();
+  let dn=document.getElementById('profileDisplayName');
+  let un=document.getElementById('profileUsername');
+  let bd=document.getElementById('profileBirthDate');
+  if(!d.profile) d.profile={};
+  d.profile.displayName = dn ? dn.value.trim() : '';
+  d.profile.username = un ? un.value.trim() : '';
+  d.profile.birthDate = (bd && bd.value) ? bd.value : null;
+  save(d);
+  toast('Perfil guardado');
+  renderProfile(d);
 }
 
 setInterval(render,60000);render();
