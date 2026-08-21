@@ -35,32 +35,38 @@ function drawOrbit(d){let el=bigOrbit;el.innerHTML='<div class="orbit-circle o1"
 function constellationSvg(def, unlocked, progress) {
   let N = def.pts.length;
   let pVal = unlocked ? 1 : Math.max(0, Math.min(1, Number(progress) || 0));
-  let achieved = unlocked ? N : Math.floor(N * pVal);
+  
+  // Progresión estrella por estrella: cada estrella ganada activa un nodo y sus conexiones
+  // Para Lira (need: 8, 6 nodos): 0 -> 0, 1 -> 1, 2 -> 2, 3 -> 3, 4 -> 4, 5 -> 5, 6..8 -> 6
+  let totalNeed = def.need || N;
+  let earned = Math.floor(pVal * totalNeed);
+  let achieved = unlocked ? N : Math.min(N, earned);
   let nextTarget = unlocked ? -1 : (achieved < N ? achieved : -1);
+  let isRefined = unlocked || pVal >= 0.875;
   
   let lines = def.edges.map(([a, b]) => {
     let active = a < achieved && b < achieved;
-    let cls = active ? 'line' : 'ghost-line';
+    let cls = active ? ('line' + (isRefined ? ' refined-line' : '')) : 'ghost-line';
     return `<line class="${cls}" x1="${def.pts[a][0]}%" y1="${def.pts[a][1]}%" x2="${def.pts[b][0]}%" y2="${def.pts[b][1]}%"/>`;
   }).join('');
   
   let stars = def.pts.map((p, i) => {
     let cls = 'ghost-star';
     let isMain = (def.id === 'lyra' && i === 0);
-    let r = isMain ? 1.9 : 1.8;
+    let r = isMain ? 1.8 : 1.7;
     
     if (i < achieved) {
       if (isMain) {
-        let level = pVal >= 0.75 ? 'main-star-full' : (pVal >= 0.35 ? 'main-star-mid' : 'main-star-low');
+        let level = isRefined ? 'main-star-full' : (pVal >= 0.38 ? 'main-star-mid' : 'main-star-low');
         cls = `star ${level}`;
-        r = pVal >= 0.75 ? 3.6 : (pVal >= 0.35 ? 3.2 : 2.8);
+        r = isRefined ? 3.5 : (pVal >= 0.38 ? 3.0 : 2.6);
       } else {
-        cls = 'star';
-        r = 2.6;
+        cls = 'star' + (isRefined ? ' refined-star' : '');
+        r = isRefined ? 2.6 : 2.3;
       }
     } else if (i === nextTarget) {
       cls = 'target-star';
-      r = isMain ? 2.3 : 2.2;
+      r = isMain ? 2.1 : 2.0;
     }
     return `<circle class="${cls}" cx="${p[0]}%" cy="${p[1]}%" r="${r}"/>`;
   }).join('');
@@ -87,18 +93,18 @@ function renderUniverse(d){
    let current = next;
    constellationStage.style.display = 'block';
    
-   // Cálculo responsive proporcional al viewport (Mobile-first)
+   // Posicionamiento y escala celeste armónica (Mobile-first, preparado para convivir con más constelaciones)
    let vw = window.innerWidth || document.documentElement.clientWidth || 360;
    let vh = window.innerHeight || document.documentElement.clientHeight || 640;
    
-   // Límites: mínimo 200px en pantallas pequeñas, máximo 340px en pantallas grandes/desktop
-   // Escala con el ancho útil (~75%) y alto útil disponible dejando aire y espacio para el toolbar
-   let size = Math.round(Math.max(200, Math.min(vw * 0.75, (vh - 140) * 0.55, 340)));
+   // Escala contenida (~120px-160px en móvil) que deja libre el resto del mapa estelar
+   let baseSize = current.size || 125;
+   let size = Math.round(Math.max(110, Math.min(vw * 0.38, (vh - 140) * 0.28, baseSize, 160)));
    
    constellationStage.style.width = size + 'px';
    constellationStage.style.height = size + 'px';
-   constellationStage.style.left = '50%';
-   constellationStage.style.top = '44%';
+   constellationStage.style.left = (current.x || 50) + '%';
+   constellationStage.style.top = (current.y || 34) + '%';
    constellationStage.style.transform = `translate(-50%, -50%) rotate(${current.rot || 0}deg)`;
    
    let idx = available.indexOf(current);

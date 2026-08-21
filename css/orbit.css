@@ -615,6 +615,10 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
   filter: drop-shadow(0 0 8px rgba(255, 255, 255, 1)) drop-shadow(0 0 16px rgba(230, 205, 255, 0.8)) !important;
 }
 
+.constellation-stage .star.refined-star {
+  filter: drop-shadow(0 0 8px rgba(255, 255, 255, 1)) !important;
+}
+
 .constellation-stage .target-star {
   fill: rgba(255, 255, 255, 0.9) !important;
   opacity: 0.55 !important;
@@ -622,8 +626,9 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
 }
 
 .constellation-stage .ghost-star {
-  fill: rgba(255, 255, 255, 0.65) !important;
-  opacity: 0.15 !important;
+  fill: #fff !important;
+  opacity: 0.32 !important;
+  filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.45)) !important;
 }
 
 .constellation-stage .line {
@@ -632,11 +637,15 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
   fill: none !important;
 }
 
+.constellation-stage .line.refined-line {
+  stroke: rgba(255, 255, 255, 0.85) !important;
+  stroke-width: 0.9 !important;
+  filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.6)) !important;
+}
+
 .constellation-stage .ghost-line {
-  stroke: rgba(255, 255, 255, 0.4) !important;
-  stroke-width: 0.4 !important;
-  stroke-dasharray: 1 1 !important;
-  opacity: 0.03 !important;
+  opacity: 0 !important;
+  stroke: none !important;
   fill: none;
 }
 
