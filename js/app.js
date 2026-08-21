@@ -348,22 +348,6 @@ function renderUniverse(d){
    }
  }
 
-  function wrapInFolioSlices(innerContentHtml) {
-    let slicesHtml = '';
-    for (let i = 0; i < 10; i++) {
-      let offset = i * 100;
-      slicesHtml += `
-        <div class="atlas-slice" style="--s-idx:${i};">
-          <div class="atlas-slice-content" style="left:-${offset}%;">
-            ${innerContentHtml}
-          </div>
-          <div class="atlas-slice-shade"></div>
-        </div>
-      `;
-    }
-    return `<div class="atlas-slices-stage">${slicesHtml}</div>`;
-  }
-
   // 5 Capítulos celestes del Atlas (un único libro continuo)
   const bookChapters = [
     { id: 'cielo-1', name: 'Primer cielo', roman: 'I', region: 'cielo-1', consts: ['lyra', 'cassiopeia', 'ursa-major'], desc: 'El firmamento visible a simple vista.' },
@@ -399,58 +383,54 @@ function renderUniverse(d){
     if (!isUnlocked) {
       // Tipo C: Portadilla de Capítulo Sellado (No genera páginas de constelaciones internas)
       let regName = regNames[ch.region] || ch.region;
-      let lockedInner = `
-        <div class="atlas-folio-inner atlas-chapter-locked-inner">
-          <div class="atlas-folio-header">
-            <span class="atlas-folio-chapter">CAPÍTULO ${ch.roman}</span>
-            <span class="atlas-folio-num">SELLADO 🔒</span>
-          </div>
-          <div class="atlas-chapter-symbol">
-            <div class="compass-ring">
-              <svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" style="width:38px; height:38px;"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-            </div>
-          </div>
-          <div class="atlas-folio-body">
-            <div class="atlas-chapter-title-tag">CAPÍTULO ${ch.roman}</div>
-            <div class="atlas-chapter-name">${esc(ch.name.toUpperCase().split('').join(' '))}</div>
-            <p class="atlas-folio-desc">Región aún no cartografiada.<br>Desbloquea la región <strong>${regName}</strong> desde la nave espacial para abrir este capítulo.</p>
-          </div>
-          <div class="atlas-folio-footer">
-            <button class="btn btn-soft" style="font-size:10px; padding:6px 16px;" onclick="closeModal('constellationBookModal'); openShipModal(); setShipTab('regiones');">Ir a Exploración</button>
-          </div>
-        </div>
-      `;
       allPagesHtml += `
         <div class="atlas-page atlas-folio atlas-chapter-locked" id="chapter-${ch.id}">
-          ${wrapInFolioSlices(lockedInner)}
+          <div class="atlas-folio-inner atlas-chapter-locked-inner">
+            <div class="atlas-folio-header">
+              <span class="atlas-folio-chapter">CAPÍTULO ${ch.roman}</span>
+              <span class="atlas-folio-num">SELLADO 🔒</span>
+            </div>
+            <div class="atlas-chapter-symbol">
+              <div class="compass-ring">
+                <svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" style="width:38px; height:38px;"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              </div>
+            </div>
+            <div class="atlas-folio-body">
+              <div class="atlas-chapter-title-tag">CAPÍTULO ${ch.roman}</div>
+              <div class="atlas-chapter-name">${esc(ch.name.toUpperCase().split('').join(' '))}</div>
+              <p class="atlas-folio-desc">Región aún no cartografiada.<br>Desbloquea la región <strong>${regName}</strong> desde la nave espacial para abrir este capítulo.</p>
+            </div>
+            <div class="atlas-folio-footer">
+              <button class="btn btn-soft" style="font-size:10px; padding:6px 16px;" onclick="closeModal('constellationBookModal'); openShipModal(); setShipTab('regiones');">Ir a Exploración</button>
+            </div>
+          </div>
+          <div class="atlas-fold-shade"></div>
         </div>
       `;
     } else {
       // Tipo A: Portadilla de Capítulo Abierto (Solemne y Ceremonial)
-      let coverInner = `
-        <div class="atlas-folio-inner atlas-chapter-cover-inner">
-          <div class="atlas-folio-header">
-            <span class="atlas-folio-chapter">LIBRO I · FIRMAMENTO</span>
-            <span class="atlas-folio-num">CAPÍTULO ${ch.roman}</span>
-          </div>
-          <div class="atlas-chapter-symbol">
-            <div class="compass-ring">
-              <span class="spark">✦</span>
-            </div>
-          </div>
-          <div class="atlas-folio-body">
-            <div class="atlas-chapter-title-tag">CAPÍTULO ${ch.roman}</div>
-            <div class="atlas-chapter-name">${esc(ch.name.toUpperCase().split('').join(' '))}</div>
-            <p class="atlas-chapter-desc">“${esc(ch.desc)}”</p>
-          </div>
-          <div class="atlas-folio-footer">
-            <span class="atlas-status owned" style="margin:0;">✦ ${ownedInCh} de ${chConsts.length} descubiertas</span>
-          </div>
-        </div>
-      `;
       allPagesHtml += `
         <div class="atlas-page atlas-folio atlas-chapter-cover" id="chapter-${ch.id}">
-          ${wrapInFolioSlices(coverInner)}
+          <div class="atlas-folio-inner atlas-chapter-cover-inner">
+            <div class="atlas-folio-header">
+              <span class="atlas-folio-chapter">LIBRO I · FIRMAMENTO</span>
+              <span class="atlas-folio-num">CAPÍTULO ${ch.roman}</span>
+            </div>
+            <div class="atlas-chapter-symbol">
+              <div class="compass-ring">
+                <span class="spark">✦</span>
+              </div>
+            </div>
+            <div class="atlas-folio-body">
+              <div class="atlas-chapter-title-tag">CAPÍTULO ${ch.roman}</div>
+              <div class="atlas-chapter-name">${esc(ch.name.toUpperCase().split('').join(' '))}</div>
+              <p class="atlas-chapter-desc">“${esc(ch.desc)}”</p>
+            </div>
+            <div class="atlas-folio-footer">
+              <span class="atlas-status owned" style="margin:0;">✦ ${ownedInCh} de ${chConsts.length} descubiertas</span>
+            </div>
+          </div>
+          <div class="atlas-fold-shade"></div>
         </div>
       `;
 
@@ -492,32 +472,29 @@ function renderUniverse(d){
 
         let nameSpaced = c.name.toUpperCase().split('').join(' ');
 
-        let folioInner = `
-          <div class="atlas-folio-inner atlas-constellation-folio-inner">
-            <div class="atlas-folio-header">
-              <span class="atlas-folio-chapter">${ch.roman} · ${esc(ch.name).toUpperCase()}</span>
-              <span class="atlas-folio-num">FOLIO ${pageNum}</span>
-            </div>
-            
-            <div class="atlas-sky-canvas">
-              ${svgMarkup}
-            </div>
-
-            <div class="atlas-folio-body">
-              <div class="atlas-folio-name">${esc(nameSpaced)}${c.extra === 'tu signo' ? '<span class="sign-tag" style="margin-left:8px; font-size:8.5px; vertical-align:middle; letter-spacing:normal;">tu signo</span>' : ''}</div>
-              <p class="atlas-folio-desc">${esc(c.desc || 'Constelación del firmamento.')}</p>
-            </div>
-
-            <div class="atlas-folio-footer">
-              <div class="atlas-folio-status-badge">${statusMarkup}</div>
-              ${actionMarkup ? `<div class="atlas-folio-action">${actionMarkup}</div>` : ''}
-            </div>
-          </div>
-        `;
-
         allPagesHtml += `
           <div class="atlas-page atlas-folio ${owned ? 'owned' : (discovered ? 'discovered' : (isTarget ? 'in-progress' : 'locked'))}">
-            ${wrapInFolioSlices(folioInner)}
+            <div class="atlas-folio-inner atlas-constellation-folio-inner">
+              <div class="atlas-folio-header">
+                <span class="atlas-folio-chapter">${ch.roman} · ${esc(ch.name).toUpperCase()}</span>
+                <span class="atlas-folio-num">FOLIO ${pageNum}</span>
+              </div>
+              
+              <div class="atlas-sky-canvas">
+                ${svgMarkup}
+              </div>
+
+              <div class="atlas-folio-body">
+                <div class="atlas-folio-name">${esc(nameSpaced)}${c.extra === 'tu signo' ? '<span class="sign-tag" style="margin-left:8px; font-size:8.5px; vertical-align:middle; letter-spacing:normal;">tu signo</span>' : ''}</div>
+                <p class="atlas-folio-desc">${esc(c.desc || 'Constelación del firmamento.')}</p>
+              </div>
+
+              <div class="atlas-folio-footer">
+                <div class="atlas-folio-status-badge">${statusMarkup}</div>
+                ${actionMarkup ? `<div class="atlas-folio-action">${actionMarkup}</div>` : ''}
+              </div>
+            </div>
+            <div class="atlas-fold-shade"></div>
           </div>
         `;
       });
@@ -749,39 +726,42 @@ function initAtlasPageTurn(carouselEl) {
       let isPassingNext = clamped < 0;
       let p = Math.abs(clamped);
       
-      let slices = page.querySelectorAll('.atlas-slice');
-      let numSlices = slices.length || 10;
-      
-      slices.forEach((slice, i) => {
-        let xNorm = (i + 0.5) / numSlices; // 0.05 (lomo) a 0.95 (borde exterior)
+      if (isPassingNext) {
+        // Curvatura temprana y suave (desde 5-8% de progreso)
+        // Elevación armónica de la esquina inferior derecha
+        let rotY = clamped * -20.0;
+        let rotZ = -p * 3.0;
+        let transZ = -p * 16.0;
+        let transX = -p * 12.0;
         
-        if (isPassingNext && p > 0.01) {
-          // Onda de flexión: avanza desde el borde derecho hacia el lomo
-          // Las franjas exteriores se curvan antes y con más intensidad
-          let activationThreshold = 1.0 - (p * 1.25);
-          let rawBend = Math.max(0, (xNorm - activationThreshold) / 0.5);
-          let bend = Math.min(1, rawBend);
-          
-          // Rotación progresiva en Y y elevación en Z desde esquina inferior derecha
-          let rotY = -bend * (16 + xNorm * 18);
-          let rotZ = -bend * (xNorm * 5.5);
-          let transZ = -Math.sin(bend * Math.PI) * 26 - (bend * xNorm * 18);
-          let transX = -bend * (xNorm * 36);
-          
-          slice.style.transform = `translateX(${transX.toFixed(1)}px) translateZ(${transZ.toFixed(1)}px) rotateY(${rotY.toFixed(1)}deg) rotateZ(${rotZ.toFixed(1)}deg)`;
-          
-          // Sombra dinámica del pliegue físico
-          let shade = slice.querySelector('.atlas-slice-shade');
-          if (shade) {
-            let shadeOp = Math.sin(bend * Math.PI) * 0.42 + (bend > 0.7 ? 0.22 : 0);
-            shade.style.opacity = shadeOp.toFixed(2);
-          }
-        } else {
-          slice.style.transform = '';
-          let shade = slice.querySelector('.atlas-slice-shade');
-          if (shade) shade.style.opacity = '0';
+        page.style.transformOrigin = 'left 78%';
+        page.style.transform = `perspective(1200px) translateX(${transX.toFixed(1)}px) translateZ(${transZ.toFixed(1)}px) rotateY(${rotY.toFixed(2)}deg) rotateZ(${rotZ.toFixed(2)}deg)`;
+        
+        // Sombra suave en el pliegue
+        let foldShade = page.querySelector('.atlas-fold-shade');
+        if (foldShade) {
+          let shadeOpacity = Math.min(1, p * 1.35);
+          foldShade.style.opacity = shadeOpacity.toFixed(2);
         }
-      });
+        page.style.opacity = '1';
+      } else {
+        // Página siguiente que asoma progresivamente debajo sin saltos
+        if (p < 0.95 && p > 0.05) {
+          let scale = 0.985 + (1 - p) * 0.015;
+          let op = 0.75 + (1 - p) * 0.25;
+          page.style.transform = `perspective(1200px) scale(${scale.toFixed(3)})`;
+          page.style.opacity = op.toFixed(2);
+        } else if (p <= 0.05) {
+          page.style.transform = '';
+          page.style.opacity = '1';
+        } else {
+          page.style.transform = '';
+          page.style.opacity = '0.75';
+        }
+        
+        let foldShade = page.querySelector('.atlas-fold-shade');
+        if (foldShade) foldShade.style.opacity = '0';
+      }
     });
   }
 

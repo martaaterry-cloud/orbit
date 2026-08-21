@@ -812,7 +812,7 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
 }
 
 /* ==========================================================================
-   LÁMINA DE ATLAS ASTRONÓMICO (MOTOR DE SLICES FLEXIBLES 3D)
+   LÁMINA DE ATLAS ASTRONÓMICO (HOJA CONTINUA Y PASO DE PÁGINA SUAVE)
    ========================================================================== */
 .atlas-page.atlas-folio {
   flex: 0 0 96% !important;
@@ -820,53 +820,27 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
   height: 410px !important;
   min-height: 410px !important;
   position: relative !important;
-  background: transparent !important;
-  border: none !important;
-  padding: 0 !important;
+  box-sizing: border-box !important;
   scroll-snap-align: center !important;
   scroll-snap-stop: always !important;
   perspective: 1200px !important;
   perspective-origin: center 80% !important;
   transform-style: preserve-3d !important;
-  will-change: transform;
+  transform-origin: left 78% !important;
+  will-change: transform, opacity;
+  transition: transform 0.52s cubic-bezier(0.22, 0.61, 0.36, 1), opacity 0.52s cubic-bezier(0.22, 0.61, 0.36, 1) !important;
 }
 
-.atlas-slices-stage {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  transform-style: preserve-3d;
-  pointer-events: none;
-}
-
-.atlas-slice {
-  flex: 1 0 10%;
-  width: 10%;
-  height: 100%;
-  position: relative;
-  overflow: hidden;
-  transform-style: preserve-3d;
-  transform-origin: left 85%;
-  will-change: transform;
-  pointer-events: auto;
-}
-
-.atlas-slice-content {
-  position: absolute;
-  top: 0;
-  width: 1000%;
-  height: 100%;
-  pointer-events: auto;
-}
-
-.atlas-slice-shade {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
+/* Sombra suave y gradual durante el pliegue */
+.atlas-fold-shade {
+  position: absolute !important;
+  inset: 0 !important;
+  pointer-events: none !important;
+  border-radius: 4px 18px 18px 4px !important;
+  background: linear-gradient(to right, transparent 0%, transparent 65%, rgba(15, 10, 25, 0.25) 82%, rgba(0, 0, 0, 0.55) 100%) !important;
   opacity: 0;
-  background: linear-gradient(90deg, rgba(0, 0, 0, 0.6) 0%, rgba(35, 20, 55, 0.75) 100%);
-  transition: opacity 0.05s ease;
-  z-index: 15;
+  transition: opacity 0.45s cubic-bezier(0.22, 0.61, 0.36, 1) !important;
+  z-index: 12 !important;
 }
 
 /* Base interior común a toda lámina del libro */
