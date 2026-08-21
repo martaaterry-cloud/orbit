@@ -67,10 +67,14 @@ function getTimerState(){
 function saveTimerState(state){
  if(!state){localStorage.removeItem('orbitTimer')}
  else{localStorage.setItem('orbitTimer',JSON.stringify(state))}
+ localStorage.setItem('orbitLocalUpdatedAt',new Date().toISOString());
+ if(typeof scheduleCloudSync==='function')scheduleCloudSync();
 }
 
 function clearTimerState(){
  localStorage.removeItem('orbitTimer');
+ localStorage.setItem('orbitLocalUpdatedAt',new Date().toISOString());
+ if(typeof scheduleCloudSync==='function')scheduleCloudSync();
 }
 
 function updateTimerDisplay(totalSeconds){
