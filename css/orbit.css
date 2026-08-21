@@ -954,6 +954,55 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
   user-select: none;
 }
 
+.swipe-front.clickable {
+  cursor: pointer;
+}
+.swipe-front.clickable:active {
+  background: var(--soft2) !important;
+}
+
+.desktop-delete-btn-wrap {
+  display: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .swipe-front {
+    position: relative;
+  }
+  .desktop-delete-btn-wrap {
+    display: flex;
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    opacity: 0;
+    transition: opacity 0.15s ease;
+    z-index: 4;
+  }
+  .swipe-front:hover .desktop-delete-btn-wrap {
+    opacity: 1;
+  }
+  .desktop-delete-btn {
+    padding: 5px 8px !important;
+    font-size: 10px !important;
+    color: #c24b5a !important;
+    border-color: rgba(194, 75, 90, 0.3) !important;
+    background: #fffdfb !important;
+    border-radius: 8px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 3px !important;
+    cursor: pointer;
+  }
+  .desktop-delete-btn:hover {
+    background: #c24b5a !important;
+    color: #ffffff !important;
+  }
+  .desktop-delete-btn:hover .icon {
+    stroke: #ffffff !important;
+  }
+}
+
 /* ==========================================================================
    BANNER DE ACTUALIZACIÓN (PWA)
    ========================================================================== */

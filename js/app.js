@@ -22,6 +22,114 @@ function redeem(id){let d=load(),r=d.rewards.find(x=>x.id===id);if(r&&Number(d.w
 function closeModal(id){document.getElementById(id).classList.remove('show')}
 function toast(msg){let t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(window.toastTimeout);window.toastTimeout=setTimeout(()=>t.classList.remove('show'),1900)}
 
+// ==========================================================================
+// SWIPE TO DELETE REUTILIZABLE (TOUCH & DESKTOP)
+// ==========================================================================
+let swipeTouchState = {
+  startX: 0,
+  startY: 0,
+  currentEl: null,
+  isHorizontal: null,
+  currentTx: 0,
+  didSwipe: false,
+  openedEl: null
+};
+
+function handleSwipeTouchStart(e, el) {
+  if (swipeTouchState.openedEl && swipeTouchState.openedEl !== el) {
+    swipeTouchState.openedEl.style.transition = 'transform 0.22s cubic-bezier(0.25, 1, 0.5, 1)';
+    swipeTouchState.openedEl.style.transform = 'translateX(0px)';
+    swipeTouchState.openedEl = null;
+  }
+  let touch = e.touches[0];
+  swipeTouchState.startX = touch.clientX;
+  swipeTouchState.startY = touch.clientY;
+  swipeTouchState.currentEl = el;
+  swipeTouchState.isHorizontal = null;
+  swipeTouchState.currentTx = 0;
+  swipeTouchState.didSwipe = false;
+  el.style.transition = 'none';
+}
+
+function handleSwipeTouchMove(e, el) {
+  if (swipeTouchState.currentEl !== el) return;
+  let touch = e.touches[0];
+  let dx = touch.clientX - swipeTouchState.startX;
+  let dy = touch.clientY - swipeTouchState.startY;
+
+  if (swipeTouchState.isHorizontal === null) {
+    if (Math.abs(dx) > 6 || Math.abs(dy) > 6) {
+      swipeTouchState.isHorizontal = Math.abs(dx) > Math.abs(dy);
+    }
+  }
+
+  if (swipeTouchState.isHorizontal) {
+    if (Math.abs(dx) > 8) {
+      swipeTouchState.didSwipe = true;
+    }
+    let tx = Math.min(0, Math.max(-85, dx));
+    swipeTouchState.currentTx = tx;
+    el.style.transform = `translateX(${tx}px)`;
+    if (Math.abs(dx) > 8 && e.cancelable) {
+      e.preventDefault();
+    }
+  }
+}
+
+function handleSwipeTouchEnd(e, el) {
+  if (swipeTouchState.currentEl !== el) return;
+  el.style.transition = 'transform 0.22s cubic-bezier(0.25, 1, 0.5, 1)';
+  if (swipeTouchState.currentTx < -40) {
+    el.style.transform = 'translateX(-75px)';
+    swipeTouchState.openedEl = el;
+  } else {
+    el.style.transform = 'translateX(0px)';
+    if (swipeTouchState.openedEl === el) swipeTouchState.openedEl = null;
+  }
+  setTimeout(() => {
+    swipeTouchState.didSwipe = false;
+  }, 80);
+  swipeTouchState.currentEl = null;
+}
+
+function handleSwipeCardClick(e, el, actionFn) {
+  if (swipeTouchState.didSwipe || (swipeTouchState.openedEl === el)) {
+    if (swipeTouchState.openedEl === el) {
+      el.style.transition = 'transform 0.22s cubic-bezier(0.25, 1, 0.5, 1)';
+      el.style.transform = 'translateX(0px)';
+      swipeTouchState.openedEl = null;
+    }
+    return;
+  }
+  if (typeof actionFn === 'function') {
+    actionFn(e);
+  }
+}
+
+function wrapSwipe(contentHtml, deleteActionAttr, extraClasses = '', clickActionAttr = '') {
+  const isClickable = Boolean(clickActionAttr);
+  const clickableClass = isClickable ? 'clickable' : '';
+  const clickHandler = isClickable ? `onclick="handleSwipeCardClick(event, this, () => { ${clickActionAttr} })"` : '';
+
+  return `<div class="swipe-row">
+    <div class="swipe-action-bg">
+      <button class="swipe-delete-btn" onclick="${deleteActionAttr}">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+        <span>Eliminar</span>
+      </button>
+    </div>
+    <div class="card ${extraClasses} swipe-front ${clickableClass}" ${clickHandler} ontouchstart="handleSwipeTouchStart(event,this)" ontouchmove="handleSwipeTouchMove(event,this)" ontouchend="handleSwipeTouchEnd(event,this)">
+      ${contentHtml}
+      <div class="desktop-delete-btn-wrap">
+        <button class="btn btn-line btn-sm desktop-delete-btn" onclick="event.stopPropagation(); ${deleteActionAttr}" title="Eliminar">
+          <svg class="icon" viewBox="0 0 24 24" style="width:13px; height:13px; stroke:currentColor;"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+          <span>Eliminar</span>
+        </button>
+      </div>
+    </div>
+  </div>`;
+}
+
 
 
 function populatePillarSelect(d){
@@ -468,10 +576,16 @@ function unlockRegion(id, cost){
 function render(){let d=accrue(),now=Date.now(),p=prompts[new Date().getDate()%prompts.length];todayDate.textContent=new Date().toLocaleDateString('es-ES',{weekday:'short',day:'numeric',month:'short'});dailyPromptTitle.textContent=p[0];dailyPromptSub.textContent=p[1];let c=d.checkins[dayKey()];if(c){needToday.value=c.need||'';forMeToday.value=c.forMe||'';mood=c.mood||3;document.querySelectorAll('#moodScale button').forEach((b,i)=>b.classList.toggle('sel',i+1===mood))}
  drawOrbit(d);
  populatePillarSelect(d);
- orbitItems.innerHTML=(d.orbit||[]).length?d.orbit.map(o=>`<div class="card good-card"><div><strong>${esc(o.name)}</strong><small>${esc(o.meaning||'')}</small></div><div style="display:flex; gap:6px;"><button class="btn btn-line btn-sm" onclick="openEditOrbitItem('${o.id}')">Editar</button><button class="btn btn-line btn-sm" onclick="removeOrbit('${o.id}')">Eliminar</button></div></div>`).join(''):'<div class="empty" style="padding:14px; text-align:center; font-size:12px; color:var(--muted);">No tienes pilares guardados todavía.</div>';
- let todays=d.goodThings.filter(g=>dayKey(g.ts)===dayKey()).slice().reverse();todayGoodThings.innerHTML=todays.length?'<div class="section-head"><h2>Hoy también pasó esto</h2></div>'+todays.map(g=>{
+ orbitItems.innerHTML=(d.orbit||[]).length?d.orbit.map(o=>{
+   let contentHtml=`<div style="flex:1;"><strong>${esc(o.name)}</strong><small>${esc(o.meaning||'')}</small></div>`;
+   return wrapSwipe(contentHtml, `removeOrbit('${o.id}')`, 'good-card', `openEditOrbitItem('${o.id}')`);
+ }).join(''):'<div class="empty" style="padding:14px; text-align:center; font-size:12px; color:var(--muted);">No tienes pilares guardados todavía.</div>';
+ 
+ let todays=d.goodThings.filter(g=>dayKey(g.ts)===dayKey()).slice().reverse();
+ todayGoodThings.innerHTML=todays.length?'<div class="section-head"><h2>Hoy también pasó esto</h2></div>'+todays.map(g=>{
    let p=g.pillarId?(d.orbit||[]).find(o=>o&&o.id===g.pillarId):null;
-   return `<div class="card good-card"><div><strong>${esc(g.text)}</strong>${p?`<small style="color:var(--wine); font-weight:600; margin-bottom:2px;">✦ ${esc(p.name)}</small>`:''}<small>${esc(g.meaning||'')}</small></div><button class="btn btn-line" onclick="deleteGood('${g.id}')">Quitar</button></div>`;
+   let contentHtml=`<div style="flex:1;"><strong>${esc(g.text)}</strong>${p?`<small style="color:var(--wine); font-weight:600; margin-bottom:2px;">✦ ${esc(p.name)}</small>`:''}<small>${esc(g.meaning||'')}</small></div>`;
+   return wrapSwipe(contentHtml, `deleteGood('${g.id}')`, 'good-card');
  }).join(''):'';
  bank.textContent=Number(d.wallet||0).toFixed(1).replace('.',',');shopWallet.textContent=Number(d.wallet||0).toFixed(1).replace('.',',');shopLifetime.textContent=Number(d.lifetimeStars||0).toFixed(1).replace('.',',');todayPoints.textContent=todayPointsTotal(d).toFixed(1).replace('.',',');bestStreak.textContent=fmt(d.returnToMe?.best||d.best||0);
  goals.innerHTML=d.goals.map(g=>`<div class="card goal">
