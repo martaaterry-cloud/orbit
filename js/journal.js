@@ -137,39 +137,204 @@ function removeOrbit(id){
  render();
 }
 
-function addGoodThing(){
- let t=goodThing.value.trim();
- if(!t)return toast('Escribe algo que quieras guardar');
- let d=load();
- let gId=uid();
- let sel=document.getElementById('goodPillarSelect');
- let pId=sel?sel.value.trim():'';
- let item={id:gId,ts:Date.now(),text:t,meaning:goodMeaning.value.trim()};
- if(pId)item.pillarId=pId;
- d.goodThings.push(item);
- save(d);
- goodThing.value='';
- goodMeaning.value='';
- if(sel)sel.value='';
- let got=awardDailyAction('goodThing',.1,.5,'Algo bueno',gId);
- toast(got?'Guardado · +0,1':'Guardado en tu órbita de hoy');
- render();
+// ==========================================================================
+// FOTOS EN RECUERDOS (SUPABASE STORAGE)
+// ==========================================================================
+let selectedGoodPhotoBlob = null;
+
+function triggerGoodPhotoSelect(){
+  if(typeof navigator !== 'undefined' && !navigator.onLine){
+    return toast('Necesitas conexión para añadir una foto. Puedes guardar el recuerdo sin ella.');
+  }
+  let input = document.getElementById('goodPhotoInput');
+  if(input) input.click();
+}
+
+async function compressImageFile(file, maxDimension = 1600, quality = 0.8){
+  return new Promise((resolve, reject) => {
+    let img = new Image();
+    let reader = new FileReader();
+
+    reader.onload = (e) => {
+      img.src = e.target.result;
+    };
+    reader.onerror = (err) => reject(err);
+
+    img.onload = () => {
+      let width = img.width;
+      let height = img.height;
+
+      if(width > height){
+        if(width > maxDimension){
+          height = Math.round((height * maxDimension) / width);
+          width = maxDimension;
+        }
+      } else {
+        if(height > maxDimension){
+          width = Math.round((width * maxDimension) / height);
+          height = maxDimension;
+        }
+      }
+
+      let canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      let ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+
+      canvas.toBlob(
+        (blob) => {
+          if(blob) resolve(blob);
+          else reject(new Error('Error al procesar la imagen'));
+        },
+        'image/jpeg',
+        quality
+      );
+    };
+
+    img.onerror = (err) => reject(err);
+    reader.readAsDataURL(file);
+  });
+}
+
+async function handleGoodPhotoSelect(e){
+  let file = e.target.files?.[0];
+  if(!file) return;
+
+  if(typeof navigator !== 'undefined' && !navigator.onLine){
+    clearGoodPhotoSelect();
+    return toast('Necesitas conexión para añadir una foto. Puedes guardar el recuerdo sin ella.');
+  }
+
+  let previewWrap = document.getElementById('goodPhotoPreviewWrap');
+  let previewImg = document.getElementById('goodPhotoPreviewImg');
+  let fileNameEl = document.getElementById('goodPhotoFileName');
+
+  try {
+    toast('Procesando foto…');
+    let compressedBlob = await compressImageFile(file, 1600, 0.8);
+    selectedGoodPhotoBlob = compressedBlob;
+
+    if(previewImg){
+      let objUrl = URL.createObjectURL(compressedBlob);
+      previewImg.src = objUrl;
+    }
+    if(fileNameEl) fileNameEl.textContent = file.name || 'Foto lista';
+    if(previewWrap) previewWrap.style.display = 'flex';
+  } catch (err) {
+    console.error('Error al procesar foto:', err);
+    clearGoodPhotoSelect();
+    toast('No se pudo procesar la foto. Puedes guardar el recuerdo sin ella.');
+  }
+}
+
+function clearGoodPhotoSelect(){
+  selectedGoodPhotoBlob = null;
+  let input = document.getElementById('goodPhotoInput');
+  if(input) input.value = '';
+  let previewWrap = document.getElementById('goodPhotoPreviewWrap');
+  let previewImg = document.getElementById('goodPhotoPreviewImg');
+  if(previewImg) previewImg.src = '';
+  if(previewWrap) previewWrap.style.display = 'none';
+}
+
+async function addGoodThing(){
+  let t=goodThing.value.trim();
+  if(!t)return toast('Escribe algo que quieras guardar');
+
+  const isOffline = typeof navigator !== 'undefined' && !navigator.onLine;
+  if(selectedGoodPhotoBlob && isOffline){
+    return toast('Necesitas conexión para añadir una foto. Puedes guardar el recuerdo sin ella.');
+  }
+
+  let d=load();
+  let gId=uid();
+  let sel=document.getElementById('goodPillarSelect');
+  let pId=sel?sel.value.trim():'';
+  let item={id:gId,ts:Date.now(),text:t,meaning:goodMeaning.value.trim()};
+  if(pId)item.pillarId=pId;
+
+  let submitBtn=document.getElementById('addGoodSubmitBtn');
+
+  if(selectedGoodPhotoBlob){
+    let sb=typeof getSupabase==='function'?getSupabase():null;
+    if(!sb){
+      return toast('Servicio en la nube no disponible. Puedes guardar el recuerdo sin foto.');
+    }
+    const { data: { session } } = await sb.auth.getSession();
+    if(!session || !session.user){
+      return toast('Inicia sesión en la nube para adjuntar fotos.');
+    }
+
+    if(submitBtn){ submitBtn.disabled=true; submitBtn.textContent='Subiendo foto…'; }
+    const photoPath=`${session.user.id}/good-things/${gId}.jpg`;
+
+    try {
+      const { error: uploadError } = await sb.storage
+        .from('orbit-media')
+        .upload(photoPath, selectedGoodPhotoBlob, {
+          contentType: 'image/jpeg',
+          upsert: true
+        });
+
+      if(uploadError){
+        console.error('Error al subir foto a Supabase Storage:', uploadError);
+        if(submitBtn){ submitBtn.disabled=false; submitBtn.textContent='Guardar en mi órbita de hoy'; }
+        return toast('Error al subir la foto. Puedes intentarlo de nuevo o guardarlo sin foto.');
+      }
+
+      item.photoPath=photoPath;
+    } catch (err) {
+      console.error('Excepción al subir foto:', err);
+      if(submitBtn){ submitBtn.disabled=false; submitBtn.textContent='Guardar en mi órbita de hoy'; }
+      return toast('Error de red al subir la foto.');
+    }
+  }
+
+  d.goodThings.push(item);
+  save(d);
+  goodThing.value='';
+  goodMeaning.value='';
+  if(sel)sel.value='';
+  clearGoodPhotoSelect();
+  if(submitBtn){ submitBtn.disabled=false; submitBtn.textContent='Guardar en mi órbita de hoy'; }
+
+  let got=awardDailyAction('goodThing',.1,.5,'Algo bueno',gId);
+  toast(got?'Guardado · +0,1':'Guardado en tu órbita de hoy');
+  render();
 }
 
 function deleteGood(id){
- if(!id)return;
- let ok=confirm('¿Eliminar este recuerdo?');
- if(!ok)return;
- let d=load();
- if(!Array.isArray(d.goodThings))return;
- let item=d.goodThings.find(x=>x.id===id);
- if(!item)return;
- revertPointsForRef(d,id,'goodThing',item.ts?dayKey(item.ts):null);
- d.goodThings=d.goodThings.filter(x=>x.id!==id);
- save(d);
- toast('Recuerdo eliminado');
- render();
- if(typeof renderArchive==='function')renderArchive();
+  if(!id)return;
+  let ok=confirm('¿Eliminar este recuerdo?');
+  if(!ok)return;
+  let d=load();
+  if(!Array.isArray(d.goodThings))return;
+  let item=d.goodThings.find(x=>x.id===id);
+  if(!item)return;
+
+  let photoPathToDelete = item.photoPath || null;
+
+  revertPointsForRef(d,id,'goodThing',item.ts?dayKey(item.ts):null);
+  d.goodThings=d.goodThings.filter(x=>x.id!==id);
+  save(d);
+  toast('Recuerdo eliminado');
+  render();
+  if(typeof renderArchive==='function')renderArchive();
+
+  // Intentar eliminar foto en Storage de forma asíncrona y segura
+  if(photoPathToDelete){
+    let sb=typeof getSupabase==='function'?getSupabase():null;
+    if(sb){
+      sb.storage.from('orbit-media').remove([photoPathToDelete]).then(({error})=>{
+        if(error){
+          console.warn('Advertencia: no se pudo eliminar la foto de Storage:', photoPathToDelete, error);
+        }
+      }).catch(err=>{
+        console.warn('Advertencia: excepción al eliminar foto de Storage:', photoPathToDelete, err);
+      });
+    }
+  }
 }
 
 function deleteJournalEntry(id){

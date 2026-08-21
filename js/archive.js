@@ -118,6 +118,7 @@ function renderDayDetail(d){
     if(Array.isArray(d.urges)) d.urges.filter(u=>u && u.ts && dayKey(u.ts)===selectedDay).forEach(u=>html+=urgeHTML(u,d));
   }
   dayDetail.innerHTML=html||'<div class="empty">No guardaste nada este día.</div>';
+  if(typeof loadPhotoThumbnails==='function')loadPhotoThumbnails();
 }
 
 function entryHTML(e){
@@ -147,12 +148,18 @@ function goodHTML(g, d = null){
    if(p) pillarName = p.name;
   }
  }
- let contentHtml=`<div class="entry-meta">
-   <span class="entry-type">lo que sí pasó${pillarName ? ` · ${esc(pillarName)}` : ''}</span>
-   <span>${new Date(g.ts).toLocaleDateString('es-ES',{day:'2-digit',month:'short'})}</span>
- </div>
- <h3>${esc(g.text)}</h3>
- ${g.meaning?`<p>${esc(g.meaning)}</p>`:''}`;
+ let photoHtml=g.photoPath?`<div class="good-photo-thumb-wrap" data-photo-path="${esc(g.photoPath)}" onclick="event.stopPropagation(); previewGoodPhoto('${esc(g.photoPath)}')"><div class="good-photo-loading"></div><img class="good-photo-thumb" style="display:none;" alt="Foto del recuerdo"></div>`:'';
+ let contentHtml=`<div class="good-card-row">
+   <div class="good-card-text">
+     <div class="entry-meta">
+       <span class="entry-type">lo que sí pasó${pillarName ? ` · ${esc(pillarName)}` : ''}</span>
+       <span>${new Date(g.ts).toLocaleDateString('es-ES',{day:'2-digit',month:'short'})}</span>
+     </div>
+     <h3>${esc(g.text)}</h3>
+     ${g.meaning?`<p>${esc(g.meaning)}</p>`:''}
+   </div>
+   ${photoHtml}
+ </div>`;
 
  return wrapSwipe(contentHtml, `deleteGood('${g.id}')`, 'entry-card');
 }
@@ -183,7 +190,8 @@ function renderGoodArchive(){
  let arr=d.goodThings.filter(g=>inTime(g.ts,timeFilters.good)&&(!q||(g.text+' '+(g.meaning||'')).toLowerCase().includes(q)));
  arr.sort((a,b)=>sortModes.good==='desc'?b.ts-a.ts:a.ts-b.ts);
  goodResultsCount.textContent=arr.length+' resultado'+(arr.length===1?'':'s');
- goodArchiveList.innerHTML=arr.length?arr.map(g=>goodHTML(g, d)).join(''):'<div class="empty">Todavía no hay nada aquí.</div>'
+ goodArchiveList.innerHTML=arr.length?arr.map(g=>goodHTML(g, d)).join(''):'<div class="empty">Todavía no hay nada aquí.</div>';
+ if(typeof loadPhotoThumbnails==='function')loadPhotoThumbnails();
 }
 
 function renderUrgeArchive(){

@@ -21,6 +21,42 @@ function getSupabase() {
   return supabaseClient;
 }
 
+// Caché en memoria durante la sesión activa para URLs firmadas (no persistido)
+const signedUrlCache = new Map();
+
+async function getPhotoSignedUrl(photoPath) {
+  if (!photoPath) return null;
+  const now = Date.now();
+  if (signedUrlCache.has(photoPath)) {
+    const item = signedUrlCache.get(photoPath);
+    if (item && item.expiresAt > now + 60000) {
+      return item.url;
+    }
+  }
+
+  const sb = typeof getSupabase === 'function' ? getSupabase() : null;
+  if (!sb) return null;
+
+  try {
+    const { data, error } = await sb.storage
+      .from('orbit-media')
+      .createSignedUrl(photoPath, 7200);
+
+    if (error || !data?.signedUrl) {
+      return null;
+    }
+
+    signedUrlCache.set(photoPath, {
+      url: data.signedUrl,
+      expiresAt: now + (7100 * 1000)
+    });
+    return data.signedUrl;
+  } catch (err) {
+    console.warn('Excepción obteniendo signedUrl:', err);
+    return null;
+  }
+}
+
 function updateSyncStatus(status) {
   if (typeof document === 'undefined') return;
   const statusText = document.getElementById('cloudStatusText');

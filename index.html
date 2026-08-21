@@ -138,7 +138,21 @@
         <option value="">Sin asociar</option>
       </select>
     </div>
-    <button class="btn btn-main btn-wide" onclick="addGoodThing()">Guardar en mi órbita de hoy</button>
+    <div class="field" style="margin-bottom:12px;">
+      <input type="file" id="goodPhotoInput" accept="image/*" style="display:none" onchange="handleGoodPhotoSelect(event)">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <button type="button" class="btn btn-line btn-sm" id="goodPhotoBtn" onclick="triggerGoodPhotoSelect()" style="display:inline-flex; align-items:center; gap:5px; font-size:11px;">
+          <svg class="icon" viewBox="0 0 24 24" style="width:14px; height:14px; stroke:currentColor;"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          <span>Añadir foto</span>
+        </button>
+      </div>
+      <div id="goodPhotoPreviewWrap" style="display:none; align-items:center; gap:10px; margin-top:8px; padding:6px 10px; background:var(--soft); border-radius:12px; border:1px solid var(--line);">
+        <img id="goodPhotoPreviewImg" style="width:44px; height:44px; object-fit:cover; border-radius:8px; border:1px solid var(--line);">
+        <div style="flex:1; font-size:11px; color:var(--ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" id="goodPhotoFileName">Foto seleccionada</div>
+        <button type="button" class="btn btn-line btn-sm" onclick="clearGoodPhotoSelect()" style="padding:4px 8px; font-size:11px; color:var(--wine);" title="Quitar foto">✕</button>
+      </div>
+    </div>
+    <button class="btn btn-main btn-wide" id="addGoodSubmitBtn" onclick="addGoodThing()">Guardar en mi órbita de hoy</button>
   </div>
   <div id="todayGoodThings"></div>
   <button class="btn btn-line btn-wide" onclick="showPage('archive');setArchiveView('good')">Ver todas las cosas que sí pasaron</button>
@@ -452,6 +466,9 @@
   </div>
   <button class="btn btn-main btn-wide" onclick="applyDateRange()">Aplicar</button>
   <button class="btn btn-line btn-wide" style="margin-top:7px" onclick="closeModal('dateRangeModal')">Cancelar</button>
+<div class="modal" id="photoModal" onclick="closeModal('photoModal')"><div class="sheet" style="padding:14px; max-width:440px; text-align:center;" onclick="event.stopPropagation()">
+  <img id="photoModalImg" src="" style="width:100%; max-height:72vh; object-fit:contain; border-radius:12px; margin-bottom:12px; background:var(--soft);">
+  <button class="btn btn-line btn-wide" onclick="closeModal('photoModal')">Cerrar</button>
 </div></div>
 
 <!-- Modal de Tienda -->

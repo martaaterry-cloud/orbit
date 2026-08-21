@@ -157,6 +157,43 @@ function showPillarMemory(goodId){
   toast(`“${m.text}” · ${pName}`);
 }
 
+async function previewGoodPhoto(photoPath){
+  if(!photoPath)return;
+  toast('Cargando foto…');
+  let signedUrl = typeof getPhotoSignedUrl === 'function' ? await getPhotoSignedUrl(photoPath) : null;
+  if(!signedUrl){
+    return toast('No se pudo cargar la foto.');
+  }
+  let modalImg = document.getElementById('photoModalImg');
+  if(modalImg) modalImg.src = signedUrl;
+  let modal = document.getElementById('photoModal');
+  if(modal) modal.classList.add('show');
+}
+
+function loadPhotoThumbnails(){
+  let wraps = document.querySelectorAll('.good-photo-thumb-wrap[data-photo-path]');
+  wraps.forEach(wrap => {
+    let path = wrap.getAttribute('data-photo-path');
+    if(!path) return;
+    let img = wrap.querySelector('.good-photo-thumb');
+    let spinner = wrap.querySelector('.good-photo-loading');
+    if(img && img.getAttribute('data-loaded-path') === path) return;
+
+    if(typeof getPhotoSignedUrl === 'function'){
+      getPhotoSignedUrl(path).then(signedUrl => {
+        if(signedUrl && img){
+          img.src = signedUrl;
+          img.style.display = 'block';
+          img.setAttribute('data-loaded-path', path);
+          if(spinner) spinner.style.display = 'none';
+        } else if(spinner) {
+          spinner.style.display = 'none';
+        }
+      });
+    }
+  });
+}
+
 function drawOrbit(d){
   let el=bigOrbit;
   if(!el)return;
@@ -581,12 +618,14 @@ function render(){let d=accrue(),now=Date.now(),p=prompts[new Date().getDate()%p
    return wrapSwipe(contentHtml, `removeOrbit('${o.id}')`, 'good-card', `openEditOrbitItem('${o.id}')`);
  }).join(''):'<div class="empty" style="padding:14px; text-align:center; font-size:12px; color:var(--muted);">No tienes pilares guardados todavía.</div>';
  
- let todays=d.goodThings.filter(g=>dayKey(g.ts)===dayKey()).slice().reverse();
- todayGoodThings.innerHTML=todays.length?'<div class="section-head"><h2>Hoy también pasó esto</h2></div>'+todays.map(g=>{
-   let p=g.pillarId?(d.orbit||[]).find(o=>o&&o.id===g.pillarId):null;
-   let contentHtml=`<div style="flex:1;"><strong>${esc(g.text)}</strong>${p?`<small style="color:var(--wine); font-weight:600; margin-bottom:2px;">✦ ${esc(p.name)}</small>`:''}<small>${esc(g.meaning||'')}</small></div>`;
-   return wrapSwipe(contentHtml, `deleteGood('${g.id}')`, 'good-card');
- }).join(''):'';
+  let todays=d.goodThings.filter(g=>dayKey(g.ts)===dayKey()).slice().reverse();
+  todayGoodThings.innerHTML=todays.length?'<div class="section-head"><h2>Hoy también pasó esto</h2></div>'+todays.map(g=>{
+    let p=g.pillarId?(d.orbit||[]).find(o=>o&&o.id===g.pillarId):null;
+    let photoHtml=g.photoPath?`<div class="good-photo-thumb-wrap" data-photo-path="${esc(g.photoPath)}" onclick="event.stopPropagation(); previewGoodPhoto('${esc(g.photoPath)}')"><div class="good-photo-loading"></div><img class="good-photo-thumb" style="display:none;" alt="Foto del recuerdo"></div>`:'';
+    let contentHtml=`<div class="good-card-row"><div class="good-card-text"><strong>${esc(g.text)}</strong>${p?`<small style="color:var(--wine); font-weight:600; margin-bottom:2px;">✦ ${esc(p.name)}</small>`:''}<small>${esc(g.meaning||'')}</small></div>${photoHtml}</div>`;
+    return wrapSwipe(contentHtml, `deleteGood('${g.id}')`, 'good-card');
+  }).join(''):'';
+  loadPhotoThumbnails();
  bank.textContent=Number(d.wallet||0).toFixed(1).replace('.',',');shopWallet.textContent=Number(d.wallet||0).toFixed(1).replace('.',',');shopLifetime.textContent=Number(d.lifetimeStars||0).toFixed(1).replace('.',',');todayPoints.textContent=todayPointsTotal(d).toFixed(1).replace('.',',');bestStreak.textContent=fmt(d.returnToMe?.best||d.best||0);
  goals.innerHTML=d.goals.map(g=>`<div class="card goal">
    <div class="goal-top">
