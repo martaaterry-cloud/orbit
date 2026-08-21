@@ -11,7 +11,7 @@ function dayKey(ts=Date.now()){let d=new Date(ts);return d.getFullYear()+'-'+Str
 
 function defaults(){
  const n=Date.now();
- return {v:9,wallet:0,lifetimeStars:0,bank:0,claimed:{},best:0,pointAwards:{},returnToMe:{since:n,awardedMilestones:[],best:0},
+ return {v:9,templateId:'ruptura',wallet:0,lifetimeStars:0,bank:0,claimed:{},best:0,pointAwards:{},returnToMe:{since:n,awardedMilestones:[],best:0},
  goals:[
  {id:'msg',icon:'chat',name:'No comprobar si me ha escrito',sub:'No abrir el chat solo para buscar una señal',since:n},
  {id:'insta',icon:'insta',name:'No comprobar cambios en Instagram',sub:'No mirar seguidores, seguidos o cambios para calmar la ansiedad',since:n},
@@ -40,7 +40,7 @@ function load(){
   let old;try{old=JSON.parse(localStorage.getItem('orbitV8'))}catch{}
   d=defaults();
   if(old){
-   ['bank','claimed','best','pointAwards','goals','rewards','urges','slips','journal','checkins','orbit','boosters'].forEach(k=>{if(old[k]!==undefined)d[k]=old[k]});
+   ['bank','claimed','best','pointAwards','goals','rewards','urges','slips','journal','checkins','orbit','boosters','templateId'].forEach(k=>{if(old[k]!==undefined)d[k]=old[k]});
    if(old.goodThings)d.goodThings=old.goodThings
   }else{
    try{old=JSON.parse(localStorage.getItem('orbitV3'))}catch{}
@@ -56,6 +56,7 @@ function load(){
  if(d.wallet===undefined||d.wallet===null)d.wallet=Number(d.bank||0);
  if(d.lifetimeStars===undefined||d.lifetimeStars===null)d.lifetimeStars=Number(d.wallet||0);
  d.bank=d.wallet;
+ if(!d.templateId)d.templateId='ruptura';
  if(!d.returnToMe){
    let starts=(d.goals||[]).map(g=>Number(g.since||Date.now()));
    let sharedSince=starts.length?Math.max(...starts):Date.now();
