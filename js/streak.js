@@ -26,7 +26,7 @@ function accrue(){
  });
  r.best=Math.max(Number(r.best||0),elapsed);
  d.best=Math.max(Number(d.best||0),r.best);
- save(d);
+ save(d, added > 0);
  if(added)toast('+'+String(added).replace('.',',')+' estrellas por tu racha');
  return d
 }
