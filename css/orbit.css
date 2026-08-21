@@ -87,8 +87,8 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
 .bottom button{border:0;background:transparent;border-radius:14px;color:var(--muted);padding:8px 2px;font-size:9px}
 .bottom button .icon{width:19px;height:19px;margin:auto auto 3px}
 .bottom button.active{background:var(--soft);color:var(--wine);font-weight:700}
-.modal{position:fixed;inset:0;background:rgba(46,35,37,.34);display:none;align-items:flex-end;z-index:30}.modal.show{display:flex}
-.sheet{width:min(640px,100%);max-height:88vh;overflow:auto;margin:auto;background:var(--paper);border-radius:25px 25px 0 0;padding:20px 16px calc(24px + env(safe-area-inset-bottom))}
+.modal{position:fixed;inset:0;background:rgba(20,16,28,.5);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);display:none;align-items:center;justify-content:center;z-index:30;padding:16px;box-sizing:border-box}.modal.show{display:flex}
+.sheet{width:min(520px,92vw);height:auto;max-height:min(82vh,640px);overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;margin:auto;box-sizing:border-box;background:var(--paper);border-radius:24px;box-shadow:0 16px 40px rgba(0,0,0,.25);padding:22px 18px}
 .sheet h3{font-family:Georgia,serif;font-weight:500;font-size:21px;margin:0 0 5px}.sheet>p{font-size:11px;color:var(--muted);line-height:1.45;margin-top:0}
 .pause{text-align:center;background:linear-gradient(145deg,#fffafa,#f5e2e5);padding:17px;border-radius:18px;margin-top:15px}.timer{font-family:Georgia,serif;font-size:39px;margin:6px 0 10px}
 .toast{position:fixed;left:50%;bottom:94px;transform:translateX(-50%) translateY(18px);background:#3e3133;color:white;padding:10px 14px;border-radius:999px;font-size:11px;opacity:0;transition:.25s;z-index:60}.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
@@ -248,30 +248,7 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
 }
 
 .cosmic-grid {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  opacity: 0.018;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.cosmic-grid svg {
-  width: 85%;
-  height: 85%;
-  max-width: 620px;
-  max-height: 620px;
-}
-
-.cosmic-grid .grid-line {
-  stroke: rgba(255, 255, 255, 0.25);
-  stroke-width: 0.3;
-  fill: none;
-}
-
-.cosmic-grid .grid-line.dashed {
-  stroke-dasharray: 2 2;
+  display: none;
 }
 
 .ambient-constellation {
@@ -309,17 +286,16 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
 }
 
 .universe-immersive-page .constellation-stage {
+  position: absolute;
   margin-top: 0;
   background: transparent;
   border: none;
   min-height: unset;
-  width: 100%;
-  max-width: 500px;
-  height: 85vh;
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 2;
+  pointer-events: none;
 }
 
 .universe-immersive-page .constellation-stage svg {
@@ -474,12 +450,12 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
 #universeDetailsModal .sheet,
 #constellationDetailModal .sheet,
 #shopModal .sheet {
-  background: rgba(15, 11, 28, 0.8) !important;
+  background: rgba(15, 11, 28, 0.85) !important;
   backdrop-filter: blur(28px) !important;
   -webkit-backdrop-filter: blur(28px) !important;
-  border: 1.5px solid rgba(255, 255, 255, 0.06) !important;
-  border-radius: 24px 24px 0 0 !important;
-  box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.5) !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 24px !important;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6) !important;
   color: #f7f4eb !important;
 }
 
