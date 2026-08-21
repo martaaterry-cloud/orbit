@@ -87,8 +87,8 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
 .bottom button{border:0;background:transparent;border-radius:14px;color:var(--muted);padding:8px 2px;font-size:9px}
 .bottom button .icon{width:19px;height:19px;margin:auto auto 3px}
 .bottom button.active{background:var(--soft);color:var(--wine);font-weight:700}
-.modal{position:fixed;inset:0;background:rgba(20,16,25,.55);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);display:none;align-items:flex-end;justify-content:center;z-index:50;padding:0;box-sizing:border-box}.modal.show{display:flex}
-.sheet{width:100%;max-width:600px;max-height:calc(100dvh - 24px);max-height:calc(100vh - 24px);overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;margin:0 auto;box-sizing:border-box;background:var(--paper);border-radius:24px 24px 0 0;padding:20px 16px calc(28px + env(safe-area-inset-bottom,16px))}
+.modal{position:fixed;inset:0;background:rgba(46,35,37,.34);display:none;align-items:flex-end;z-index:30}.modal.show{display:flex}
+.sheet{width:min(640px,100%);max-height:88vh;overflow:auto;margin:auto;background:var(--paper);border-radius:25px 25px 0 0;padding:20px 16px calc(24px + env(safe-area-inset-bottom))}
 .sheet h3{font-family:Georgia,serif;font-weight:500;font-size:21px;margin:0 0 5px}.sheet>p{font-size:11px;color:var(--muted);line-height:1.45;margin-top:0}
 .pause{text-align:center;background:linear-gradient(145deg,#fffafa,#f5e2e5);padding:17px;border-radius:18px;margin-top:15px}.timer{font-family:Georgia,serif;font-size:39px;margin:6px 0 10px}
 .toast{position:fixed;left:50%;bottom:94px;transform:translateX(-50%) translateY(18px);background:#3e3133;color:white;padding:10px 14px;border-radius:999px;font-size:11px;opacity:0;transition:.25s;z-index:60}.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
@@ -251,7 +251,7 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
   position: absolute;
   inset: 0;
   pointer-events: none;
-  opacity: 0.05;
+  opacity: 0.018;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -265,8 +265,8 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
 }
 
 .cosmic-grid .grid-line {
-  stroke: rgba(255, 255, 255, 0.5);
-  stroke-width: 0.5;
+  stroke: rgba(255, 255, 255, 0.25);
+  stroke-width: 0.3;
   fill: none;
 }
 
@@ -313,8 +313,9 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
   background: transparent;
   border: none;
   min-height: unset;
-  position: absolute;
-  pointer-events: none;
+  width: 100%;
+  max-width: 500px;
+  height: 85vh;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -328,13 +329,12 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
 
 .sky-toolbar {
   position: absolute;
-  bottom: calc(16px + env(safe-area-inset-bottom, 16px));
+  bottom: calc(16px + env(safe-area-inset-bottom));
   left: 50%;
   transform: translateX(-50%);
   display: flex;
-  gap: 10px;
-  max-width: calc(100% - 24px);
-  padding: 4px 8px;
+  gap: 16px;
+  padding: 4px 10px;
   background: rgba(16, 13, 35, 0.45);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
@@ -342,16 +342,14 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
   border-radius: 99px;
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
   z-index: 20;
-  box-sizing: border-box;
 }
 
 .tool-btn {
   background: transparent;
   border: none;
   border-radius: 50%;
-  width: 38px;
-  height: 38px;
-  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
   display: grid;
   place-items: center;
   color: rgba(255, 255, 255, 0.55);
@@ -368,26 +366,6 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
   width: 18px;
   height: 18px;
   stroke-width: 1.2;
-}
-
-.book-tabs {
-  display: flex;
-  gap: 6px;
-  overflow-x: auto;
-  padding-bottom: 6px;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-  width: 100%;
-}
-
-.book-tabs::-webkit-scrollbar {
-  display: none;
-}
-
-.book-tabs .chip,
-.book-tabs button {
-  white-space: nowrap;
-  flex-shrink: 0;
 }
 
 .shop-balance-bar {
