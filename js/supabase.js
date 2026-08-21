@@ -1,8 +1,17 @@
-// Integración con Supabase - Autenticación en Entrada y Respaldo Manual
+// Integración con Supabase - Autenticación y Sincronización Automática Segura
 const SUPABASE_URL = 'https://wquknalzykitgdkxoysu.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_ctuEoowcWJs2yaGDOyoK1g_BsQKIVFh';
 
 let supabaseClient = null;
+let currentCloudUser = null;
+let syncDebounceTimer = null;
+let isSyncing = false;
+let pendingSync = false;
+let hasConflict = false;
+
+if (typeof window !== 'undefined') {
+  window.isApplyingCloudState = false;
+}
 
 function getSupabase() {
   if (!supabaseClient && typeof window !== 'undefined' && window.supabase && typeof window.supabase.createClient === 'function') {
@@ -11,16 +20,77 @@ function getSupabase() {
   return supabaseClient;
 }
 
+function updateSyncStatus(status) {
+  if (typeof document === 'undefined') return;
+  const statusText = document.getElementById('cloudStatusText');
+  const statusDot = document.getElementById('cloudStatusDot');
+  const statusBadge = document.getElementById('cloudStatusBadge');
+  if (!statusText) return;
+
+  const offline = typeof navigator !== 'undefined' && !navigator.onLine;
+
+  if (offline) {
+    statusText.textContent = 'Sin conexión';
+    if (statusDot) statusDot.style.background = '#c27d38';
+    if (statusBadge) {
+      statusBadge.style.color = '#c27d38';
+      statusBadge.style.borderColor = 'rgba(194,125,56,0.25)';
+      statusBadge.style.background = 'rgba(194,125,56,0.08)';
+    }
+    return;
+  }
+
+  if (status === 'conflict') {
+    statusText.textContent = 'Cambios pendientes de revisar';
+    if (statusDot) statusDot.style.background = '#c27d38';
+    if (statusBadge) {
+      statusBadge.style.color = '#c27d38';
+      statusBadge.style.borderColor = 'rgba(194,125,56,0.25)';
+      statusBadge.style.background = 'rgba(194,125,56,0.08)';
+    }
+  } else if (status === 'saving') {
+    statusText.textContent = 'Nube · Guardando…';
+    if (statusDot) statusDot.style.background = '#2e7d32';
+    if (statusBadge) {
+      statusBadge.style.color = '#2e7d32';
+      statusBadge.style.borderColor = 'rgba(46,125,50,0.2)';
+      statusBadge.style.background = 'rgba(46,125,50,0.08)';
+    }
+  } else if (status === 'error') {
+    statusText.textContent = 'Error de sincronización';
+    if (statusDot) statusDot.style.background = '#c27d38';
+    if (statusBadge) {
+      statusBadge.style.color = '#c27d38';
+      statusBadge.style.borderColor = 'rgba(194,125,56,0.25)';
+      statusBadge.style.background = 'rgba(194,125,56,0.08)';
+    }
+  } else if (status === 'synced') {
+    statusText.textContent = 'Nube conectada · Sincronizado';
+    if (statusDot) statusDot.style.background = '#2e7d32';
+    if (statusBadge) {
+      statusBadge.style.color = '#2e7d32';
+      statusBadge.style.borderColor = 'rgba(46,125,50,0.2)';
+      statusBadge.style.background = 'rgba(46,125,50,0.08)';
+    }
+  } else {
+    statusText.textContent = 'Nube conectada';
+    if (statusDot) statusDot.style.background = '#2e7d32';
+    if (statusBadge) {
+      statusBadge.style.color = '#2e7d32';
+      statusBadge.style.borderColor = 'rgba(46,125,50,0.2)';
+      statusBadge.style.background = 'rgba(46,125,50,0.08)';
+    }
+  }
+}
+
 function updateAppAuthState(user, isOffline = false) {
   if (typeof document === 'undefined') return;
   const authScreen = document.getElementById('authScreen');
   const mainApp = document.getElementById('mainApp');
   const userEmailEl = document.getElementById('cloudUserEmail');
-  const statusText = document.getElementById('cloudStatusText');
-  const statusDot = document.getElementById('cloudStatusDot');
-  const statusBadge = document.getElementById('cloudStatusBadge');
   const offlineNotice = document.getElementById('authOfflineNotice');
 
+  currentCloudUser = user || null;
   const knownUser = localStorage.getItem('orbitKnownUser');
   const offline = isOffline || (typeof navigator !== 'undefined' && !navigator.onLine);
 
@@ -29,27 +99,13 @@ function updateAppAuthState(user, isOffline = false) {
     if (authScreen) authScreen.style.display = 'none';
     if (mainApp) mainApp.style.display = 'block';
     if (userEmailEl) userEmailEl.textContent = user.email || '';
-    if (statusText) statusText.textContent = offline ? 'Sin conexión' : 'Nube conectada';
-    if (statusDot) statusDot.style.background = offline ? '#c27d38' : '#2e7d32';
-    if (statusBadge) {
-      statusBadge.style.color = offline ? '#c27d38' : '#2e7d32';
-      statusBadge.style.borderColor = offline ? 'rgba(194,125,56,0.25)' : 'rgba(46,125,50,0.2)';
-      statusBadge.style.background = offline ? 'rgba(194,125,56,0.08)' : 'rgba(46,125,50,0.08)';
-    }
+    updateSyncStatus(offline ? 'offline' : (hasConflict ? 'conflict' : 'synced'));
   } else if (knownUser && offline) {
-    // Sesión conocida previamente pero sin conexión a Internet: permitir seguir usando Orbit localmente
     if (authScreen) authScreen.style.display = 'none';
     if (mainApp) mainApp.style.display = 'block';
     if (userEmailEl) userEmailEl.textContent = knownUser !== 'true' ? knownUser : '';
-    if (statusText) statusText.textContent = 'Sin conexión';
-    if (statusDot) statusDot.style.background = '#c27d38';
-    if (statusBadge) {
-      statusBadge.style.color = '#c27d38';
-      statusBadge.style.borderColor = 'rgba(194,125,56,0.25)';
-      statusBadge.style.background = 'rgba(194,125,56,0.08)';
-    }
+    updateSyncStatus('offline');
   } else {
-    // Sin sesión activa ni conocida: mostrar pantalla de acceso
     if (authScreen) authScreen.style.display = 'flex';
     if (mainApp) mainApp.style.display = 'none';
     if (userEmailEl) userEmailEl.textContent = '';
@@ -76,12 +132,17 @@ async function supabaseLogin(email, password) {
   if (typeof toast === 'function') toast('Bienvenida a Orbit');
   localStorage.setItem('orbitKnownUser', email);
   updateAppAuthState(data.session?.user || null);
+  if (data.session) {
+    autoSyncOnInit(data.session);
+  }
   return true;
 }
 
 async function supabaseLogout() {
   const sb = getSupabase();
   localStorage.removeItem('orbitKnownUser');
+  clearTimeout(syncDebounceTimer);
+  hasConflict = false;
   if (sb) {
     await sb.auth.signOut().catch(() => {});
   }
@@ -89,62 +150,204 @@ async function supabaseLogout() {
   updateAppAuthState(null);
 }
 
-async function initSupabaseAuth() {
+// Aplicar estado de la nube evitando bucles
+function safeApplyCloudState(cloudData, cloudTimer, cloudUpdatedAt) {
+  if (typeof window !== 'undefined') window.isApplyingCloudState = true;
+  try {
+    localStorage.setItem('orbitV9', JSON.stringify(cloudData));
+    if (cloudTimer) {
+      localStorage.setItem('orbitTimer', JSON.stringify(cloudTimer));
+    } else {
+      localStorage.removeItem('orbitTimer');
+    }
+    if (cloudUpdatedAt) {
+      localStorage.setItem('orbitLocalUpdatedAt', cloudUpdatedAt);
+      localStorage.setItem('orbitLastCloudUpdatedAt', cloudUpdatedAt);
+    }
+    hasConflict = false;
+
+    if (typeof load === 'function') load();
+    if (typeof render === 'function') render();
+    if (typeof syncUrgeTimer === 'function') syncUrgeTimer();
+    if (typeof renderArchive === 'function') renderArchive();
+  } finally {
+    if (typeof window !== 'undefined') window.isApplyingCloudState = false;
+  }
+}
+
+// Sincronización automática al iniciar, recuperar foco o conexión
+async function autoSyncOnInit(session) {
+  if (!session || !session.user) return;
   const sb = getSupabase();
-  if (!sb) {
-    // Si no carga Supabase JS pero hay usuario conocido, no bloquear el acceso local
+  if (!sb || (typeof navigator !== 'undefined' && !navigator.onLine)) return;
+
+  try {
+    const { data, error } = await sb
+      .from('orbit_state')
+      .select('orbit_data, orbit_timer, updated_at')
+      .eq('user_id', session.user.id)
+      .maybeSingle();
+
+    if (error) {
+      console.warn('Error al verificar estado en Supabase:', error);
+      updateSyncStatus('error');
+      return;
+    }
+
+    let localUpdatedAt = localStorage.getItem('orbitLocalUpdatedAt');
+    if (!localUpdatedAt) {
+      localUpdatedAt = new Date().toISOString();
+      localStorage.setItem('orbitLocalUpdatedAt', localUpdatedAt);
+    }
+    const localTime = new Date(localUpdatedAt).getTime();
+
+    // Caso D: No existe fila en la nube -> crearla con el estado local actual
+    if (!data || !data.orbit_data || !data.updated_at) {
+      performAutoUpload();
+      return;
+    }
+
+    const cloudUpdatedAt = data.updated_at;
+    const cloudTime = new Date(cloudUpdatedAt).getTime();
+    const lastKnownCloud = localStorage.getItem('orbitLastCloudUpdatedAt');
+    const lastKnownCloudTime = lastKnownCloud ? new Date(lastKnownCloud).getTime() : 0;
+    const timeDiff = cloudTime - localTime;
+
+    // Detección de conflicto: la nube cambió respecto a la última versión conocida Y el local también cambió
+    if (lastKnownCloudTime > 0 && cloudTime > (lastKnownCloudTime + 2000) && localTime > (lastKnownCloudTime + 2000) && Math.abs(timeDiff) > 2000) {
+      hasConflict = true;
+      updateSyncStatus('conflict');
+      return;
+    }
+
+    // Caso A: Nube más nueva (diferencia > 2s)
+    if (timeDiff > 2000) {
+      safeApplyCloudState(data.orbit_data, data.orbit_timer, cloudUpdatedAt);
+      updateSyncStatus('synced');
+      return;
+    }
+
+    // Caso B: Local más nuevo (diferencia > 2s)
+    if (timeDiff < -2000) {
+      performAutoUpload();
+      return;
+    }
+
+    // Caso C: Iguales / Prácticamente al mismo tiempo
+    localStorage.setItem('orbitLastCloudUpdatedAt', cloudUpdatedAt);
+    hasConflict = false;
+    updateSyncStatus('synced');
+  } catch (err) {
+    console.error('Error en sincronización inicial:', err);
+    updateSyncStatus('error');
+  }
+}
+
+// Programar subida automática con debounce (1500 ms)
+function scheduleCloudSync() {
+  if (!currentCloudUser || (typeof navigator !== 'undefined' && !navigator.onLine)) return;
+  if (typeof window !== 'undefined' && window.isApplyingCloudState) return;
+  if (hasConflict) return;
+
+  updateSyncStatus('saving');
+  clearTimeout(syncDebounceTimer);
+  syncDebounceTimer = setTimeout(() => {
+    performAutoUpload();
+  }, 1500);
+}
+
+// Subida automática a Supabase
+async function performAutoUpload() {
+  const sb = getSupabase();
+  if (!sb || (typeof navigator !== 'undefined' && !navigator.onLine)) return;
+  if (typeof window !== 'undefined' && window.isApplyingCloudState) return;
+
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session || !session.user) {
     updateAppAuthState(null);
     return;
   }
+  currentCloudUser = session.user;
 
-  try {
-    const { data: { session } } = await sb.auth.getSession();
-    updateAppAuthState(session?.user || null);
-
-    sb.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_OUT') {
-        localStorage.removeItem('orbitKnownUser');
-        updateAppAuthState(null);
-      } else if (session?.user) {
-        updateAppAuthState(session.user);
-      }
-    });
-  } catch (err) {
-    console.warn('Error verificando sesión de Supabase (posible offline):', err);
-    updateAppAuthState(null, true);
-  }
-
-  window.addEventListener('online', () => {
-    sb.auth.getSession().then(({ data: { session } }) => {
-      updateAppAuthState(session?.user || null, false);
-    }).catch(() => updateAppAuthState(null, true));
-  });
-
-  window.addEventListener('offline', () => {
-    updateAppAuthState(null, true);
-  });
-}
-
-function handleCloudLoginSubmit(e) {
-  if (e && e.preventDefault) e.preventDefault();
-  const emailInput = document.getElementById('cloudEmail');
-  const passInput = document.getElementById('cloudPassword');
-  const email = emailInput ? emailInput.value.trim() : '';
-  const password = passInput ? passInput.value : '';
-
-  if (!email || !password) {
-    if (typeof toast === 'function') toast('Introduce email y contraseña');
+  if (isSyncing) {
+    pendingSync = true;
     return;
   }
+  isSyncing = true;
+  updateSyncStatus('saving');
 
-  supabaseLogin(email, password);
+  try {
+    let orbitData = null;
+    try { orbitData = JSON.parse(localStorage.getItem('orbitV9')); } catch (e) {}
+    if (!orbitData && typeof load === 'function') orbitData = load();
+
+    let orbitTimer = null;
+    try {
+      const raw = localStorage.getItem('orbitTimer');
+      if (raw) orbitTimer = JSON.parse(raw);
+    } catch (e) {}
+
+    let localIso = localStorage.getItem('orbitLocalUpdatedAt');
+    if (!localIso) {
+      localIso = new Date().toISOString();
+      localStorage.setItem('orbitLocalUpdatedAt', localIso);
+    }
+
+    // Verificar si la nube cambió remotamente antes de sobrescribir
+    const { data: cloudCheck } = await sb
+      .from('orbit_state')
+      .select('updated_at')
+      .eq('user_id', session.user.id)
+      .maybeSingle();
+
+    if (cloudCheck && cloudCheck.updated_at) {
+      const cloudTime = new Date(cloudCheck.updated_at).getTime();
+      const lastKnownCloud = localStorage.getItem('orbitLastCloudUpdatedAt');
+      const lastKnownCloudTime = lastKnownCloud ? new Date(lastKnownCloud).getTime() : 0;
+      const localTime = new Date(localIso).getTime();
+
+      if (lastKnownCloudTime > 0 && cloudTime > (lastKnownCloudTime + 2000) && localTime > (lastKnownCloudTime + 2000)) {
+        hasConflict = true;
+        isSyncing = false;
+        updateSyncStatus('conflict');
+        return;
+      }
+    }
+
+    const payload = {
+      user_id: session.user.id,
+      orbit_data: orbitData,
+      orbit_timer: orbitTimer,
+      updated_at: localIso
+    };
+
+    const { error } = await sb
+      .from('orbit_state')
+      .upsert(payload, { onConflict: 'user_id' });
+
+    isSyncing = false;
+
+    if (error) {
+      console.warn('Error en subida automática:', error);
+      updateSyncStatus('error');
+    } else {
+      localStorage.setItem('orbitLastCloudUpdatedAt', localIso);
+      hasConflict = false;
+      updateSyncStatus('synced');
+    }
+  } catch (err) {
+    isSyncing = false;
+    console.warn('Excepción en subida automática:', err);
+    updateSyncStatus('error');
+  }
+
+  if (pendingSync) {
+    pendingSync = false;
+    scheduleCloudSync();
+  }
 }
 
-function handleCloudLogout() {
-  supabaseLogout();
-}
-
-// Subida manual a la nube
+// Subida manual
 async function uploadToCloud() {
   const sb = getSupabase();
   if (!sb) {
@@ -159,7 +362,7 @@ async function uploadToCloud() {
   }
 
   let orbitData = null;
-  try { orbitData = JSON.parse(localStorage.getItem('orbitV9')); } catch (e) {}
+  try { orbitData = JSON.parse(localStorage.getItem('orbitV9')); } catch (e) { if (typeof load === 'function') orbitData = load(); }
   if (!orbitData && typeof load === 'function') orbitData = load();
 
   let orbitTimer = null;
@@ -169,6 +372,8 @@ async function uploadToCloud() {
   } catch (e) {}
 
   const nowIso = new Date().toISOString();
+  localStorage.setItem('orbitLocalUpdatedAt', nowIso);
+
   const payload = {
     user_id: session.user.id,
     orbit_data: orbitData,
@@ -178,6 +383,7 @@ async function uploadToCloud() {
 
   const uploadBtn = document.getElementById('cloudUploadBtn');
   if (uploadBtn) uploadBtn.disabled = true;
+  updateSyncStatus('saving');
 
   const { error } = await sb
     .from('orbit_state')
@@ -187,14 +393,18 @@ async function uploadToCloud() {
 
   if (error) {
     if (typeof toast === 'function') toast(error.message || 'Error al guardar en la nube');
+    updateSyncStatus('error');
     return false;
   }
 
+  localStorage.setItem('orbitLastCloudUpdatedAt', nowIso);
+  hasConflict = false;
   if (typeof toast === 'function') toast('Datos guardados en la nube');
+  updateSyncStatus('synced');
   return true;
 }
 
-// Recuperación manual desde la nube
+// Recuperación manual
 async function restoreFromCloud() {
   const sb = getSupabase();
   if (!sb) {
@@ -233,22 +443,86 @@ async function restoreFromCloud() {
   const ok = confirm(`¿Restaurar los datos guardados en la nube${dateStr ? ` (${dateStr})` : ''}?\n\nEsta acción reemplazará los datos locales en este dispositivo.`);
   if (!ok) return false;
 
-  localStorage.setItem('orbitV9', JSON.stringify(data.orbit_data));
-
-  if (data.orbit_timer) {
-    localStorage.setItem('orbitTimer', JSON.stringify(data.orbit_timer));
-  } else {
-    localStorage.removeItem('orbitTimer');
-  }
+  safeApplyCloudState(data.orbit_data, data.orbit_timer, data.updated_at);
 
   if (typeof toast === 'function') toast('Datos de la nube restaurados');
-
-  if (typeof load === 'function') load();
-  if (typeof render === 'function') render();
-  if (typeof syncUrgeTimer === 'function') syncUrgeTimer();
-  if (typeof renderArchive === 'function') renderArchive();
-
+  updateSyncStatus('synced');
   return true;
+}
+
+async function initSupabaseAuth() {
+  const sb = getSupabase();
+  if (!sb) {
+    updateAppAuthState(null);
+    return;
+  }
+
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    updateAppAuthState(session?.user || null);
+    if (session) {
+      autoSyncOnInit(session);
+    }
+
+    sb.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT') {
+        localStorage.removeItem('orbitKnownUser');
+        updateAppAuthState(null);
+      } else if (session?.user) {
+        updateAppAuthState(session.user);
+        if (event === 'SIGNED_IN') {
+          autoSyncOnInit(session);
+        }
+      }
+    });
+  } catch (err) {
+    console.warn('Error verificando sesión de Supabase:', err);
+    updateAppAuthState(null, true);
+  }
+
+  window.addEventListener('online', () => {
+    sb.auth.getSession().then(({ data: { session } }) => {
+      updateAppAuthState(session?.user || null, false);
+      if (session) autoSyncOnInit(session);
+    }).catch(() => updateAppAuthState(null, true));
+  });
+
+  window.addEventListener('offline', () => {
+    updateAppAuthState(null, true);
+  });
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      sb.auth.getSession().then(({ data: { session } }) => {
+        if (session) autoSyncOnInit(session);
+      }).catch(() => {});
+    }
+  });
+
+  window.addEventListener('pageshow', () => {
+    sb.auth.getSession().then(({ data: { session } }) => {
+      if (session) autoSyncOnInit(session);
+    }).catch(() => {});
+  });
+}
+
+function handleCloudLoginSubmit(e) {
+  if (e && e.preventDefault) e.preventDefault();
+  const emailInput = document.getElementById('cloudEmail');
+  const passInput = document.getElementById('cloudPassword');
+  const email = emailInput ? emailInput.value.trim() : '';
+  const password = passInput ? passInput.value : '';
+
+  if (!email || !password) {
+    if (typeof toast === 'function') toast('Introduce email y contraseña');
+    return;
+  }
+
+  supabaseLogin(email, password);
+}
+
+function handleCloudLogout() {
+  supabaseLogout();
 }
 
 if (typeof document !== 'undefined') {

@@ -64,13 +64,27 @@ function getTimerState(){
  try{return JSON.parse(localStorage.getItem('orbitTimer'))}catch(e){return null}
 }
 
-function saveTimerState(state){
+function saveTimerState(state, markChange = true){
  if(!state){localStorage.removeItem('orbitTimer')}
  else{localStorage.setItem('orbitTimer',JSON.stringify(state))}
+ if(markChange && typeof window !== 'undefined'){
+  if(window.isApplyingCloudState) return;
+  localStorage.setItem('orbitLocalUpdatedAt', new Date().toISOString());
+  if(typeof scheduleCloudSync === 'function'){
+   scheduleCloudSync();
+  }
+ }
 }
 
-function clearTimerState(){
+function clearTimerState(markChange = true){
  localStorage.removeItem('orbitTimer');
+ if(markChange && typeof window !== 'undefined'){
+  if(window.isApplyingCloudState) return;
+  localStorage.setItem('orbitLocalUpdatedAt', new Date().toISOString());
+  if(typeof scheduleCloudSync === 'function'){
+   scheduleCloudSync();
+  }
+ }
 }
 
 function updateTimerDisplay(totalSeconds){

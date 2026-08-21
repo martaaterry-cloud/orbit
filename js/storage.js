@@ -65,11 +65,22 @@ function load(){
  if(Array.isArray(d.journal)){d.journal.forEach(e=>{if(e&&!e.id)e.id=uid()})}
  if(Array.isArray(d.goodThings)){d.goodThings.forEach(g=>{if(g&&!g.id)g.id=uid()})}
  if(Array.isArray(d.urges)){d.urges.forEach(u=>{if(u&&!u.id)u.id=uid()})}
- save(d);return d
+ save(d, false);
+ if(!localStorage.getItem('orbitLocalUpdatedAt')){
+   localStorage.setItem('orbitLocalUpdatedAt', new Date().toISOString());
+ }
+ return d
 }
 
-function save(d){
- localStorage.setItem('orbitV9',JSON.stringify(d));
+function save(d, markChange = true){
+ localStorage.setItem('orbitV9', JSON.stringify(d));
+ if(markChange && typeof window !== 'undefined'){
+  if(window.isApplyingCloudState) return;
+  localStorage.setItem('orbitLocalUpdatedAt', new Date().toISOString());
+  if(typeof scheduleCloudSync === 'function'){
+   scheduleCloudSync();
+  }
+ }
 }
 
 function exportBackup(){
