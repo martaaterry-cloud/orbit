@@ -62,6 +62,9 @@ function load(){
  }
  if(d.shipLevel===undefined)d.shipLevel=0;
  if(!d.unlockedRegions)d.unlockedRegions=['cielo-1'];
+ if(Array.isArray(d.journal)){d.journal.forEach(e=>{if(e&&!e.id)e.id=uid()})}
+ if(Array.isArray(d.goodThings)){d.goodThings.forEach(g=>{if(g&&!g.id)g.id=uid()})}
+ if(Array.isArray(d.urges)){d.urges.forEach(u=>{if(u&&!u.id)u.id=uid()})}
  save(d);return d
 }
 

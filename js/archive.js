@@ -108,7 +108,20 @@ function renderDayDetail(d){
       html+=`<div class="card stat"><div class="label">estrellas ganados este día</div><strong>${pts.toFixed(1).replace('.',',')}</strong></div>`;
     }
     let c=d.checkins?.[selectedDay];
-    if(c)html+=`<div class="card entry-card"><div class="entry-meta"><span class="entry-type">check-in</span></div><p>Estado: ${c.mood}/5${c.need?'<br>Necesitaba: '+esc(c.need):''}${c.forMe?'<br>Por mí: '+esc(c.forMe):''}</p></div>`;
+    if(c){
+      html+=`<div class="swipe-row">
+        <div class="swipe-action-bg">
+          <button class="swipe-delete-btn" onclick="deleteCheckin('${selectedDay}')">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            <span>Eliminar</span>
+          </button>
+        </div>
+        <div class="card entry-card swipe-front" ontouchstart="handleSwipeTouchStart(event,this)" ontouchmove="handleSwipeTouchMove(event,this)" ontouchend="handleSwipeTouchEnd(event,this)">
+          <div class="entry-meta"><span class="entry-type">check-in</span><span>${c.ts?new Date(c.ts).toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'}):''}</span></div>
+          <p>Estado: ${c.mood}/5${c.need?'<br>Necesitaba: '+esc(c.need):''}${c.forMe?'<br>Por mí: '+esc(c.forMe):''}</p>
+        </div>
+      </div>`;
+    }
     if(Array.isArray(d.journal)) d.journal.filter(e=>e && e.ts && dayKey(e.ts)===selectedDay).forEach(e=>html+=entryHTML(e));
     if(Array.isArray(d.goodThings)) d.goodThings.filter(g=>g && g.ts && dayKey(g.ts)===selectedDay).forEach(g=>html+=goodHTML(g));
     if(Array.isArray(d.urges)) d.urges.filter(u=>u && u.ts && dayKey(u.ts)===selectedDay).forEach(u=>html+=urgeHTML(u,d));
@@ -117,19 +130,31 @@ function renderDayDetail(d){
 }
 
 function entryHTML(e){
+ if(!e)return '';
  let future=e.type==='futuro'&&e.futureDate;
+ let isLocked=false;
  if(future){
-   let openTs=new Date(e.futureDate+'T00:00:00').getTime();
-   let locked=Date.now()<openTs;
-   if(locked){
-     return `<div class="card entry-card future-sealed">
-       <div class="entry-meta"><span class="entry-type">carta para mi yo futuro</span><span class="future-badge">guardada</span></div>
-       <h3>${e.title?esc(e.title):'Carta cerrada'}</h3>
-       <p>Podrás volver a abrirla el ${new Date(e.futureDate+'T12:00:00').toLocaleDateString('es-ES',{day:'numeric',month:'long',year:'numeric'})}.</p>
-     </div>`
-   }
+  let openTs=new Date(e.futureDate+'T00:00:00').getTime();
+  isLocked=Date.now()<openTs;
  }
- return `<div class="card entry-card"><div class="entry-meta"><span class="entry-type">${esc(e.type.replaceAll('-',' '))}</span><span>${new Date(e.ts).toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'})}</span></div>${e.title?`<h3>${esc(e.title)}</h3>`:''}<p>${esc(e.text)}</p></div>`
+ let contentHtml='';
+ if(isLocked){
+  contentHtml=`<div class="entry-meta"><span class="entry-type">carta para mi yo futuro</span><span class="future-badge">guardada</span></div><h3>${e.title?esc(e.title):'Carta cerrada'}</h3><p>Podrás volver a abrirla el ${new Date(e.futureDate+'T12:00:00').toLocaleDateString('es-ES',{day:'numeric',month:'long',year:'numeric'})}.</p>`;
+ }else{
+  contentHtml=`<div class="entry-meta"><span class="entry-type">${esc((e.type||'diario').replaceAll('-',' '))}</span><span>${new Date(e.ts).toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'})}</span></div>${e.title?`<h3>${esc(e.title)}</h3>`:''}<p>${esc(e.text)}</p>`;
+ }
+
+ return `<div class="swipe-row">
+  <div class="swipe-action-bg">
+    <button class="swipe-delete-btn" onclick="deleteJournalEntry('${e.id}')">
+      <svg class="icon" viewBox="0 0 24 24"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+      <span>Eliminar</span>
+    </button>
+  </div>
+  <div class="card entry-card swipe-front ${isLocked?'future-sealed':''}" ontouchstart="handleSwipeTouchStart(event,this)" ontouchmove="handleSwipeTouchMove(event,this)" ontouchend="handleSwipeTouchEnd(event,this)">
+    ${contentHtml}
+  </div>
+ </div>`;
 }
 
 let swipeTouchState={startX:0,startY:0,currentEl:null,isHorizontal:null,currentTx:0};
@@ -177,7 +202,21 @@ function handleSwipeTouchEnd(e,el){
  swipeTouchState.currentEl=null;
 }
 
-function goodHTML(g){return `<div class="card entry-card"><div class="entry-meta"><span class="entry-type">lo que sí pasó</span><span>${new Date(g.ts).toLocaleDateString('es-ES',{day:'2-digit',month:'short'})}</span></div><h3>${esc(g.text)}</h3>${g.meaning?`<p>${esc(g.meaning)}</p>`:''}</div>`}
+function goodHTML(g){
+ return `<div class="swipe-row">
+  <div class="swipe-action-bg">
+    <button class="swipe-delete-btn" onclick="deleteGood('${g.id}')">
+      <svg class="icon" viewBox="0 0 24 24"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+      <span>Eliminar</span>
+    </button>
+  </div>
+  <div class="card entry-card swipe-front" ontouchstart="handleSwipeTouchStart(event,this)" ontouchmove="handleSwipeTouchMove(event,this)" ontouchend="handleSwipeTouchEnd(event,this)">
+    <div class="entry-meta"><span class="entry-type">lo que sí pasó</span><span>${new Date(g.ts).toLocaleDateString('es-ES',{day:'2-digit',month:'short'})}</span></div>
+    <h3>${esc(g.text)}</h3>
+    ${g.meaning?`<p>${esc(g.meaning)}</p>`:''}
+  </div>
+ </div>`;
+}
 
 function urgeHTML(u,d){
  let g=d.goals.find(x=>x.id===u.goalId);
