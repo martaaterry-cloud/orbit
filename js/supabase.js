@@ -5,6 +5,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_ctuEoowcWJs2yaGDOyoK1g_BsQKIVFh';
 let supabaseClient = null;
 let currentCloudUser = null;
 let syncDebounceTimer = null;
+let foregroundSyncTimer = null;
 let isSyncing = false;
 let pendingSync = false;
 let hasConflict = false;
@@ -142,6 +143,7 @@ async function supabaseLogout() {
   const sb = getSupabase();
   localStorage.removeItem('orbitKnownUser');
   clearTimeout(syncDebounceTimer);
+  clearTimeout(foregroundSyncTimer);
   hasConflict = false;
   if (sb) {
     await sb.auth.signOut().catch(() => {});
@@ -150,7 +152,7 @@ async function supabaseLogout() {
   updateAppAuthState(null);
 }
 
-// Aplicar estado de la nube evitando bucles
+// Aplicar estado de la nube evitando bucles y marcando cambios pendientes en false
 function safeApplyCloudState(cloudData, cloudTimer, cloudUpdatedAt) {
   if (typeof window !== 'undefined') window.isApplyingCloudState = true;
   try {
@@ -164,6 +166,7 @@ function safeApplyCloudState(cloudData, cloudTimer, cloudUpdatedAt) {
       localStorage.setItem('orbitLocalUpdatedAt', cloudUpdatedAt);
       localStorage.setItem('orbitLastCloudUpdatedAt', cloudUpdatedAt);
     }
+    localStorage.setItem('orbitHasUnsyncedChanges', 'false');
     hasConflict = false;
 
     if (typeof load === 'function') load();
@@ -199,7 +202,7 @@ async function autoSyncOnInit(session) {
       localUpdatedAt = new Date().toISOString();
       localStorage.setItem('orbitLocalUpdatedAt', localUpdatedAt);
     }
-    const localTime = new Date(localUpdatedAt).getTime();
+    const hasUnsynced = localStorage.getItem('orbitHasUnsyncedChanges') === 'true';
 
     // Caso D: No existe fila en la nube -> crearla con el estado local actual
     if (!data || !data.orbit_data || !data.updated_at) {
@@ -211,30 +214,36 @@ async function autoSyncOnInit(session) {
     const cloudTime = new Date(cloudUpdatedAt).getTime();
     const lastKnownCloud = localStorage.getItem('orbitLastCloudUpdatedAt');
     const lastKnownCloudTime = lastKnownCloud ? new Date(lastKnownCloud).getTime() : 0;
-    const timeDiff = cloudTime - localTime;
+    const localTime = new Date(localUpdatedAt).getTime();
 
-    // Detección de conflicto: la nube cambió respecto a la última versión conocida Y el local también cambió
-    if (lastKnownCloudTime > 0 && cloudTime > (lastKnownCloudTime + 2000) && localTime > (lastKnownCloudTime + 2000) && Math.abs(timeDiff) > 2000) {
+    // ¿La nube ha cambiado desde la última versión que este dispositivo conoció?
+    const isCloudNewer = lastKnownCloudTime > 0 
+      ? cloudTime > (lastKnownCloudTime + 1000) 
+      : cloudTime > (localTime + 1000);
+
+    // Conflicto REAL: La nube cambió Y este contexto local tiene cambios no sincronizados
+    if (isCloudNewer && hasUnsynced) {
       hasConflict = true;
       updateSyncStatus('conflict');
       return;
     }
 
-    // Caso A: Nube más nueva (diferencia > 2s)
-    if (timeDiff > 2000) {
+    // Caso A: La nube es más nueva y el contexto local NO tiene cambios pendientes -> Descargar
+    if (isCloudNewer && !hasUnsynced) {
       safeApplyCloudState(data.orbit_data, data.orbit_timer, cloudUpdatedAt);
       updateSyncStatus('synced');
       return;
     }
 
-    // Caso B: Local más nuevo (diferencia > 2s)
-    if (timeDiff < -2000) {
+    // Caso B: El contexto local tiene cambios pendientes y la nube no ha cambiado remotamente -> Subir
+    if (hasUnsynced && !isCloudNewer) {
       performAutoUpload();
       return;
     }
 
-    // Caso C: Iguales / Prácticamente al mismo tiempo
+    // Caso C: Ambos están al día y sin cambios pendientes
     localStorage.setItem('orbitLastCloudUpdatedAt', cloudUpdatedAt);
+    localStorage.setItem('orbitHasUnsyncedChanges', 'false');
     hasConflict = false;
     updateSyncStatus('synced');
   } catch (err) {
@@ -304,9 +313,9 @@ async function performAutoUpload() {
       const cloudTime = new Date(cloudCheck.updated_at).getTime();
       const lastKnownCloud = localStorage.getItem('orbitLastCloudUpdatedAt');
       const lastKnownCloudTime = lastKnownCloud ? new Date(lastKnownCloud).getTime() : 0;
-      const localTime = new Date(localIso).getTime();
+      const hasUnsynced = localStorage.getItem('orbitHasUnsyncedChanges') === 'true';
 
-      if (lastKnownCloudTime > 0 && cloudTime > (lastKnownCloudTime + 2000) && localTime > (lastKnownCloudTime + 2000)) {
+      if (lastKnownCloudTime > 0 && cloudTime > (lastKnownCloudTime + 1000) && hasUnsynced) {
         hasConflict = true;
         isSyncing = false;
         updateSyncStatus('conflict');
@@ -321,9 +330,11 @@ async function performAutoUpload() {
       updated_at: localIso
     };
 
-    const { error } = await sb
+    const { data: upsertData, error } = await sb
       .from('orbit_state')
-      .upsert(payload, { onConflict: 'user_id' });
+      .upsert(payload, { onConflict: 'user_id' })
+      .select('updated_at')
+      .maybeSingle();
 
     isSyncing = false;
 
@@ -331,7 +342,9 @@ async function performAutoUpload() {
       console.warn('Error en subida automática:', error);
       updateSyncStatus('error');
     } else {
-      localStorage.setItem('orbitLastCloudUpdatedAt', localIso);
+      const confirmedTime = upsertData?.updated_at || localIso;
+      localStorage.setItem('orbitLastCloudUpdatedAt', confirmedTime);
+      localStorage.setItem('orbitHasUnsyncedChanges', 'false');
       hasConflict = false;
       updateSyncStatus('synced');
     }
@@ -385,9 +398,11 @@ async function uploadToCloud() {
   if (uploadBtn) uploadBtn.disabled = true;
   updateSyncStatus('saving');
 
-  const { error } = await sb
+  const { data: upsertData, error } = await sb
     .from('orbit_state')
-    .upsert(payload, { onConflict: 'user_id' });
+    .upsert(payload, { onConflict: 'user_id' })
+    .select('updated_at')
+    .maybeSingle();
 
   if (uploadBtn) uploadBtn.disabled = false;
 
@@ -397,7 +412,9 @@ async function uploadToCloud() {
     return false;
   }
 
-  localStorage.setItem('orbitLastCloudUpdatedAt', nowIso);
+  const confirmedTime = upsertData?.updated_at || nowIso;
+  localStorage.setItem('orbitLastCloudUpdatedAt', confirmedTime);
+  localStorage.setItem('orbitHasUnsyncedChanges', 'false');
   hasConflict = false;
   if (typeof toast === 'function') toast('Datos guardados en la nube');
   updateSyncStatus('synced');
@@ -450,6 +467,21 @@ async function restoreFromCloud() {
   return true;
 }
 
+function handleForegroundTrigger() {
+  if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return;
+  clearTimeout(foregroundSyncTimer);
+  foregroundSyncTimer = setTimeout(() => {
+    const sb = getSupabase();
+    if (!sb || (typeof navigator !== 'undefined' && !navigator.onLine)) return;
+    sb.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        updateAppAuthState(session.user);
+        autoSyncOnInit(session);
+      }
+    }).catch(() => {});
+  }, 400);
+}
+
 async function initSupabaseAuth() {
   const sb = getSupabase();
   if (!sb) {
@@ -480,30 +512,17 @@ async function initSupabaseAuth() {
     updateAppAuthState(null, true);
   }
 
-  window.addEventListener('online', () => {
-    sb.auth.getSession().then(({ data: { session } }) => {
-      updateAppAuthState(session?.user || null, false);
-      if (session) autoSyncOnInit(session);
-    }).catch(() => updateAppAuthState(null, true));
-  });
-
+  window.addEventListener('online', handleForegroundTrigger);
   window.addEventListener('offline', () => {
     updateAppAuthState(null, true);
   });
 
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') {
-      sb.auth.getSession().then(({ data: { session } }) => {
-        if (session) autoSyncOnInit(session);
-      }).catch(() => {});
-    }
+    if (document.visibilityState === 'visible') handleForegroundTrigger();
   });
 
-  window.addEventListener('pageshow', () => {
-    sb.auth.getSession().then(({ data: { session } }) => {
-      if (session) autoSyncOnInit(session);
-    }).catch(() => {});
-  });
+  window.addEventListener('pageshow', handleForegroundTrigger);
+  window.addEventListener('focus', handleForegroundTrigger);
 }
 
 function handleCloudLoginSubmit(e) {

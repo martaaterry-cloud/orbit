@@ -141,6 +141,7 @@ function save(d, markChange = true){
  if(markChange && typeof window !== 'undefined'){
   if(window.isApplyingCloudState) return;
   localStorage.setItem('orbitLocalUpdatedAt', new Date().toISOString());
+  localStorage.setItem('orbitHasUnsyncedChanges', 'true');
   if(typeof scheduleCloudSync === 'function'){
    scheduleCloudSync();
   }
