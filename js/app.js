@@ -143,7 +143,7 @@ function renderUniverse(d){
    let active = window.currentBookTab === tab.id;
    let isTabUnlocked = d.unlockedRegions && d.unlockedRegions.includes(tab.region);
    let label = tab.name + (isTabUnlocked ? '' : ' 🔒');
-   return `<button class="chip ${active ? 'active' : ''}" style="padding:6px 12px; font-size:10px; border-radius:99px; background:${active ? 'var(--wine)' : 'rgba(255,255,255,0.04)'}; border:1px solid ${active ? 'var(--rose2)' : 'rgba(255,255,255,0.1)'}; color:${active ? '#fff' : 'rgba(255,255,255,0.6)'}; cursor:pointer;" onclick="window.currentBookTab='${tab.id}'; render()">${label}</button>`;
+   return `<button class="atlas-chip ${active ? 'active' : ''}" onclick="window.currentBookTab='${tab.id}'; render()">${label}</button>`;
  }).join('');
  
  let activeTab = bookTabs.find(t => t.id === window.currentBookTab) || bookTabs[0];
@@ -156,15 +156,7 @@ function renderUniverse(d){
  }
  let ownedCount = isTabUnlocked ? tabConsts.filter(c => d.claimed && d.claimed[c.id]).length : 0;
  
- let headerHtml = `
-   <div class="collection-header" style="grid-column: 1 / -1; margin-bottom: 10px; display:flex; justify-content:space-between; align-items:center;">
-     <h4 style="margin: 0; font-size: 13px; color: var(--rose2); text-transform: uppercase; letter-spacing: 0.05em;">
-       ${activeTab.name} ${isTabUnlocked ? `(${ownedCount}/${tabConsts.length})` : '(Bloqueada)'}
-     </h4>
-   </div>
- `;
- 
- let bodyHtml = '';
+ let pagesHtml = '';
  if (!isTabUnlocked) {
    let regNames = {
      'zodiaco': 'Cinturón Zodiacal',
@@ -172,51 +164,80 @@ function renderUniverse(d){
      'profundo': 'Espacio profundo'
    };
    let regName = regNames[activeTab.region] || activeTab.region;
-   bodyHtml = `
-     <div class="empty" style="grid-column: 1 / -1; padding: 30px; background: rgba(255,255,255,0.02); border-radius: 12px; text-align: center; border: 1px dashed rgba(255,255,255,0.08);">
-       <p style="margin: 0 0 10px 0; font-size: 11px; color: rgba(247,244,235,0.6);">Requiere desbloquear la región <strong>${regName}</strong> en Exploración.</p>
-       <button class="btn btn-soft" style="padding: 6px 12px; font-size: 10px; border-radius: 8px;" onclick="closeModal('constellationBookModal'); openShipModal(); setShipTab('regiones');">Ir a Regiones</button>
+   pagesHtml = `
+     <div class="atlas-page locked-region" style="flex: 0 0 100%;">
+       <div class="atlas-drawing-stage" style="border: 1px dashed rgba(255,255,255,0.15);">
+         <svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" style="width:36px; height:36px;"><circle cx="12" cy="12" r="10"/><path d="m16.24 7.76-2.12 6.36-6.36 2.12 2.12-6.36z"/></svg>
+       </div>
+       <div class="atlas-name">${activeTab.name}</div>
+       <div class="atlas-status locked">Región por explorar</div>
+       <p class="atlas-desc">Desbloquea la región <strong>${regName}</strong> desde la nave para cartografiar este capítulo.</p>
+       <button class="btn btn-soft" style="margin-top:10px; font-size:10px; padding:6px 14px;" onclick="closeModal('constellationBookModal'); openShipModal(); setShipTab('regiones');">Ir a Exploración</button>
      </div>
    `;
  } else {
-   bodyHtml = tabConsts.map(c => {
+   pagesHtml = tabConsts.map((c, idx) => {
      let owned = d.claimed && d.claimed[c.id];
      let discovered = !owned && total >= c.need;
+     let isTarget = !owned && !discovered && next && (next.id === c.id);
+     
+     let svgMarkup = '';
+     let statusMarkup = '';
+     let actionMarkup = '';
+     let pageNum = String(idx + 1).padStart(2, '0') + ' / ' + String(tabConsts.length).padStart(2, '0');
+
      if (owned) {
        let acqDate = new Date(d.claimed[c.id]).toLocaleDateString('es-ES', {day:'numeric', month:'short'});
-       return `<div class="card book-card owned">
-         <div class="mini-const">${constellationSvg(c, true, 1.0)}</div>
-         <span class="unlock text-owned" style="color: var(--rose2); font-weight: bold; font-size: 9px;">En mi universo</span>
-         <h3>${c.name}${c.extra === 'tu signo' ? '<span class="sign-tag">tu signo</span>' : ''}</h3>
-         <p style="font-size: 9px; color: rgba(247,244,235,0.5); margin-bottom: 6px;">Adquirida: ${acqDate}</p>
-         <button class="btn btn-line" style="padding: 4px 8px; font-size: 9px; border-radius: 8px;" onclick="verFichaConstelacion('${c.id}')">Ficha</button>
-       </div>`;
+       svgMarkup = constellationSvg(c, true, 1.0);
+       statusMarkup = `<div class="atlas-status owned">✦ En tu universo</div>`;
+       actionMarkup = `
+         <div class="atlas-meta-row">
+           <span class="atlas-date">Adquirida: ${acqDate}</span>
+           <button class="btn btn-line btn-sm" style="padding:3px 8px; font-size:9px; border-radius:8px;" onclick="verFichaConstelacion('${c.id}')">Ficha</button>
+         </div>`;
      } else if (discovered) {
-       return `<div class="card book-card discovered">
-         <div class="mini-const">${constellationSvg(c, true, 0.5)}</div>
-         <span class="unlock text-discovered" style="color: #fcc2cd; font-size: 9px;">Descubierta</span>
-         <h3>${c.name}${c.extra === 'tu signo' ? '<span class="sign-tag">tu signo</span>' : ''}</h3>
-         <button class="btn btn-main" style="padding: 4px 8px; font-size: 9px; border-radius: 8px; margin-top: 5px;" onclick="guardarConstelacion('${c.id}', ${c.cost})">Guardar · ${c.cost} estrellas</button>
-       </div>`;
+       svgMarkup = constellationSvg(c, true, 0.7);
+       statusMarkup = `<div class="atlas-status discovered">✧ Descubierta</div>`;
+       actionMarkup = `<button class="btn btn-main btn-sm" style="padding:6px 14px; font-size:10px; margin-top:4px;" onclick="guardarConstelacion('${c.id}', ${c.cost})">Guardar en universo · ${c.cost} ★</button>`;
+     } else if (isTarget) {
+       let prevNeed = idx > 0 ? tabConsts[idx - 1].need : 0;
+       let pVal = Math.max(0, Math.min(1, (total - prevNeed) / (c.need - prevNeed)));
+       svgMarkup = constellationSvg(c, false, pVal);
+       statusMarkup = `<div class="atlas-status in-progress">En curso (${total.toFixed(1).replace('.', ',')} / ${c.need} ★)</div>`;
+       actionMarkup = `<div class="atlas-req">Faltan ${(c.need - total).toFixed(1).replace('.', ',')} estrellas</div>`;
      } else {
-       return `<div class="card book-card locked">
-         <div class="mini-const">${constellationSvg(c, false, 0.0)}</div>
-         <span class="unlock" style="color: rgba(247,244,235,0.4); font-size: 9px;">${c.need} hist.</span>
-         <h3>${c.name}</h3>
-         <p style="font-size: 9px; color: rgba(247,244,235,0.4);">Bloqueada. Necesitas ${c.need} estrellas históricas.</p>
-       </div>`;
+       svgMarkup = constellationSvg(c, false, 0.0);
+       statusMarkup = `<div class="atlas-status locked">Por descubrir</div>`;
+       actionMarkup = `<div class="atlas-req">Requiere ${c.need} estrellas históricas</div>`;
      }
+
+     return `
+       <div class="atlas-page ${owned ? 'owned' : (discovered ? 'discovered' : 'locked')}">
+         <div class="atlas-page-num">${pageNum}</div>
+         <div class="atlas-drawing-stage">${svgMarkup}</div>
+         <div class="atlas-name">${esc(c.name)}${c.extra === 'tu signo' ? '<span class="sign-tag" style="margin-left:5px; font-size:8.5px;">tu signo</span>' : ''}</div>
+         ${statusMarkup}
+         <p class="atlas-desc">${esc(c.desc || 'Constelación del firmamento.')}</p>
+         ${actionMarkup}
+       </div>
+     `;
    }).join('');
  }
  
  constellationBook.innerHTML = `
-   <div style="grid-column: 1 / -1; display:flex; flex-direction:column; gap:10px; margin-bottom:10px;">
-     <div class="book-tabs" style="display:flex; gap:6px; overflow-x:auto; padding-bottom:5px; -webkit-overflow-scrolling:touch;">
+   <div class="atlas-container">
+     <div class="atlas-chapters">
        ${tabsHtml}
      </div>
+     <div class="atlas-collection-info">
+       <span>${activeTab.name}</span>
+       <small>${isTabUnlocked ? `${ownedCount} de ${tabConsts.length} descubiertas` : 'Bloqueada'}</small>
+     </div>
+     <div class="atlas-carousel">
+       ${pagesHtml}
+     </div>
+     ${isTabUnlocked && tabConsts.length > 1 ? '<div class="atlas-swipe-hint">← Desliza para explorar →</div>' : ''}
    </div>
-   ${headerHtml}
-   ${bodyHtml}
  `;
  
  // Render Ship Level & Status
