@@ -105,7 +105,7 @@ function renderDayDetail(d){
         if(pa.actions)Object.values(pa.actions).forEach(v=>pts+=Number(v||0));
         if(pa.limits)Object.values(pa.limits).forEach(v=>pts+=Number(v||0))
       }
-      html+=`<div class="card stat"><div class="label">estrellas ganados este día</div><strong>${pts.toFixed(1).replace('.',',')}</strong></div>`;
+      html+=`<div class="card stat" onclick="openTodayPointsModal('${selectedDay}')" style="cursor:pointer;" title="Ver detalle de estrellas de este día"><div class="label" style="display:flex; align-items:center; justify-content:center; gap:3px;"><span>estrellas ganadas este día</span><svg class="icon" viewBox="0 0 24 24" style="width:11px; height:11px; stroke:var(--wine); opacity:0.75;"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg></div><strong>${pts.toFixed(1).replace('.',',')}</strong></div>`;
     }
     let c=d.checkins?.[selectedDay];
     if(c){
