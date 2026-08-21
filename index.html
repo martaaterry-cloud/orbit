@@ -13,7 +13,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <title>Orbit</title>
 
-  <link rel="stylesheet" href="css/orbit.css?v=1.2.10">
+  <link rel="stylesheet" href="css/orbit.css?v=1.2.11">
 </head>
 <body>
 <!-- Pantalla de Acceso Inicial -->
@@ -43,6 +43,7 @@
 <header>
   <button class="icon-button" onclick="showPage('today')"><svg class="icon" viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 16 0A8 8 0 1 0 4 12"/><path d="M12 8v4l2.5 1.5"/></svg></button>
   <div class="brand">ORBIT<span class="brand-mark"></span></div>
+  <div id="activeBoosterBadge" style="display:none; margin-left:auto; margin-right:8px;" onclick="openShopModal()" title="Ver booster activo"></div>
   <button class="icon-button" onclick="toast('Tus textos y registros se guardan solo en este dispositivo')"><svg class="icon" viewBox="0 0 24 24"><path d="M12 3 5 6v5c0 4.5 2.6 7.7 7 10 4.4-2.3 7-5.5 7-10V6z"/><path d="m9.5 12 1.7 1.7L15 10"/></svg></button>
 </header>
 
@@ -316,7 +317,7 @@
           <span style="display:inline-block; width:7px; height:7px; border-radius:50%; background:#2e7d32;" id="cloudStatusDot"></span>
           <span id="cloudStatusText">Nube conectada</span>
         </div>
-        <div style="font-size:11px; color:var(--muted); margin-bottom:12px;"><span id="cloudUserEmail"></span><span style="font-size:10px; color:var(--muted); opacity:0.6; margin-left:6px;">v1.2.10</span></div>
+        <div style="font-size:11px; color:var(--muted); margin-bottom:12px;"><span id="cloudUserEmail"></span><span style="font-size:10px; color:var(--muted); opacity:0.6; margin-left:6px;">v1.2.11</span></div>
         <div style="display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin-bottom:12px;">
           <button class="btn btn-main" style="font-size:11px; padding:8px 12px; display:inline-flex; align-items:center; gap:6px;" id="cloudUploadBtn" onclick="uploadToCloud()">
             <svg class="icon" viewBox="0 0 24 24" style="width:14px; height:14px; stroke:currentColor;"><path d="M12 3v12M17 8l-5-5-5 5M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/></svg>
@@ -495,7 +496,17 @@
       </div>
     </div>
   </div>
-  <div id="rewards" style="margin-top:15px"></div>
+
+  <div class="section-head" style="margin-top:16px; margin-bottom:8px;">
+    <h4 style="margin:0; font-size:11.5px; text-transform:uppercase; letter-spacing:0.05em; color:var(--wine);">Impulsos estelares</h4>
+    <small style="font-size:9.5px; color:var(--muted);">Multiplicadores de esfuerzo</small>
+  </div>
+  <div id="shopBoostersList" style="margin-bottom:14px;"></div>
+
+  <div class="section-head" style="margin-top:14px; margin-bottom:8px;">
+    <h4 style="margin:0; font-size:11.5px; text-transform:uppercase; letter-spacing:0.05em; color:var(--wine);">Recompensas de autocuidado</h4>
+  </div>
+  <div id="rewards" style="margin-top:4px"></div>
   <button class="btn btn-dashed btn-wide" style="margin-top:12px" onclick="closeModal('shopModal'); openReward()">Añadir mi propio premio</button>
   <button class="btn btn-line btn-wide" style="margin-top:9px" onclick="closeModal('shopModal')">Cerrar</button>
 </div></div>
@@ -522,21 +533,30 @@
       <li>4 h: +0,3 estrellas</li>
       <li>8 h: +0,5 estrellas</li>
       <li>12 h: +0,5 estrellas</li>
-      <li>24 h: +1,0 estrellas</li>
-      <li>48 h: +1,5 estrellas</li>
-      <li>3 días: +2,0 estrellas</li>
-      <li>7 días: +3,0 estrellas</li>
+      <li>24 h (1 día): +1,0 estrellas</li>
+      <li>48 h (2 días): +1,5 estrellas</li>
+      <li>72 h (3 días): +2,0 estrellas</li>
+      <li>96 h (4 días): +1,0 estrellas</li>
+      <li>120 h (5 días): +1,2 estrellas</li>
+      <li>144 h (6 días): +1,5 estrellas</li>
+      <li>168 h (7 días): +3,0 estrellas</li>
     </ul>
     <p>Cualquier comprobación (deslizar) reinicia esta única racha.</p>
-    <b>Acciones diarias:</b>
+    <b>Acciones y esfuerzo:</b>
     <ul>
       <li><b>Check-in:</b> +0,2 estrellas (una vez al día).</li>
       <li><b>Escribir diario:</b> +0,1 por entrada (máx +0,5 al día).</li>
       <li><b>Algo bueno:</b> +0,1 por registro (máx +0,5 al día).</li>
-      <li><b>Detenerse ante impulso:</b> +0,2 estrellas por pausar 10 min.</li>
-      <li><b>Superar impulso sin mirar:</b> +0,3 estrellas adicionales.</li>
+      <li><b>Detenerse ante impulso:</b> +0,4 estrellas por pausar.</li>
+      <li><b>Superar con temporizador:</b> +0,4 estrellas (+0,8 ★ en total).</li>
     </ul>
-    <p>Las <i>estrellas de hoy</i> se reinician cada mañana. Todo lo ganado entra también en tu <i>cesta</i> (estrellas disponibles) para canjear en la tienda.</p>
+    <b>Impulsos estelares (Boosters):</b>
+    <ul>
+      <li><b>Ventana Estelar:</b> x1.5 durante 2 h en acciones de esfuerzo (compra por 2 ★).</li>
+      <li><b>Impulso Valiente:</b> x2 en el próximo timer (se gana cada 3 timers superados).</li>
+      <li><b>Noche de Constancia:</b> x1.5 durante 24 h al alcanzar 7 días de racha.</li>
+    </ul>
+    <p>Las <i>estrellas de hoy</i> se reinician cada mañana. Todo lo ganado entra en tu <i>cesta</i> para canjear en la tienda o desbloquear el universo.</p>
   </div>
   <button class="btn btn-line btn-wide" style="margin-top:15px" onclick="closeModal('infoModal')">Entendido</button>
 </div></div>
@@ -615,13 +635,13 @@
 <div class="toast" id="toast"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="js/storage.js?v=1.2.10"></script>
-  <script src="js/supabase.js?v=1.2.10"></script>
-  <script src="js/stars.js?v=1.2.10"></script>
-  <script src="js/streak.js?v=1.2.10"></script>
-  <script src="js/journal.js?v=1.2.10"></script>
-  <script src="js/archive.js?v=1.2.10"></script>
-  <script src="data/constellations.js?v=1.2.10"></script>
-  <script src="js/app.js?v=1.2.10"></script>
+  <script src="js/storage.js?v=1.2.11"></script>
+  <script src="js/supabase.js?v=1.2.11"></script>
+  <script src="js/stars.js?v=1.2.11"></script>
+  <script src="js/streak.js?v=1.2.11"></script>
+  <script src="js/journal.js?v=1.2.11"></script>
+  <script src="js/archive.js?v=1.2.11"></script>
+  <script src="data/constellations.js?v=1.2.11"></script>
+  <script src="js/app.js?v=1.2.11"></script>
 </body>
 </html>

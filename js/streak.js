@@ -4,14 +4,17 @@
 function accrue(){
  let d=load(),now=Date.now(),added=0;
  const milestones=[
-   {ms:2*HOUR,pts:.2,key:'2h'},
-   {ms:4*HOUR,pts:.3,key:'4h'},
-   {ms:8*HOUR,pts:.5,key:'8h'},
-   {ms:12*HOUR,pts:.5,key:'12h'},
-   {ms:24*HOUR,pts:1,key:'24h'},
-   {ms:48*HOUR,pts:1.5,key:'48h'},
-   {ms:72*HOUR,pts:2,key:'72h'},
-   {ms:168*HOUR,pts:3,key:'168h'}
+   {ms:2*HOUR,pts:.2,key:'2h',label:'2 h'},
+   {ms:4*HOUR,pts:.3,key:'4h',label:'4 h'},
+   {ms:8*HOUR,pts:.5,key:'8h',label:'8 h'},
+   {ms:12*HOUR,pts:.5,key:'12h',label:'12 h'},
+   {ms:24*HOUR,pts:1.0,key:'24h',label:'24 h'},
+   {ms:48*HOUR,pts:1.5,key:'48h',label:'48 h'},
+   {ms:72*HOUR,pts:2.0,key:'72h',label:'3 días'},
+   {ms:96*HOUR,pts:1.0,key:'96h',label:'4 días'},
+   {ms:120*HOUR,pts:1.2,key:'120h',label:'5 días'},
+   {ms:144*HOUR,pts:1.5,key:'144h',label:'6 días'},
+   {ms:168*HOUR,pts:3.0,key:'168h',label:'7 días'}
  ];
  let r=d.returnToMe;
  if(!r.awardedMilestones)r.awardedMilestones=[];
@@ -20,14 +23,37 @@ function accrue(){
    if(elapsed>=x.ms&&!r.awardedMilestones.includes(x.key)){
      r.awardedMilestones.push(x.key);
      let milestoneReachedTs=Number(r.since)+x.ms;
-     addPoints(d,x.pts,'racha','Volver a mí · '+x.key,null,milestoneReachedTs);
-     added+=x.pts
+     let boostResult=applyStarBoost(d,x.pts,'racha');
+     addPoints(d,boostResult.total,'racha','Volver a mí · '+(x.label||x.key),null,milestoneReachedTs,boostResult.boosterId?boostResult:null);
+     added+=boostResult.total;
+
+     // Booster C: Noche de Constancia (al alcanzar 7 días de racha)
+     if(x.key==='168h'){
+       if(!d.boosters)d.boosters={active:[],inventory:[],progress:{}};
+       if(!d.boosters.progress)d.boosters.progress={};
+       if(d.boosters.progress.lastNightOfConstancyStreakTs!==r.since){
+         d.boosters.progress.lastNightOfConstancyStreakTs=r.since;
+         let expiry=now+24*HOUR;
+         if(!Array.isArray(d.boosters.active))d.boosters.active=[];
+         d.boosters.active.push({
+           id:'constancy-night',
+           name:'Noche de Constancia',
+           multiplier:1.5,
+           startedAt:now,
+           expiresAt:expiry,
+           maxExtraStars:3.0,
+           extraStarsGenerated:0.0,
+           scope:['impulso','racha']
+         });
+         toast('✦ ¡Noche de Constancia activada! (x1.5 por 24h)');
+       }
+     }
    }
  });
  r.best=Math.max(Number(r.best||0),elapsed);
  d.best=Math.max(Number(d.best||0),r.best);
  save(d, added > 0);
- if(added)toast('+'+String(added).replace('.',',')+' estrellas por tu racha');
+ if(added)toast('+'+String(added.toFixed(1)).replace('.',',')+' estrellas por tu racha');
  return d
 }
 
@@ -37,10 +63,13 @@ function sharedMilestoneInfo(d){
   {ms:4*HOUR,pts:.3,label:'4 h'},
   {ms:8*HOUR,pts:.5,label:'8 h'},
   {ms:12*HOUR,pts:.5,label:'12 h'},
-  {ms:24*HOUR,pts:1,label:'24 h'},
+  {ms:24*HOUR,pts:1.0,label:'24 h'},
   {ms:48*HOUR,pts:1.5,label:'48 h'},
-  {ms:72*HOUR,pts:2,label:'3 días'},
-  {ms:168*HOUR,pts:3,label:'7 días'}
+  {ms:72*HOUR,pts:2.0,label:'3 días'},
+  {ms:96*HOUR,pts:1.0,label:'4 días'},
+  {ms:120*HOUR,pts:1.2,label:'5 días'},
+  {ms:144*HOUR,pts:1.5,label:'6 días'},
+  {ms:168*HOUR,pts:3.0,label:'7 días'}
  ];
  let elapsed=Date.now()-d.returnToMe.since;
  let n=m.find(x=>elapsed<x.ms);
@@ -157,7 +186,8 @@ function startUrgeTimer(){
  if(!uId){
   let d=load(),u={id:uid(),ts:Date.now(),goalId:urgeGoal.value,hope:urgeHope.value.trim(),fear:urgeFear.value.trim(),alternative:urgeAlternative.value.trim(),intensity:+urgeIntensity.value,survived:false};
   d.urges.push(u);
-  addPoints(d,.2,'impulso','Me detuve antes de comprobar',u.id);
+  let boostResult=applyStarBoost(d,0.4,'impulso');
+  addPoints(d,boostResult.total,'impulso','Me detuve antes de comprobar',u.id,null,boostResult.boosterId?boostResult:null);
   save(d);
   uId=u.id;
  }
@@ -189,7 +219,7 @@ function deleteUrge(id,askConfirm=true){
  }
  let d=load(),u=d.urges.find(x=>x.id===id);
  if(!u)return;
- 
+  
  let ptsToRevert=0;
  let foundRef=false;
  
@@ -212,14 +242,14 @@ function deleteUrge(id,askConfirm=true){
  }
  
  if(!foundRef){
-  ptsToRevert=u.survived?0.5:0.2;
+  ptsToRevert=u.survived?0.8:0.4;
   let k=dayKey(u.ts);
   if(d.pointAwards&&d.pointAwards[k]&&Array.isArray(d.pointAwards[k].events)){
-   let idx02=d.pointAwards[k].events.findIndex(e=>e.kind==='impulso'&&Number(e.amount)===0.2);
-   if(idx02!==-1)d.pointAwards[k].events.splice(idx02,1);
+   let idx04=d.pointAwards[k].events.findIndex(e=>e.kind==='impulso'&&(Number(e.amount)===0.4||Number(e.amount)===0.2));
+   if(idx04!==-1)d.pointAwards[k].events.splice(idx04,1);
    if(u.survived){
-    let idx03=d.pointAwards[k].events.findIndex(e=>e.kind==='impulso'&&Number(e.amount)===0.3);
-    if(idx03!==-1)d.pointAwards[k].events.splice(idx03,1);
+    let idx08=d.pointAwards[k].events.findIndex(e=>e.kind==='impulso'&&(Number(e.amount)===0.4||Number(e.amount)===0.3));
+    if(idx08!==-1)d.pointAwards[k].events.splice(idx08,1);
    }
   }
  }
@@ -264,11 +294,36 @@ function updateTimer(){
 function surviveUrge(){
  let state=getTimerState();
  let uId=(state&&state.activeUrge)||activeUrge;
+ let gainedTotal=0.8;
  if(uId){
   let d=load(),u=d.urges.find(x=>x.id===uId);
   if(u&&!u.survived){
    u.survived=true;
-   addPoints(d,.3,'impulso','Atravesé el impulso sin comprobar',uId);
+   let boostResult=applyStarBoost(d,0.4,'impulso-timer',{isTimer:true});
+   addPoints(d,boostResult.total,'impulso','Atravesé el impulso con temporizador',uId,null,boostResult.boosterId?boostResult:null);
+   gainedTotal=Math.round((0.4+boostResult.total)*100)/100;
+   
+   // Booster B: Impulso Valiente (cada 3 impulsos superados con temporizador: 3, 6, 9...)
+   if(!d.boosters)d.boosters={active:[],inventory:[],progress:{}};
+   if(!d.boosters.progress)d.boosters.progress={};
+   let count=(d.boosters.progress.survivedUrgesCount||0)+1;
+   d.boosters.progress.survivedUrgesCount=count;
+   if(!Array.isArray(d.boosters.progress.awardedBraveThresholds)){
+     d.boosters.progress.awardedBraveThresholds=[];
+   }
+   if(count%3===0&&!d.boosters.progress.awardedBraveThresholds.includes(count)){
+     d.boosters.progress.awardedBraveThresholds.push(count);
+     if(!Array.isArray(d.boosters.inventory))d.boosters.inventory=[];
+     d.boosters.inventory.push({
+       id:'brave-urge',
+       name:'Impulso Valiente',
+       multiplier:2.0,
+       usesRemaining:1,
+       maxExtraStars:0.8,
+       scope:['impulso-timer']
+     });
+     toast('✦ ¡Ganaste un Impulso Valiente! (x2 en tu próximo impulso con timer)');
+   }
    save(d);
   }
  }
@@ -279,7 +334,7 @@ function surviveUrge(){
  urgeFear.value='';
  urgeAlternative.value='';
  closeModal('urgeModal');
- toast('+0,2 por detenerte · +0,3 por atravesarlo');
+ toast(`+${String(gainedTotal).replace('.',',')} ★ en total por superar el impulso`);
  syncUrgeTimer();
  render();
 }

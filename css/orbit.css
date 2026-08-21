@@ -1357,5 +1357,32 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
   to { transform: rotate(360deg); }
 }
 
-
-
+/* ==========================================================================
+   IMPULSOS ESTELARES (BOOSTERS)
+   ========================================================================== */
+.active-booster-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(180, 120, 160, 0.14);
+  border: 1px solid var(--rose2);
+  color: var(--wine);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 99px;
+  cursor: pointer;
+  letter-spacing: 0.02em;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(180, 120, 160, 0.12);
+}
+.active-booster-chip:hover {
+  background: rgba(180, 120, 160, 0.22);
+  transform: translateY(-1px);
+}
+.booster-card {
+  transition: all 0.2s ease;
+}
+.booster-card:hover {
+  box-shadow: 0 4px 14px rgba(80, 58, 61, 0.08);
+}

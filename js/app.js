@@ -538,9 +538,9 @@ function renderUniverse(d){
  const regions = [
    { id: 'cielo-1', name: 'Primer cielo', cost: 0, desc: 'El cielo visible a simple vista.' },
    { id: 'zodiaco', name: 'Cinturón Zodiacal', cost: 5, desc: 'Camino solar que cruzan las 12 constelaciones.' },
+   { id: 'exterior', name: 'Cielo del norte / Exterior', cost: 7, desc: 'Estrellas lejanas en las afueras de la galaxia.' },
    { id: 'orion', name: 'Nebulosa de Orión', cost: 10, desc: 'Cuna de estrellas en el brazo de Orión.' },
-   { id: 'exterior', name: 'Sistema exterior', cost: 15, desc: 'Estrellas lejanas en las afueras de la galaxia.' },
-   { id: 'profundo', name: 'Espacio profundo', cost: 20, desc: 'Galaxias externas y horizontes lejanos.' }
+   { id: 'profundo', name: 'Espacio profundo', cost: 15, desc: 'Galaxias externas y horizontes lejanos.' }
  ];
  
  let currentLvl = d.shipLevel || 0;
@@ -600,17 +600,19 @@ function renderUniverse(d){
  if (skyRegionsEl) skyRegionsEl.innerHTML = regHtml;
 }
 
-function guardarConstelacion(id, cost){
+function guardarConstelacion(id, cost = 1){
   let d = load();
-  if (Number(d.wallet || 0) < cost) {
+  let cDef = constellationDefs.find(x => x.id === id);
+  let finalCost = cDef ? Number(cDef.cost || 1) : Number(cost || 1);
+  if (Number(d.wallet || 0) < finalCost) {
     return toast('No tienes suficientes estrellas disponibles en tu cesta.');
   }
-  d.wallet = Number(d.wallet || 0) - cost;
+  d.wallet = Math.round((Number(d.wallet || 0) - finalCost) * 100) / 100;
   d.bank = d.wallet;
   if(!d.claimed) d.claimed = {};
   d.claimed[id] = Date.now();
   save(d);
-  toast(`${constellationDefs.find(x => x.id === id).name} guardada en tu universo.`);
+  toast(`${cDef ? cDef.name : 'Constelación'} guardada en tu universo.`);
   render();
 }
 
@@ -701,10 +703,156 @@ function render(){let d=accrue(),now=Date.now(),p=prompts[new Date().getDate()%p
  sharedStreak.textContent=fmt(now-d.returnToMe.since);
  sharedNextMilestone.textContent=sm.text;
  sharedProgress.style.width=sm.pct+'%';
- rewards.innerHTML=d.rewards.map(r=>`<div class="card reward"><div><strong>${esc(r.name)}</strong><small>${r.cost} estrellas</small></div><button class="btn ${Number(d.wallet||0)>=r.cost?'btn-main':'btn-soft'}" ${Number(d.wallet||0)>=r.cost?'':'disabled'} onclick="redeem('${r.id}')">${Number(d.wallet||0)>=r.cost?'Canjear':'Aún no'}</button></div>`).join('');
- renderArchive();
- renderUniverse(d);
+  rewards.innerHTML=d.rewards.map(r=>`<div class="card reward"><div><strong>${esc(r.name)}</strong><small>${r.cost} estrellas</small></div><button class="btn ${Number(d.wallet||0)>=r.cost?'btn-main':'btn-soft'}" ${Number(d.wallet||0)>=r.cost?'':'disabled'} onclick="redeem('${r.id}')">${Number(d.wallet||0)>=r.cost?'Canjear':'Aún no'}</button></div>`).join('');
+  renderShopBoosters(d);
+  renderActiveBoosterBadge(d);
+  renderArchive();
+  renderUniverse(d);
 }
+
+function buyStellarWindow(){
+  let d=load();
+  if(!d.boosters)d.boosters={active:[],inventory:[],progress:{}};
+  cleanExpiredBoosters(d);
+  let isWindowActive=(d.boosters.active||[]).some(b=>b&&b.id==='stellar-window');
+  if(isWindowActive){
+    return toast('Ya tienes una Ventana Estelar activa.');
+  }
+  if(Number(d.wallet||0)<2){
+    return toast('Necesitas 2 estrellas disponibles en tu cesta.');
+  }
+  if(!confirm('¿Activar Ventana Estelar por 2 estrellas?\n\nMultiplicador x1.5 en acciones de esfuerzo (impulsos y rachas) durante 2 horas. Máximo +2.0 ★ extra.')){
+    return;
+  }
+  d.wallet=Math.round((Number(d.wallet||0)-2)*100)/100;
+  d.bank=d.wallet;
+  if(!Array.isArray(d.boosters.active))d.boosters.active=[];
+  d.boosters.active.push({
+    id:'stellar-window',
+    name:'Ventana Estelar',
+    multiplier:1.5,
+    startedAt:Date.now(),
+    expiresAt:Date.now()+2*HOUR,
+    maxExtraStars:2.0,
+    extraStarsGenerated:0.0,
+    scope:['impulso','racha']
+  });
+  save(d);
+  toast('✦ ¡Ventana Estelar activada! (x1.5 durante 2 h)');
+  render();
+}
+
+function renderShopBoosters(d){
+  let container=document.getElementById('shopBoostersList');
+  if(!container)return;
+  cleanExpiredBoosters(d);
+  
+  let now=Date.now();
+  let activeWindow=(d.boosters?.active||[]).find(b=>b&&b.id==='stellar-window');
+  let activeNight=(d.boosters?.active||[]).find(b=>b&&b.id==='constancy-night');
+  let braveUrge=(d.boosters?.inventory||[]).find(b=>b&&b.id==='brave-urge'&&b.usesRemaining>0);
+  let survivedCount=d.boosters?.progress?.survivedUrgesCount||0;
+  let nextBraveProgress=survivedCount%3;
+  let wallet=Number(d.wallet||0);
+  
+  let html='';
+  
+  // 1. Ventana Estelar
+  let windowStatus='';
+  if(activeWindow){
+    let remMin=Math.max(1,Math.ceil(((activeWindow.expiresAt||now)-now)/60000));
+    let remStr=remMin>=60?`${Math.floor(remMin/60)}h ${remMin%60}m`:`${remMin} min`;
+    windowStatus=`<button class="btn btn-line btn-sm" disabled style="font-size:10px; opacity:0.85; color:var(--wine);">Activa · ${remStr}</button>`;
+  }else{
+    windowStatus=`<button class="btn ${wallet>=2?'btn-main':'btn-soft'} btn-sm" ${wallet>=2?'':'disabled'} onclick="buyStellarWindow()" style="font-size:10px;">${wallet>=2?'Activar · 2 ★':'2 ★'}</button>`;
+  }
+  
+  html+=`
+    <div class="card booster-card" style="padding:12px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; border: 1px solid ${activeWindow?'var(--rose2)':'var(--line)'}; background: ${activeWindow?'var(--soft)':'#fffdfb'};">
+      <div style="text-align:left; flex:1; padding-right:10px;">
+        <div style="display:flex; align-items:center; gap:6px;">
+          <strong style="font-size:12.5px; color:var(--ink);">Ventana Estelar</strong>
+          <span class="badge" style="font-size:9px; background:rgba(180,120,160,0.15); color:var(--wine); padding:2px 6px; border-radius:6px; font-weight:700;">x1.5 · 2 h</span>
+        </div>
+        <p style="font-size:10.5px; color:var(--muted); margin:3px 0 0 0;">x1.5 en impulsos y racha. Máx +2 ★ extra.</p>
+      </div>
+      <div>${windowStatus}</div>
+    </div>
+  `;
+  
+  // 2. Impulso Valiente
+  if(braveUrge){
+    html+=`
+      <div class="card booster-card" style="padding:12px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; border: 1px solid var(--rose2); background: var(--soft);">
+        <div style="text-align:left; flex:1;">
+          <div style="display:flex; align-items:center; gap:6px;">
+            <strong style="font-size:12.5px; color:var(--wine);">✦ Impulso Valiente</strong>
+            <span class="badge" style="font-size:9px; background:var(--wine); color:#fff; padding:2px 6px; border-radius:6px; font-weight:700;">x2 en próx. impulso</span>
+          </div>
+          <p style="font-size:10.5px; color:var(--muted); margin:3px 0 0 0;">Disponible en inventario. Se aplicará al próximo temporizador superado.</p>
+        </div>
+      </div>
+    `;
+  }else{
+    html+=`
+      <div class="card booster-card" style="padding:10px 12px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; border: 1px dashed var(--line); opacity:0.85;">
+        <div style="text-align:left; flex:1;">
+          <div style="display:flex; align-items:center; gap:6px;">
+            <strong style="font-size:11.5px; color:var(--ink);">Impulso Valiente (x2)</strong>
+            <span style="font-size:9.5px; color:var(--muted); font-weight:600;">${nextBraveProgress} / 3 superados</span>
+          </div>
+          <p style="font-size:10px; color:var(--muted); margin:2px 0 0 0;">Se gana cada 3 impulsos con temporizador superados.</p>
+        </div>
+      </div>
+    `;
+  }
+  
+  // 3. Noche de Constancia
+  if(activeNight){
+    let remMin=Math.max(1,Math.ceil(((activeNight.expiresAt||now)-now)/60000));
+    let remStr=remMin>=60?`${Math.floor(remMin/60)}h ${remMin%60}m`:`${remMin} min`;
+    html+=`
+      <div class="card booster-card" style="padding:12px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; border: 1px solid var(--rose2); background: var(--soft);">
+        <div style="text-align:left; flex:1;">
+          <div style="display:flex; align-items:center; gap:6px;">
+            <strong style="font-size:12.5px; color:var(--wine);">✦ Noche de Constancia</strong>
+            <span class="badge" style="font-size:9px; background:var(--wine); color:#fff; padding:2px 6px; border-radius:6px; font-weight:700;">x1.5 · ${remStr}</span>
+          </div>
+          <p style="font-size:10.5px; color:var(--muted); margin:3px 0 0 0;">Activo por alcanzar 7 días de racha. Máx +3 ★ extra.</p>
+        </div>
+      </div>
+    `;
+  }
+  
+  container.innerHTML=html;
+}
+
+function renderActiveBoosterBadge(d){
+  let el=document.getElementById('activeBoosterBadge');
+  if(!el)return;
+  cleanExpiredBoosters(d);
+  let now=Date.now();
+  let activeList=d.boosters?.active||[];
+  let inventoryList=d.boosters?.inventory||[];
+  
+  let label='';
+  if(activeList.length){
+    let top=activeList[0];
+    let remMin=Math.max(1,Math.ceil(((top.expiresAt||now)-now)/60000));
+    let remStr=remMin>=60?`${Math.floor(remMin/60)}h ${remMin%60}m`:`${remMin}m`;
+    label=`✦ x${top.multiplier} · ${remStr}`;
+  }else if(inventoryList.some(b=>b&&b.id==='brave-urge'&&b.usesRemaining>0)){
+    label=`✦ x2 próx. impulso`;
+  }
+  
+  if(label){
+    el.style.display='inline-flex';
+    el.innerHTML=`<span class="active-booster-chip">${esc(label)}</span>`;
+  }else{
+    el.style.display='none';
+  }
+}
+
 setInterval(render,60000);render();
 
 function initAtlasPageTurn(carouselEl) {

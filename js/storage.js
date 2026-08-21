@@ -24,6 +24,7 @@ function defaults(){
  {id:'r4',name:'Un pequeño capricho',cost:20},
  {id:'r5',name:'Un plan que me ilusione',cost:40}],
  urges:[],slips:[],journal:[],checkins:{},goodThings:[],
+ boosters:{active:[],inventory:[],progress:{survivedUrgesCount:0,awardedBraveThresholds:[],lastNightOfConstancyStreakTs:null}},
  orbit:[
  {id:'o1',name:'Escribir',meaning:'poner palabras a lo que siento'},
  {id:'o2',name:'Movimiento',meaning:'volver a mi cuerpo'},
@@ -39,7 +40,7 @@ function load(){
   let old;try{old=JSON.parse(localStorage.getItem('orbitV8'))}catch{}
   d=defaults();
   if(old){
-   ['bank','claimed','best','pointAwards','goals','rewards','urges','slips','journal','checkins','orbit'].forEach(k=>{if(old[k]!==undefined)d[k]=old[k]});
+   ['bank','claimed','best','pointAwards','goals','rewards','urges','slips','journal','checkins','orbit','boosters'].forEach(k=>{if(old[k]!==undefined)d[k]=old[k]});
    if(old.goodThings)d.goodThings=old.goodThings
   }else{
    try{old=JSON.parse(localStorage.getItem('orbitV3'))}catch{}
@@ -59,6 +60,15 @@ function load(){
    let starts=(d.goals||[]).map(g=>Number(g.since||Date.now()));
    let sharedSince=starts.length?Math.max(...starts):Date.now();
    d.returnToMe={since:sharedSince,awardedMilestones:[],best:Number(d.best||0)}
+ }
+ if(!d.boosters){
+   d.boosters={active:[],inventory:[],progress:{survivedUrgesCount:0,awardedBraveThresholds:[],lastNightOfConstancyStreakTs:null}};
+ }else{
+   if(!Array.isArray(d.boosters.active)) d.boosters.active=[];
+   if(!Array.isArray(d.boosters.inventory)) d.boosters.inventory=[];
+   if(!d.boosters.progress) d.boosters.progress={};
+   if(typeof d.boosters.progress.survivedUrgesCount !== 'number') d.boosters.progress.survivedUrgesCount=0;
+   if(!Array.isArray(d.boosters.progress.awardedBraveThresholds)) d.boosters.progress.awardedBraveThresholds=[];
  }
  if(d.shipLevel===undefined)d.shipLevel=0;
  if(!d.unlockedRegions)d.unlockedRegions=['cielo-1'];

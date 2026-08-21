@@ -1,17 +1,139 @@
-// Economía de estrellas: hoy, disponibles, históricas e historial de ganancias.
+// Economía de estrellas: hoy, disponibles, históricas, boosters e historial de ganancias.
 // Extraído desde app.js sin romper compatibilidad.
 
-function addPoints(d,amount,kind,label,refId=null,eventTs=null){
+function cleanExpiredBoosters(d){
+  if(!d||!d.boosters)return false;
+  let changed=false;
+  let now=Date.now();
+  if(Array.isArray(d.boosters.active)){
+    let beforeLen=d.boosters.active.length;
+    d.boosters.active=d.boosters.active.filter(b=>{
+      if(!b)return false;
+      if(b.expiresAt&&now>=b.expiresAt)return false;
+      if(typeof b.maxExtraStars==='number'&&Number(b.extraStarsGenerated||0)>=b.maxExtraStars)return false;
+      return true;
+    });
+    if(d.boosters.active.length!==beforeLen)changed=true;
+  }
+  if(Array.isArray(d.boosters.inventory)){
+    let beforeLen=d.boosters.inventory.length;
+    d.boosters.inventory=d.boosters.inventory.filter(b=>b&&b.usesRemaining>0);
+    if(d.boosters.inventory.length!==beforeLen)changed=true;
+  }
+  return changed;
+}
+
+function applyStarBoost(d,baseAmount,kind,context={}){
+  baseAmount=Number(baseAmount||0);
+  if(baseAmount<=0)return {base:0,multiplier:1,extra:0,total:0,boosterId:null,boosterName:null};
+  
+  // Acciones rutinarias NUNCA se multiplican
+  const nonBoostable=['journal','goodThing','checkin','accion'];
+  if(nonBoostable.includes(kind)||context.noBoost){
+    return {base:baseAmount,multiplier:1,extra:0,total:baseAmount,boosterId:null,boosterName:null};
+  }
+  
+  if(!d.boosters){
+    d.boosters={active:[],inventory:[],progress:{survivedUrgesCount:0,awardedBraveThresholds:[],lastNightOfConstancyStreakTs:null}};
+  }
+  cleanExpiredBoosters(d);
+  
+  let candidates=[];
+  
+  // 1. Boosters activos (ej. Ventana Estelar x1.5, Noche de Constancia x1.5)
+  if(Array.isArray(d.boosters.active)){
+    d.boosters.active.forEach(b=>{
+      if(!b)return;
+      let matchScope=!b.scope||b.scope.includes(kind)||(kind.startsWith('impulso')&&b.scope.includes('impulso'));
+      if(matchScope){
+        candidates.push({booster:b,isInventory:false});
+      }
+    });
+  }
+  
+  // 2. Boosters de inventario aplicables (ej. Impulso Valiente x2 en próximo timer superado)
+  if(Array.isArray(d.boosters.inventory)){
+    d.boosters.inventory.forEach(b=>{
+      if(!b)return;
+      let matchScope=false;
+      if(kind==='impulso-timer'||context.isTimer){
+        matchScope=!b.scope||b.scope.includes('impulso-timer')||b.scope.includes('impulso');
+      }else if(b.scope&&b.scope.includes(kind)){
+        matchScope=true;
+      }
+      if(matchScope&&b.usesRemaining>0){
+        candidates.push({booster:b,isInventory:true});
+      }
+    });
+  }
+  
+  if(!candidates.length){
+    return {base:baseAmount,multiplier:1,extra:0,total:baseAmount,boosterId:null,boosterName:null};
+  }
+  
+  // Criterio No-Stacking: Elegir el de MAYOR multiplicador; si empatan, el que expire antes o el más antiguo
+  candidates.sort((a,b)=>{
+    let multDiff=(b.booster.multiplier||1)-(a.booster.multiplier||1);
+    if(Math.abs(multDiff)>0.001)return multDiff;
+    let expA=a.booster.expiresAt||Infinity;
+    let expB=b.booster.expiresAt||Infinity;
+    if(expA!==expB)return expA-expB;
+    return (a.booster.startedAt||0)-(b.booster.startedAt||0);
+  });
+  
+  let chosen=candidates[0];
+  let b=chosen.booster;
+  let mult=Number(b.multiplier||1);
+  let rawExtra=baseAmount*(mult-1);
+  let actualExtra=rawExtra;
+  
+  if(typeof b.maxExtraStars==='number'){
+    let remainingCap=Math.max(0,b.maxExtraStars-Number(b.extraStarsGenerated||0));
+    actualExtra=Math.min(rawExtra,remainingCap);
+  }
+  
+  actualExtra=Math.max(0,Math.round(actualExtra*100)/100);
+  let totalAmount=Math.round((baseAmount+actualExtra)*100)/100;
+  
+  // Actualizar consumo del booster
+  b.extraStarsGenerated=Math.round((Number(b.extraStarsGenerated||0)+actualExtra)*100)/100;
+  if(chosen.isInventory){
+    b.usesRemaining=Math.max(0,Number(b.usesRemaining||1)-1);
+  }
+  
+  cleanExpiredBoosters(d);
+  
+  return {
+    base:baseAmount,
+    multiplier:mult,
+    extra:actualExtra,
+    total:totalAmount,
+    boosterId:b.id,
+    boosterName:b.name
+  };
+}
+
+function addPoints(d,amount,kind,label,refId=null,eventTs=null,boostMeta=null){
  amount=Number(amount||0);
  if(amount<=0)return;
- d.wallet=Number(d.wallet||0)+amount;
- d.lifetimeStars=Number(d.lifetimeStars||0)+amount;
+ d.wallet=Math.round((Number(d.wallet||0)+amount)*100)/100;
+ d.lifetimeStars=Math.round((Number(d.lifetimeStars||0)+amount)*100)/100;
  d.bank=d.wallet;
  let ts=eventTs||Date.now();
  let k=dayKey(ts);
  if(!d.pointAwards[k])d.pointAwards[k]={limits:{},actions:{},events:[]};
  if(!d.pointAwards[k].events)d.pointAwards[k].events=[];
- d.pointAwards[k].events.push({ts,amount,kind,label,refId:refId||null});
+ let evObj={ts,amount,kind,label,refId:refId||null};
+ if(boostMeta&&boostMeta.boosterId){
+   evObj.boost={
+     boosterId:boostMeta.boosterId,
+     name:boostMeta.boosterName,
+     multiplier:boostMeta.multiplier,
+     baseAmount:boostMeta.base,
+     extraAmount:boostMeta.extra
+   };
+ }
+ d.pointAwards[k].events.push(evObj);
 }
 
 function todayPointsTotal(d){
@@ -155,6 +277,11 @@ function openTodayPointsModal(forDayKey=null){
     kindBadge=e.kind||'Orbit';
    }
 
+   let boostBadge='';
+   if(e.boost&&e.boost.name){
+     boostBadge=`<div style="font-size:9.5px; color:var(--wine); opacity:0.85; margin-top:2px; font-weight:600;">✦ x${e.boost.multiplier} · ${esc(e.boost.name)}</div>`;
+   }
+
    return `<div class="card entry-card" style="padding:10px 12px; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center;">
     <div style="text-align:left;">
       <div class="entry-meta" style="margin-bottom:2px; font-size:9px;">
@@ -162,6 +289,7 @@ function openTodayPointsModal(forDayKey=null){
         <span>${timeStr}</span>
       </div>
       <div style="font-size:12px; font-weight:500; color:var(--ink);">${esc(title)}</div>
+      ${boostBadge}
     </div>
     <div style="font-size:13px; font-weight:700; color:var(--wine); white-space:nowrap; margin-left:10px;">
       +${amt.toFixed(1).replace('.',',')} ★
