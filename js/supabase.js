@@ -57,8 +57,34 @@ async function getPhotoSignedUrl(photoPath) {
   }
 }
 
+function updateCloudHeaderStatus(status) {
+  if (typeof document === 'undefined') return;
+  const btn = document.getElementById('headerCloudBtn');
+  if (!btn) return;
+
+  const offline = typeof navigator !== 'undefined' && !navigator.onLine;
+
+  if (offline) {
+    btn.innerHTML = `<svg class="icon" viewBox="0 0 24 24" style="color:#c27d38;"><path d="M22.61 16.95A5 5 0 0 0 18 10h-1.26a8 8 0 0 0-7.05-6M5 5a8 8 0 0 0-1 7h-.5a5 5 0 0 0 0 10h14.5M1 1l22 22"/></svg>`;
+    btn.title = 'Sin conexión (modo local)';
+    return;
+  }
+
+  if (status === 'saving') {
+    btn.innerHTML = `<svg class="icon" viewBox="0 0 24 24" style="color:#2e7d32; animation:photoSpin 1s linear infinite;"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/><path d="M12 12v4M10 14l2-2 2 2"/></svg>`;
+    btn.title = 'Guardando en la nube…';
+  } else if (status === 'error' || status === 'conflict') {
+    btn.innerHTML = `<svg class="icon" viewBox="0 0 24 24" style="color:#c27d38;"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/><line x1="12" y1="12" x2="12" y2="15"/><circle cx="12" cy="17" r="0.5" fill="currentColor"/></svg>`;
+    btn.title = 'Aviso de sincronización';
+  } else {
+    btn.innerHTML = `<svg class="icon" viewBox="0 0 24 24" style="color:#2e7d32;"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/><polyline points="8.5 14.5 11 17 15.5 11.5" stroke="currentColor" stroke-width="1.8" fill="none"/></svg>`;
+    btn.title = 'Nube conectada y sincronizada';
+  }
+}
+
 function updateSyncStatus(status) {
   if (typeof document === 'undefined') return;
+  updateCloudHeaderStatus(status);
   const statusText = document.getElementById('cloudStatusText');
   const statusDot = document.getElementById('cloudStatusDot');
   const statusBadge = document.getElementById('cloudStatusBadge');

@@ -13,7 +13,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <title>Orbit</title>
 
-  <link rel="stylesheet" href="css/orbit.css?v=1.2.15">
+  <link rel="stylesheet" href="css/orbit.css?v=1.2.16">
 </head>
 <body>
 <!-- Pantalla de Acceso Inicial -->
@@ -41,10 +41,14 @@
 
 <div class="app" id="mainApp">
 <header>
-  <button class="icon-button" onclick="showPage('today')"><svg class="icon" viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 16 0A8 8 0 1 0 4 12"/><path d="M12 8v4l2.5 1.5"/></svg></button>
+  <button class="icon-button" id="headerCloudBtn" onclick="openSettings('settingsCloudSection')" title="Estado de la nube">
+    <svg class="icon" viewBox="0 0 24 24" style="color:#2e7d32;"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/><polyline points="8.5 14.5 11 17 15.5 11.5" stroke="currentColor" stroke-width="1.8" fill="none"/></svg>
+  </button>
   <div class="brand">ORBIT<span class="brand-mark"></span></div>
   <div id="activeBoosterBadge" style="display:none; margin-left:auto; margin-right:8px;" onclick="openShopModal()" title="Ver booster activo"></div>
-  <button class="icon-button" onclick="toast('Tus textos y registros se guardan solo en este dispositivo')"><svg class="icon" viewBox="0 0 24 24"><path d="M12 3 5 6v5c0 4.5 2.6 7.7 7 10 4.4-2.3 7-5.5 7-10V6z"/><path d="m9.5 12 1.7 1.7L15 10"/></svg></button>
+  <button class="icon-button" onclick="showPage('settings')" title="Ajustes">
+    <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+  </button>
 </header>
 
 <section id="today" class="page active">
@@ -298,48 +302,70 @@
     </div>
     <div class="entry-meta" style="margin:8px 3px 10px"><span id="urgeResultsCount">0 resultados</span><button class="btn btn-line" style="padding:6px 9px" onclick="toggleSort('urges')">Orden: <span id="urgesSortLabel">recientes</span></button></div><div id="urgeArchiveList"></div>
   </div>
+</section>
 
-  <div class="card" style="margin-top:20px; padding:18px;">
-    <div style="text-align:center;">
-      <div style="font-size:14px; font-weight:600; margin-bottom:4px;">Copia de seguridad y Nube</div>
-      <p style="font-size:12px; color:var(--muted); margin-bottom:12px;">Guarda tus datos en un archivo o conéctate con tu nube privada de Orbit.</p>
+<!-- Sección Ajustes -->
+<section id="settings" class="page">
+  <div class="card hero">
+    <div class="kicker">ajustes</div>
+    <h1>Ajustes</h1>
+    <p>Tu Orbit, tus datos y tus áreas.</p>
+  </div>
+
+  <!-- A. ÁREAS QUE ESTOY TRABAJANDO -->
+  <div class="section-head"><h2>Áreas que estoy trabajando</h2></div>
+  <div class="card" style="padding:16px;">
+    <div id="focusAreasList" style="display:flex; flex-direction:column; gap:8px;"></div>
+  </div>
+
+  <!-- B. CUENTA Y NUBE -->
+  <div class="section-head" id="settingsCloudHead"><h2>Cuenta y nube</h2></div>
+  <div class="card" id="settingsCloudSection" style="padding:16px;">
+    <div id="cloudLoggedSection" style="text-align:center; padding:4px 0;">
+      <div style="display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:600; color:#2e7d32; background:rgba(46,125,50,0.08); border:1px solid rgba(46,125,50,0.2); padding:4px 10px; border-radius:99px; margin-bottom:6px;" id="cloudStatusBadge">
+        <span style="display:inline-block; width:7px; height:7px; border-radius:50%; background:#2e7d32;" id="cloudStatusDot"></span>
+        <span id="cloudStatusText">Nube conectada</span>
+      </div>
+      <div style="font-size:11px; color:var(--muted); margin-bottom:14px;"><span id="cloudUserEmail"></span></div>
       <div style="display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
-        <button class="btn btn-line" onclick="exportBackup()"><svg class="icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>Exportar datos</button>
-        <button class="btn btn-line" onclick="triggerImportBackup()"><svg class="icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>Importar datos</button>
+        <button class="btn btn-main" style="font-size:11px; padding:8px 12px; display:inline-flex; align-items:center; gap:6px;" id="cloudUploadBtn" onclick="uploadToCloud()">
+          <svg class="icon" viewBox="0 0 24 24" style="width:14px; height:14px; stroke:currentColor;"><path d="M12 3v12M17 8l-5-5-5 5M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/></svg>
+          <span>Subir datos a la nube</span>
+        </button>
+        <button class="btn btn-line" style="font-size:11px; padding:8px 12px; display:inline-flex; align-items:center; gap:6px;" id="cloudRestoreBtn" onclick="restoreFromCloud()">
+          <svg class="icon" viewBox="0 0 24 24" style="width:14px; height:14px; stroke:currentColor;"><path d="M12 15V3M7 10l5 5 5-5M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/></svg>
+          <span>Recuperar datos de la nube</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- C. DATOS -->
+  <div class="section-head"><h2>Datos</h2></div>
+  <div class="card" style="padding:16px;">
+    <div style="text-align:center;">
+      <p style="font-size:12px; color:var(--muted); margin-top:0; margin-bottom:12px;">Guarda una copia local o recupera una exportación anterior.</p>
+      <div style="display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
+        <button class="btn btn-line" style="font-size:11px; padding:8px 12px; display:inline-flex; align-items:center; gap:6px;" onclick="exportBackup()">
+          <svg class="icon" viewBox="0 0 24 24" style="width:14px; height:14px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+          <span>Exportar datos</span>
+        </button>
+        <button class="btn btn-line" style="font-size:11px; padding:8px 12px; display:inline-flex; align-items:center; gap:6px;" onclick="triggerImportBackup()">
+          <svg class="icon" viewBox="0 0 24 24" style="width:14px; height:14px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+          <span>Importar datos</span>
+        </button>
       </div>
       <input type="file" id="backupFileInput" accept=".json,application/json" style="display:none" onchange="handleBackupFile(event)">
     </div>
+  </div>
 
-    <!-- Sección de Nube Supabase -->
-    <div class="cloud-auth-box" style="border-top:1px solid var(--line); padding-top:14px; margin-top:14px;">
-      <div id="cloudLoggedSection" style="text-align:center; padding:4px 0;">
-        <div style="display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:600; color:#2e7d32; background:rgba(46,125,50,0.08); border:1px solid rgba(46,125,50,0.2); padding:4px 10px; border-radius:99px; margin-bottom:6px;" id="cloudStatusBadge">
-          <span style="display:inline-block; width:7px; height:7px; border-radius:50%; background:#2e7d32;" id="cloudStatusDot"></span>
-          <span id="cloudStatusText">Nube conectada</span>
-        </div>
-        <div style="font-size:11px; color:var(--muted); margin-bottom:12px;"><span id="cloudUserEmail"></span><span style="font-size:10px; color:var(--muted); opacity:0.6; margin-left:6px;">v1.2.15</span></div>
-        <div style="display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin-bottom:12px;">
-          <button class="btn btn-main" style="font-size:11px; padding:8px 12px; display:inline-flex; align-items:center; gap:6px;" id="cloudUploadBtn" onclick="uploadToCloud()">
-            <svg class="icon" viewBox="0 0 24 24" style="width:14px; height:14px; stroke:currentColor;"><path d="M12 3v12M17 8l-5-5-5 5M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/></svg>
-            <span>Subir datos a la nube</span>
-          </button>
-          <button class="btn btn-line" style="font-size:11px; padding:8px 12px; display:inline-flex; align-items:center; gap:6px;" id="cloudRestoreBtn" onclick="restoreFromCloud()">
-            <svg class="icon" viewBox="0 0 24 24" style="width:14px; height:14px; stroke:currentColor;"><path d="M12 15V3M7 10l5 5 5-5M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/></svg>
-            <span>Recuperar datos de la nube</span>
-          </button>
-        </div>
-        <button class="btn btn-line btn-sm" onclick="handleCloudLogout()" style="font-size:10px; padding:4px 10px; opacity:0.75;" id="cloudLogoutBtn">Cerrar sesión</button>
-      </div>
-    </div>
-
-    <!-- Sección de Áreas de trabajo -->
-    <div class="focus-areas-box" style="border-top:1px solid var(--line); padding-top:16px; margin-top:16px; text-align:left;">
-      <div style="text-align:center; margin-bottom:12px;">
-        <div style="font-size:13px; font-weight:600; margin-bottom:2px;">Áreas que estoy trabajando</div>
-        <p style="font-size:11px; color:var(--muted); margin:0;">Elige las áreas que quieres enfocar en Orbit.</p>
-      </div>
-      <div id="focusAreasList" style="display:flex; flex-direction:column; gap:8px;"></div>
-    </div>
+  <!-- D. SESIÓN -->
+  <div class="section-head"><h2>Sesión</h2></div>
+  <div class="card" style="padding:16px; text-align:center;">
+    <button class="btn btn-line" onclick="handleCloudLogout()" style="font-size:12px; padding:8px 16px; color:var(--wine);" id="cloudLogoutBtn">
+      Cerrar sesión
+    </button>
+    <div style="font-size:11px; color:var(--muted); opacity:0.6; margin-top:14px;">Orbit v1.2.16</div>
   </div>
 </section>
 
@@ -644,14 +670,14 @@
 <div class="toast" id="toast"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="data/templates.js?v=1.2.15"></script>
-  <script src="data/constellations.js?v=1.2.15"></script>
-  <script src="js/storage.js?v=1.2.15"></script>
-  <script src="js/supabase.js?v=1.2.15"></script>
-  <script src="js/stars.js?v=1.2.15"></script>
-  <script src="js/streak.js?v=1.2.15"></script>
-  <script src="js/journal.js?v=1.2.15"></script>
-  <script src="js/archive.js?v=1.2.15"></script>
-  <script src="js/app.js?v=1.2.15"></script>
+  <script src="data/templates.js?v=1.2.16"></script>
+  <script src="data/constellations.js?v=1.2.16"></script>
+  <script src="js/storage.js?v=1.2.16"></script>
+  <script src="js/supabase.js?v=1.2.16"></script>
+  <script src="js/stars.js?v=1.2.16"></script>
+  <script src="js/streak.js?v=1.2.16"></script>
+  <script src="js/journal.js?v=1.2.16"></script>
+  <script src="js/archive.js?v=1.2.16"></script>
+  <script src="js/app.js?v=1.2.16"></script>
 </body>
 </html>

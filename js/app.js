@@ -9,11 +9,22 @@ search:`<svg class="icon" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6"/
 function showPage(id){
  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
  document.querySelectorAll('.bottom button').forEach(b=>b.classList.remove('active'));
- document.getElementById(id).classList.add('active');
+ let targetEl=document.getElementById(id);
+ if(targetEl)targetEl.classList.add('active');
  let nav=document.getElementById('nav-'+id);if(nav)nav.classList.add('active');
  let bottomNav=document.querySelector('.bottom');
  if(bottomNav){bottomNav.style.display=id==='universe'?'none':'grid'}
  window.scrollTo({top:0,behavior:'smooth'});render()
+}
+
+function openSettings(sectionId){
+  showPage('settings');
+  if(sectionId){
+    setTimeout(()=>{
+      let el=document.getElementById(sectionId);
+      if(el)el.scrollIntoView({behavior:'smooth',block:'center'});
+    },80);
+  }
 }
 
 function openReward(){rewardModal.classList.add('show')}
