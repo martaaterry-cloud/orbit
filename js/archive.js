@@ -123,7 +123,7 @@ function renderDayDetail(d){
       </div>`;
     }
     if(Array.isArray(d.journal)) d.journal.filter(e=>e && e.ts && dayKey(e.ts)===selectedDay).forEach(e=>html+=entryHTML(e));
-    if(Array.isArray(d.goodThings)) d.goodThings.filter(g=>g && g.ts && dayKey(g.ts)===selectedDay).forEach(g=>html+=goodHTML(g));
+    if(Array.isArray(d.goodThings)) d.goodThings.filter(g=>g && g.ts && dayKey(g.ts)===selectedDay).forEach(g=>html+=goodHTML(g, d));
     if(Array.isArray(d.urges)) d.urges.filter(u=>u && u.ts && dayKey(u.ts)===selectedDay).forEach(u=>html+=urgeHTML(u,d));
   }
   dayDetail.innerHTML=html||'<div class="empty">No guardaste nada este día.</div>';
@@ -202,7 +202,15 @@ function handleSwipeTouchEnd(e,el){
  swipeTouchState.currentEl=null;
 }
 
-function goodHTML(g){
+function goodHTML(g, d = null){
+ let pillarName = '';
+ if(g && g.pillarId){
+  let state = d || (typeof load === 'function' ? load() : null);
+  if(state && Array.isArray(state.orbit)){
+   let p = state.orbit.find(o => o && o.id === g.pillarId);
+   if(p) pillarName = p.name;
+  }
+ }
  return `<div class="swipe-row">
   <div class="swipe-action-bg">
     <button class="swipe-delete-btn" onclick="deleteGood('${g.id}')">
@@ -211,7 +219,10 @@ function goodHTML(g){
     </button>
   </div>
   <div class="card entry-card swipe-front" ontouchstart="handleSwipeTouchStart(event,this)" ontouchmove="handleSwipeTouchMove(event,this)" ontouchend="handleSwipeTouchEnd(event,this)">
-    <div class="entry-meta"><span class="entry-type">lo que sí pasó</span><span>${new Date(g.ts).toLocaleDateString('es-ES',{day:'2-digit',month:'short'})}</span></div>
+    <div class="entry-meta">
+      <span class="entry-type">lo que sí pasó${pillarName ? ` · ${esc(pillarName)}` : ''}</span>
+      <span>${new Date(g.ts).toLocaleDateString('es-ES',{day:'2-digit',month:'short'})}</span>
+    </div>
     <h3>${esc(g.text)}</h3>
     ${g.meaning?`<p>${esc(g.meaning)}</p>`:''}
   </div>
@@ -252,7 +263,7 @@ function renderGoodArchive(){
  let arr=d.goodThings.filter(g=>inTime(g.ts,timeFilters.good)&&(!q||(g.text+' '+(g.meaning||'')).toLowerCase().includes(q)));
  arr.sort((a,b)=>sortModes.good==='desc'?b.ts-a.ts:a.ts-b.ts);
  goodResultsCount.textContent=arr.length+' resultado'+(arr.length===1?'':'s');
- goodArchiveList.innerHTML=arr.length?arr.map(goodHTML).join(''):'<div class="empty">Todavía no hay nada aquí.</div>'
+ goodArchiveList.innerHTML=arr.length?arr.map(g=>goodHTML(g, d)).join(''):'<div class="empty">Todavía no hay nada aquí.</div>'
 }
 
 function renderUrgeArchive(){

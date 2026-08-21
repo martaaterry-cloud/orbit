@@ -62,7 +62,10 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
 .orbit-circle{position:absolute;border:1px solid rgba(141,76,87,.16);border-radius:50%;left:50%;top:50%;transform:translate(-50%,-50%)}
 .o1{width:150px;height:150px}.o2{width:235px;height:235px}.o3{width:315px;height:315px}
 .me{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:88px;height:88px;border-radius:50%;background:linear-gradient(145deg,#f0cfd4,#e6b7bf);display:grid;place-items:center;font-family:Georgia,serif;font-size:18px;color:#70414a;box-shadow:0 10px 30px rgba(111,57,66,.12);z-index:2}
-.planet{position:absolute;transform:translate(-50%,-50%);border:1px solid var(--line);background:#fffefa;border-radius:999px;padding:7px 10px;font-size:10px;box-shadow:0 8px 18px rgba(80,58,61,.06)}
+.planet{position:absolute;transform:translate(-50%,-50%);border:1px solid var(--line);background:#fffefa;border-radius:999px;padding:6px 10px;font-size:10px;box-shadow:0 8px 18px rgba(80,58,61,.06);display:inline-flex;align-items:center;gap:4px;z-index:5;white-space:nowrap;user-select:none}
+.planet-sparks{display:inline-flex;align-items:center;gap:2px;margin-left:2px}
+.planet-spark{background:none;border:none;padding:0 2px;margin:0;color:var(--wine);font-size:11px;line-height:1;cursor:pointer;opacity:0.85;transition:transform 0.15s ease,opacity 0.15s ease}
+.planet-spark:hover,.planet-spark:active{transform:scale(1.35);opacity:1}
 .orbit-note{font-size:11px;color:var(--muted);line-height:1.45;margin-top:3px}
 .good-card{padding:13px 14px;margin-bottom:8px;display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center}
 .good-card strong{font-size:13px}.good-card small{display:block;color:var(--muted);font-size:10px;margin-top:3px}

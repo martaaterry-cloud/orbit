@@ -24,7 +24,51 @@ function toast(msg){let t=document.getElementById('toast');t.textContent=msg;t.c
 
 
 
-function drawOrbit(d){let el=bigOrbit;el.innerHTML='<div class="orbit-circle o1"></div><div class="orbit-circle o2"></div><div class="orbit-circle o3"></div><div class="me">yo</div>';let coords=[[50,18],[80,34],[82,67],[52,83],[19,68],[19,35],[65,25],[67,74]];d.orbit.slice(0,8).forEach((o,i)=>{let p=document.createElement('div');p.className='planet';p.style.left=coords[i][0]+'%';p.style.top=coords[i][1]+'%';p.textContent=o.name;el.appendChild(p)})}
+function populatePillarSelect(d){
+  let sel=document.getElementById('goodPillarSelect');
+  if(!sel)return;
+  let currentVal=sel.value;
+  let html='<option value="">Sin asociar</option>';
+  if(Array.isArray(d.orbit)){
+    d.orbit.forEach(p=>{
+      if(p&&p.id&&p.name){
+        html+=`<option value="${esc(p.id)}">${esc(p.name)}</option>`;
+      }
+    });
+  }
+  sel.innerHTML=html;
+  if(currentVal)sel.value=currentVal;
+}
+
+function showPillarMemory(goodId){
+  let d=load();
+  let m=(d.goodThings||[]).find(g=>g&&g.id===goodId);
+  if(!m)return;
+  let p=(d.orbit||[]).find(o=>o&&o.id===m.pillarId);
+  let pName=p?p.name:'Pilar';
+  toast(`“${m.text}” · ${pName}`);
+}
+
+function drawOrbit(d){
+  let el=bigOrbit;
+  if(!el)return;
+  el.innerHTML='<div class="orbit-circle o1"></div><div class="orbit-circle o2"></div><div class="orbit-circle o3"></div><div class="me">yo</div>';
+  let coords=[[50,18],[80,34],[82,67],[52,83],[19,68],[19,35],[65,25],[67,74]];
+  (d.orbit||[]).slice(0,8).forEach((o,i)=>{
+    let p=document.createElement('div');
+    p.className='planet';
+    p.style.left=coords[i][0]+'%';
+    p.style.top=coords[i][1]+'%';
+
+    let memories=(d.goodThings||[]).filter(g=>g&&g.pillarId===o.id).slice(-3);
+    let html=`<span class="planet-name">${esc(o.name)}</span>`;
+    if(memories.length){
+      html+=`<span class="planet-sparks">${memories.map(m=>`<button type="button" class="planet-spark" onclick="event.stopPropagation(); showPillarMemory('${esc(m.id)}')" title="${esc(m.text)}">✦</button>`).join('')}</span>`;
+    }
+    p.innerHTML=html;
+    el.appendChild(p);
+  });
+}
 
 function constellationSvg(def, unlocked, progress) {
   let N = def.pts.length;
@@ -404,8 +448,12 @@ function unlockRegion(id, cost){
 
 function render(){let d=accrue(),now=Date.now(),p=prompts[new Date().getDate()%prompts.length];todayDate.textContent=new Date().toLocaleDateString('es-ES',{weekday:'short',day:'numeric',month:'short'});dailyPromptTitle.textContent=p[0];dailyPromptSub.textContent=p[1];let c=d.checkins[dayKey()];if(c){needToday.value=c.need||'';forMeToday.value=c.forMe||'';mood=c.mood||3;document.querySelectorAll('#moodScale button').forEach((b,i)=>b.classList.toggle('sel',i+1===mood))}
  drawOrbit(d);
+ populatePillarSelect(d);
  orbitItems.innerHTML=d.orbit.map(o=>`<div class="card good-card"><div><strong>${esc(o.name)}</strong><small>${esc(o.meaning||'')}</small></div><button class="btn btn-line" onclick="removeOrbit('${o.id}')">Quitar</button></div>`).join('');
- let todays=d.goodThings.filter(g=>dayKey(g.ts)===dayKey()).slice().reverse();todayGoodThings.innerHTML=todays.length?'<div class="section-head"><h2>Hoy también pasó esto</h2></div>'+todays.map(g=>`<div class="card good-card"><div><strong>${esc(g.text)}</strong><small>${esc(g.meaning||'')}</small></div><button class="btn btn-line" onclick="deleteGood('${g.id}')">Quitar</button></div>`).join(''):'';
+ let todays=d.goodThings.filter(g=>dayKey(g.ts)===dayKey()).slice().reverse();todayGoodThings.innerHTML=todays.length?'<div class="section-head"><h2>Hoy también pasó esto</h2></div>'+todays.map(g=>{
+   let p=g.pillarId?(d.orbit||[]).find(o=>o&&o.id===g.pillarId):null;
+   return `<div class="card good-card"><div><strong>${esc(g.text)}</strong>${p?`<small style="color:var(--wine); font-weight:600; margin-bottom:2px;">✦ ${esc(p.name)}</small>`:''}<small>${esc(g.meaning||'')}</small></div><button class="btn btn-line" onclick="deleteGood('${g.id}')">Quitar</button></div>`;
+ }).join(''):'';
  bank.textContent=Number(d.wallet||0).toFixed(1).replace('.',',');shopWallet.textContent=Number(d.wallet||0).toFixed(1).replace('.',',');shopLifetime.textContent=Number(d.lifetimeStars||0).toFixed(1).replace('.',',');todayPoints.textContent=todayPointsTotal(d).toFixed(1).replace('.',',');bestStreak.textContent=fmt(d.returnToMe?.best||d.best||0);
  goals.innerHTML=d.goals.map(g=>`<div class="card goal">
    <div class="goal-top">

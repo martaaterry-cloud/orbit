@@ -64,10 +64,15 @@ function addGoodThing(){
  if(!t)return toast('Escribe algo que quieras guardar');
  let d=load();
  let gId=uid();
- d.goodThings.push({id:gId,ts:Date.now(),text:t,meaning:goodMeaning.value.trim()});
+ let sel=document.getElementById('goodPillarSelect');
+ let pId=sel?sel.value.trim():'';
+ let item={id:gId,ts:Date.now(),text:t,meaning:goodMeaning.value.trim()};
+ if(pId)item.pillarId=pId;
+ d.goodThings.push(item);
  save(d);
  goodThing.value='';
  goodMeaning.value='';
+ if(sel)sel.value='';
  let got=awardDailyAction('goodThing',.1,.5,'Algo bueno',gId);
  toast(got?'Guardado · +0,1':'Guardado en tu órbita de hoy');
  render();

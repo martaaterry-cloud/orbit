@@ -133,6 +133,11 @@
   <div class="card prompt-card">
     <div class="field"><label>¿Qué quiero recordar de hoy?</label><input id="goodThing" placeholder="Me reí, avancé algo, entrené, estuve tranquila..."></div>
     <div class="field"><label>¿Por qué quiero guardarlo? (opcional)</label><input id="goodMeaning" placeholder="Me hizo sentir capaz, acompañada, ligera..."></div>
+    <div class="field"><label>¿Con qué pilar lo relacionas?</label>
+      <select id="goodPillarSelect">
+        <option value="">Sin asociar</option>
+      </select>
+    </div>
     <button class="btn btn-main btn-wide" onclick="addGoodThing()">Guardar en mi órbita de hoy</button>
   </div>
   <div id="todayGoodThings"></div>
