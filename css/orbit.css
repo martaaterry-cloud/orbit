@@ -595,55 +595,88 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
   border: 1px solid var(--rose2) !important;
 }
 
-/* Constellation SVG styles in immersive page */
+/* Contenedor del panel Constelación en curso (Mi Progreso Estelar) */
+#universeDetailsStage {
+  min-height: 220px !important;
+  height: 220px !important;
+  margin: 14px 0 !important;
+  background: radial-gradient(ellipse at 44% 38%, rgba(42, 28, 68, 0.45) 0%, rgba(11, 8, 22, 0.9) 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 20px !important;
+  padding: 10px !important;
+  box-sizing: border-box !important;
+  box-shadow: inset 0 0 28px rgba(0, 0, 0, 0.45) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  overflow: hidden !important;
+}
+
+#universeDetailsStage svg {
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 280px !important;
+  max-height: 200px !important;
+  display: block !important;
+  overflow: visible !important;
+}
+
+/* Constellation SVG styles */
 .constellation-stage svg {
   overflow: visible;
 }
 
+.constellation-stage .ambient-sky-star {
+  fill: #ded7ff;
+  pointer-events: none;
+}
+
 .constellation-stage .star {
-  fill: #fff !important;
+  fill: #ffffff !important;
   opacity: 1 !important;
-  filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.95)) !important;
+  filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.9)) drop-shadow(0 0 8px rgba(230, 215, 255, 0.4)) !important;
 }
 
 .constellation-stage .star.main-star-low {
-  filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.85)) drop-shadow(0 0 8px rgba(230, 205, 255, 0.35)) !important;
+  filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.9)) drop-shadow(0 0 10px rgba(230, 210, 255, 0.45)) !important;
 }
 
 .constellation-stage .star.main-star-mid {
-  filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.95)) drop-shadow(0 0 12px rgba(230, 205, 255, 0.55)) !important;
+  filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.95)) drop-shadow(0 0 14px rgba(230, 210, 255, 0.6)) !important;
 }
 
 .constellation-stage .star.main-star-full {
-  filter: drop-shadow(0 0 8px rgba(255, 255, 255, 1)) drop-shadow(0 0 16px rgba(230, 205, 255, 0.8)) !important;
+  filter: drop-shadow(0 0 8px rgba(255, 255, 255, 1)) drop-shadow(0 0 18px rgba(230, 210, 255, 0.85)) !important;
 }
 
 .constellation-stage .star.refined-star {
-  filter: drop-shadow(0 0 8px rgba(255, 255, 255, 1)) !important;
+  filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.95)) drop-shadow(0 0 10px rgba(230, 215, 255, 0.5)) !important;
 }
 
 .constellation-stage .target-star {
-  fill: rgba(255, 255, 255, 0.9) !important;
-  opacity: 0.55 !important;
-  filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.6)) !important;
+  fill: rgba(235, 230, 255, 0.85) !important;
+  opacity: 0.5 !important;
+  filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.5)) !important;
 }
 
 .constellation-stage .ghost-star {
-  fill: #fff !important;
-  opacity: 0.32 !important;
-  filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.45)) !important;
+  fill: #d5d0eb !important;
+  opacity: 0.38 !important;
+  filter: drop-shadow(0 0 2px rgba(213, 208, 235, 0.3)) !important;
 }
 
 .constellation-stage .line {
-  stroke: rgba(255, 255, 255, 0.7) !important;
-  stroke-width: 0.8 !important;
+  stroke: rgba(225, 218, 255, 0.65) !important;
+  stroke-width: 0.65 !important;
+  stroke-linecap: round !important;
   fill: none !important;
 }
 
 .constellation-stage .line.refined-line {
-  stroke: rgba(255, 255, 255, 0.85) !important;
-  stroke-width: 0.9 !important;
-  filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.6)) !important;
+  stroke: rgba(235, 230, 255, 0.8) !important;
+  stroke-width: 0.75 !important;
+  stroke-linecap: round !important;
+  filter: drop-shadow(0 0 3px rgba(230, 215, 255, 0.55)) !important;
 }
 
 .constellation-stage .ghost-line {

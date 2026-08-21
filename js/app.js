@@ -239,13 +239,24 @@ function constellationSvg(def, unlocked, progress) {
   let pVal = unlocked ? 1 : Math.max(0, Math.min(1, Number(progress) || 0));
   
   // Progresión estrella por estrella: cada estrella ganada activa un nodo y sus conexiones
-  // Para Lira (need: 8, 6 nodos): 0 -> 0, 1 -> 1, 2 -> 2, 3 -> 3, 4 -> 4, 5 -> 5, 6..8 -> 6
   let totalNeed = def.need || N;
   let earned = Math.floor(pVal * totalNeed);
   let achieved = unlocked ? N : Math.min(N, earned);
   let nextTarget = unlocked ? -1 : (achieved < N ? achieved : -1);
   let isRefined = unlocked || pVal >= 0.875;
   
+  // Micro-estrellas de fondo suaves para ambientar el cielo nocturno
+  let ambientStars = [
+    [14, 22, 0.8, 0.22],
+    [85, 17, 1.0, 0.28],
+    [11, 72, 0.7, 0.18],
+    [88, 70, 0.9, 0.25],
+    [48, 90, 0.8, 0.20],
+    [80, 42, 0.6, 0.16],
+    [20, 50, 0.7, 0.19],
+    [64, 12, 0.9, 0.24]
+  ].map(([cx, cy, r, op]) => `<circle class="ambient-sky-star" cx="${cx}%" cy="${cy}%" r="${r}" opacity="${op}"/>`).join('');
+
   let lines = def.edges.map(([a, b]) => {
     let active = a < achieved && b < achieved;
     let cls = active ? ('line' + (isRefined ? ' refined-line' : '')) : 'ghost-line';
@@ -255,25 +266,25 @@ function constellationSvg(def, unlocked, progress) {
   let stars = def.pts.map((p, i) => {
     let cls = 'ghost-star';
     let isMain = (def.id === 'lyra' && i === 0);
-    let r = isMain ? 1.8 : 1.7;
+    let r = isMain ? 2.3 : 2.1;
     
     if (i < achieved) {
       if (isMain) {
         let level = isRefined ? 'main-star-full' : (pVal >= 0.38 ? 'main-star-mid' : 'main-star-low');
         cls = `star ${level}`;
-        r = isRefined ? 3.5 : (pVal >= 0.38 ? 3.0 : 2.6);
+        r = isRefined ? 3.6 : (pVal >= 0.38 ? 3.3 : 3.0);
       } else {
         cls = 'star' + (isRefined ? ' refined-star' : '');
-        r = isRefined ? 2.6 : 2.3;
+        r = isRefined ? 2.8 : 2.6;
       }
     } else if (i === nextTarget) {
       cls = 'target-star';
-      r = isMain ? 2.1 : 2.0;
+      r = isMain ? 2.5 : 2.3;
     }
     return `<circle class="${cls}" cx="${p[0]}%" cy="${p[1]}%" r="${r}"/>`;
   }).join('');
   
-  return `<svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">${lines}${stars}</svg>`;
+  return `<svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">${ambientStars}${lines}${stars}</svg>`;
 }
 function renderUniverse(d){
  let total=Number(d.lifetimeStars||0),wallet=Number(d.wallet||0);
