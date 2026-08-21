@@ -706,6 +706,7 @@ function render(){let d=accrue(),now=Date.now(),p=prompts[new Date().getDate()%p
   rewards.innerHTML=d.rewards.map(r=>`<div class="card reward"><div><strong>${esc(r.name)}</strong><small>${r.cost} estrellas</small></div><button class="btn ${Number(d.wallet||0)>=r.cost?'btn-main':'btn-soft'}" ${Number(d.wallet||0)>=r.cost?'':'disabled'} onclick="redeem('${r.id}')">${Number(d.wallet||0)>=r.cost?'Canjear':'Aún no'}</button></div>`).join('');
   renderShopBoosters(d);
   renderActiveBoosterBadge(d);
+  renderFocusAreas(d);
   renderArchive();
   renderUniverse(d);
 }
@@ -851,6 +852,69 @@ function renderActiveBoosterBadge(d){
   }else{
     el.style.display='none';
   }
+}
+
+function renderFocusAreas(d){
+  let container=document.getElementById('focusAreasList');
+  if(!container)return;
+  if(!d)d=load();
+  
+  if(typeof orbitTemplates==='undefined'){
+    container.innerHTML='<div class="empty" style="padding:10px; font-size:12px;">No se encontraron plantillas.</div>';
+    return;
+  }
+  
+  let activeIds=(d.focusAreas||[]).filter(a=>a&&a.status==='active').map(a=>a.id);
+  
+  let html=Object.keys(orbitTemplates).map(key=>{
+    let t=orbitTemplates[key];
+    let isActive=activeIds.includes(key);
+    
+    return `
+      <div class="card" style="margin-bottom:8px; padding:12px 14px; display:flex; align-items:center; justify-content:space-between; gap:12px; border:1px solid ${isActive?'var(--rose2, #e8c8cf)':'var(--line, #efe8e9)'}; background:${isActive?'rgba(235, 210, 220, 0.14)':'#fffdfb'}; border-radius:14px;">
+        <div style="flex:1; min-width:0;">
+          <div style="display:flex; align-items:center; gap:6px; margin-bottom:3px;">
+            <strong style="font-size:13px; color:var(--text, #332d30);">${esc(t.name||key)}</strong>
+            ${isActive?'<span style="font-size:10px; font-weight:700; color:#2e7d32; background:rgba(46,125,50,0.1); border:1px solid rgba(46,125,50,0.25); padding:2px 7px; border-radius:99px;">● Activa</span>':'<span style="font-size:10px; font-weight:600; color:var(--muted, #8b7d82); background:var(--soft, #f7f1f2); padding:2px 7px; border-radius:99px;">Disponible</span>'}
+          </div>
+          <div style="font-size:11px; color:var(--muted, #8b7d82); line-height:1.35;">${esc(t.home?.title||t.home?.subtitle||'')}</div>
+        </div>
+        <div>
+          ${isActive?'<span style="font-size:11px; color:var(--muted, #8b7d82); font-weight:600;">En curso</span>':`<button class="btn btn-line btn-sm" style="font-size:11px; padding:6px 12px; font-weight:600;" onclick="activateFocusArea('${esc(key)}')">Activar</button>`}
+        </div>
+      </div>
+    `;
+  }).join('');
+  
+  container.innerHTML=html;
+}
+
+function activateFocusArea(areaId){
+  if(!areaId)return;
+  let d=load();
+  if(!Array.isArray(d.focusAreas))d.focusAreas=[];
+  
+  let existing=d.focusAreas.find(a=>a&&a.id===areaId);
+  if(existing){
+    if(existing.status==='active'){
+      toast('Esta área ya está activa');
+      return;
+    }
+    existing.status='active';
+    existing.archivedAt=null;
+  }else{
+    d.focusAreas.push({
+      id:areaId,
+      status:'active',
+      startedAt:Date.now(),
+      archivedAt:null
+    });
+  }
+  
+  save(d);
+  let name=(typeof orbitTemplates!=='undefined'&&orbitTemplates[areaId]?.name)||areaId;
+  toast(`Área activada: ${name}`);
+  render();
 }
 
 setInterval(render,60000);render();
