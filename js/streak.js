@@ -54,56 +54,148 @@ function openUrge(id){
  let d=load();
  urgeGoal.innerHTML=d.goals.map(g=>`<option value="${g.id}">${esc(g.name)}</option>`).join('');
  if(id&&d.goals.some(g=>g.id===id))urgeGoal.value=id;
+ syncUrgeTimer();
  urgeModal.classList.add('show');
 }
 
-let timer=null,left=600,activeUrge=null;
+let timerInterval=null,activeUrge=null;
+
+function getTimerState(){
+ try{return JSON.parse(localStorage.getItem('orbitTimer'))}catch(e){return null}
+}
+
+function saveTimerState(state){
+ if(!state){localStorage.removeItem('orbitTimer')}
+ else{localStorage.setItem('orbitTimer',JSON.stringify(state))}
+}
+
+function clearTimerState(){
+ localStorage.removeItem('orbitTimer');
+}
+
+function updateTimerDisplay(totalSeconds){
+ let s=Math.max(0,Math.ceil(totalSeconds));
+ let el=document.getElementById('timer');
+ if(el){
+  el.textContent=String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');
+ }
+}
+
+function syncUrgeTimer(){
+ let state=getTimerState();
+ let startBtn=document.getElementById('startTimerBtn');
+ let sBtn=document.getElementById('surviveBtn');
+ 
+ if(!state){
+  if(timerInterval){clearInterval(timerInterval);timerInterval=null}
+  activeUrge=null;
+  updateTimerDisplay(600);
+  if(startBtn)startBtn.disabled=false;
+  if(sBtn)sBtn.disabled=true;
+  return;
+ }
+ 
+ activeUrge=state.activeUrge||null;
+ 
+ if(state.running){
+  let remainingMs=(state.endTime||0)-Date.now();
+  if(remainingMs<=0){
+   if(timerInterval){clearInterval(timerInterval);timerInterval=null}
+   updateTimerDisplay(0);
+   if(startBtn)startBtn.disabled=false;
+   if(sBtn)sBtn.disabled=false;
+   if(!state.completedNotified){
+    toast('Ya han pasado 10 minutos');
+    saveTimerState({activeUrge:state.activeUrge,running:false,remainingMs:0,completedNotified:true});
+   }
+  }else{
+   let secLeft=remainingMs/1000;
+   updateTimerDisplay(secLeft);
+   if(startBtn)startBtn.disabled=true;
+   if(sBtn)sBtn.disabled=true;
+   if(!timerInterval){
+    timerInterval=setInterval(syncUrgeTimer,1000);
+   }
+  }
+ }else{
+  if(timerInterval){clearInterval(timerInterval);timerInterval=null}
+  let secLeft=Math.max(0,Math.ceil((state.remainingMs||0)/1000));
+  updateTimerDisplay(secLeft);
+  if(startBtn)startBtn.disabled=false;
+  if(sBtn)sBtn.disabled=(secLeft>0);
+ }
+}
 
 function startUrgeTimer(){
- let d=load(),u={id:uid(),ts:Date.now(),goalId:urgeGoal.value,hope:urgeHope.value.trim(),fear:urgeFear.value.trim(),alternative:urgeAlternative.value.trim(),intensity:+urgeIntensity.value,survived:false};
- d.urges.push(u);
- addPoints(d,.2,'impulso','Me detuve antes de comprobar');
- save(d);
- activeUrge=u.id;
- left=600;
- updateTimer();
- clearInterval(timer);
- startTimerBtn.disabled=true;
- surviveBtn.disabled=true;
- timer=setInterval(()=>{
-  left--;
-  updateTimer();
-  if(left<=0){
-   clearInterval(timer);
-   timer=null;
-   surviveBtn.disabled=false;
-   startTimerBtn.disabled=false;
-   toast('Ya han pasado 10 minutos');
-  }
- },1000);
+ let state=getTimerState();
+ let remMs=(state&&!state.running&&state.remainingMs>0)?state.remainingMs:600*1000;
+ let uId=(state&&state.activeUrge)?state.activeUrge:null;
+ 
+ if(!uId){
+  let d=load(),u={id:uid(),ts:Date.now(),goalId:urgeGoal.value,hope:urgeHope.value.trim(),fear:urgeFear.value.trim(),alternative:urgeAlternative.value.trim(),intensity:+urgeIntensity.value,survived:false};
+  d.urges.push(u);
+  addPoints(d,.2,'impulso','Me detuve antes de comprobar');
+  save(d);
+  uId=u.id;
+ }
+ 
+ let targetEndTime=Date.now()+remMs;
+ saveTimerState({activeUrge:uId,running:true,endTime:targetEndTime,remainingMs:remMs});
+ syncUrgeTimer();
  render();
 }
 
+function pauseUrgeTimer(){
+ let state=getTimerState();
+ if(state&&state.running){
+  let remMs=Math.max(0,(state.endTime||0)-Date.now());
+  saveTimerState({activeUrge:state.activeUrge,running:false,remainingMs:remMs});
+  syncUrgeTimer();
+ }
+}
+
+function resumeUrgeTimer(){
+ startUrgeTimer();
+}
+
+function resetUrgeTimer(){
+ if(timerInterval){clearInterval(timerInterval);timerInterval=null}
+ clearTimerState();
+ activeUrge=null;
+ syncUrgeTimer();
+}
+
 function updateTimer(){
- document.getElementById('timer').textContent=String(Math.floor(left/60)).padStart(2,'0')+':'+String(left%60).padStart(2,'0');
+ syncUrgeTimer();
 }
 
 function surviveUrge(){
- if(!activeUrge)return;
- let d=load(),u=d.urges.find(x=>x.id===activeUrge);
- if(u&&!u.survived){
-  u.survived=true;
-  addPoints(d,.3,'impulso','Atravesé el impulso sin comprobar');
-  save(d);
+ let state=getTimerState();
+ let uId=(state&&state.activeUrge)||activeUrge;
+ if(uId){
+  let d=load(),u=d.urges.find(x=>x.id===uId);
+  if(u&&!u.survived){
+   u.survived=true;
+   addPoints(d,.3,'impulso','Atravesé el impulso sin comprobar');
+   save(d);
+  }
  }
+ if(timerInterval){clearInterval(timerInterval);timerInterval=null}
+ clearTimerState();
  activeUrge=null;
  urgeHope.value='';
  urgeFear.value='';
  urgeAlternative.value='';
  closeModal('urgeModal');
  toast('+0,2 por detenerte · +0,3 por atravesarlo');
+ syncUrgeTimer();
  render();
 }
+
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)syncUrgeTimer()});
+window.addEventListener('pageshow',()=>syncUrgeTimer());
+window.addEventListener('focus',()=>syncUrgeTimer());
+syncUrgeTimer();
 
 function slip(id){
  slipGoalId.value=id;
