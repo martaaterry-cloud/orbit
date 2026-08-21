@@ -16,7 +16,30 @@
   <link rel="stylesheet" href="css/orbit.css?v=1.1.0">
 </head>
 <body>
-<div class="app">
+<!-- Pantalla de Acceso Inicial -->
+<div id="authScreen" class="auth-screen" style="display:none;">
+  <div class="auth-box">
+    <div class="brand" style="margin-bottom:6px; font-size:24px; letter-spacing:0.15em;">ORBIT<span class="brand-mark"></span></div>
+    <p style="font-size:13px; color:var(--muted); margin-bottom:24px; line-height:1.5;">Tu espacio personal y protegido para volver a ti.</p>
+    
+    <form onsubmit="handleCloudLoginSubmit(event)" style="display:flex; flex-direction:column; gap:12px; width:100%;">
+      <div class="field" style="text-align:left;">
+        <label style="font-size:11px; text-transform:uppercase; letter-spacing:0.05em; color:var(--muted); font-weight:600; margin-bottom:4px; display:block;">Email</label>
+        <input id="cloudEmail" type="email" placeholder="tu@email.com" required style="width:100%; box-sizing:border-box; padding:12px 14px; font-size:14px; border-radius:12px; border:1px solid var(--line); background:#fffdfb;" autocomplete="username">
+      </div>
+      
+      <div class="field" style="text-align:left;">
+        <label style="font-size:11px; text-transform:uppercase; letter-spacing:0.05em; color:var(--muted); font-weight:600; margin-bottom:4px; display:block;">Contraseña</label>
+        <input id="cloudPassword" type="password" placeholder="••••••••" required style="width:100%; box-sizing:border-box; padding:12px 14px; font-size:14px; border-radius:12px; border:1px solid var(--line); background:#fffdfb;" autocomplete="current-password">
+      </div>
+      
+      <button type="submit" class="btn btn-main btn-wide" style="margin-top:6px; padding:12px; font-size:14px; font-weight:600; border-radius:12px;" id="cloudLoginBtn">Entrar en Orbit</button>
+    </form>
+    <div id="authOfflineNotice" style="display:none; margin-top:14px; font-size:11px; color:var(--muted); line-height:1.4;">Se requiere conexión a Internet para el primer acceso en este dispositivo.</div>
+  </div>
+</div>
+
+<div class="app" id="mainApp">
 <header>
   <button class="icon-button" onclick="showPage('today')"><svg class="icon" viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 16 0A8 8 0 1 0 4 12"/><path d="M12 8v4l2.5 1.5"/></svg></button>
   <div class="brand">ORBIT<span class="brand-mark"></span></div>
@@ -269,23 +292,10 @@
 
     <!-- Sección de Nube Supabase -->
     <div class="cloud-auth-box" style="border-top:1px solid var(--line); padding-top:14px; margin-top:14px;">
-      <div id="cloudLoginForm">
-        <div style="font-size:12px; font-weight:600; color:var(--ink); margin-bottom:8px; text-align:left; display:flex; align-items:center; gap:6px;">
-          <svg class="icon" viewBox="0 0 24 24" style="width:16px; height:16px; stroke:var(--wine);"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg>
-          <span>Conectar con mi nube</span>
-        </div>
-        <form onsubmit="handleCloudLoginSubmit(event)" style="display:flex; flex-direction:column; gap:8px;">
-          <input id="cloudEmail" type="email" placeholder="Email de tu nube" style="padding:9px 12px; font-size:12px;" autocomplete="username">
-          <input id="cloudPassword" type="password" placeholder="Contraseña" style="padding:9px 12px; font-size:12px;" autocomplete="current-password">
-          <button type="submit" class="btn btn-main btn-wide" style="padding:9px 14px; font-size:12px;" id="cloudLoginBtn">Conectar con mi nube</button>
-        </form>
-      </div>
-
-      <div id="cloudLoggedSection" style="display:none; text-align:center; padding:4px 0;">
-        <div style="display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:600; color:#2e7d32; background:rgba(46,125,50,0.08); border:1px solid rgba(46,125,50,0.2); padding:4px 10px; border-radius:99px; margin-bottom:6px;">
-          <span style="display:inline-block; width:7px; height:7px; border-radius:50%; background:#2e7d32;"></span>
-          <span>Nube conectada</span>
-          <span id="cloudSyncStatus" style="font-size:11px; font-weight:400; color:#2e7d32; opacity:0.85;"></span>
+      <div id="cloudLoggedSection" style="text-align:center; padding:4px 0;">
+        <div style="display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:600; color:#2e7d32; background:rgba(46,125,50,0.08); border:1px solid rgba(46,125,50,0.2); padding:4px 10px; border-radius:99px; margin-bottom:6px;" id="cloudStatusBadge">
+          <span style="display:inline-block; width:7px; height:7px; border-radius:50%; background:#2e7d32;" id="cloudStatusDot"></span>
+          <span id="cloudStatusText">Nube conectada</span>
         </div>
         <div style="font-size:11px; color:var(--muted); margin-bottom:12px;" id="cloudUserEmail"></div>
         <div style="display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin-bottom:12px;">

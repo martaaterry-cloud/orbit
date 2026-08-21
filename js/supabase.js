@@ -1,12 +1,8 @@
-// Integración con Supabase - Autenticación y Sincronización Automática Segura
+// Integración con Supabase - Autenticación en Entrada y Respaldo Manual
 const SUPABASE_URL = 'https://wquknalzykitgdkxoysu.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_ctuEoowcWJs2yaGDOyoK1g_BsQKIVFh';
 
 let supabaseClient = null;
-let currentCloudUser = null;
-let syncDebounceTimer = null;
-let isSyncing = false;
-let pendingSync = false;
 
 function getSupabase() {
   if (!supabaseClient && typeof window !== 'undefined' && window.supabase && typeof window.supabase.createClient === 'function') {
@@ -15,31 +11,49 @@ function getSupabase() {
   return supabaseClient;
 }
 
-function updateSyncStatus(status) {
+function updateAppAuthState(user, isOffline = false) {
   if (typeof document === 'undefined') return;
-  const statusEl = document.getElementById('cloudSyncStatus');
-  if (statusEl) {
-    statusEl.textContent = status ? ' · ' + status : '';
-  }
-}
-
-function updateCloudUI(user) {
-  if (typeof document === 'undefined') return;
-  const loginForm = document.getElementById('cloudLoginForm');
-  const loggedSection = document.getElementById('cloudLoggedSection');
+  const authScreen = document.getElementById('authScreen');
+  const mainApp = document.getElementById('mainApp');
   const userEmailEl = document.getElementById('cloudUserEmail');
+  const statusText = document.getElementById('cloudStatusText');
+  const statusDot = document.getElementById('cloudStatusDot');
+  const statusBadge = document.getElementById('cloudStatusBadge');
+  const offlineNotice = document.getElementById('authOfflineNotice');
 
-  currentCloudUser = user || null;
+  const knownUser = localStorage.getItem('orbitKnownUser');
+  const offline = isOffline || (typeof navigator !== 'undefined' && !navigator.onLine);
 
   if (user) {
-    if (loginForm) loginForm.style.display = 'none';
-    if (loggedSection) loggedSection.style.display = 'block';
-    if (userEmailEl) userEmailEl.textContent = user.email || 'Conectado';
+    localStorage.setItem('orbitKnownUser', user.email || 'true');
+    if (authScreen) authScreen.style.display = 'none';
+    if (mainApp) mainApp.style.display = 'block';
+    if (userEmailEl) userEmailEl.textContent = user.email || '';
+    if (statusText) statusText.textContent = offline ? 'Sin conexión' : 'Nube conectada';
+    if (statusDot) statusDot.style.background = offline ? '#c27d38' : '#2e7d32';
+    if (statusBadge) {
+      statusBadge.style.color = offline ? '#c27d38' : '#2e7d32';
+      statusBadge.style.borderColor = offline ? 'rgba(194,125,56,0.25)' : 'rgba(46,125,50,0.2)';
+      statusBadge.style.background = offline ? 'rgba(194,125,56,0.08)' : 'rgba(46,125,50,0.08)';
+    }
+  } else if (knownUser && offline) {
+    // Sesión conocida previamente pero sin conexión a Internet: permitir seguir usando Orbit localmente
+    if (authScreen) authScreen.style.display = 'none';
+    if (mainApp) mainApp.style.display = 'block';
+    if (userEmailEl) userEmailEl.textContent = knownUser !== 'true' ? knownUser : '';
+    if (statusText) statusText.textContent = 'Sin conexión';
+    if (statusDot) statusDot.style.background = '#c27d38';
+    if (statusBadge) {
+      statusBadge.style.color = '#c27d38';
+      statusBadge.style.borderColor = 'rgba(194,125,56,0.25)';
+      statusBadge.style.background = 'rgba(194,125,56,0.08)';
+    }
   } else {
-    if (loginForm) loginForm.style.display = 'block';
-    if (loggedSection) loggedSection.style.display = 'none';
+    // Sin sesión activa ni conocida: mostrar pantalla de acceso
+    if (authScreen) authScreen.style.display = 'flex';
+    if (mainApp) mainApp.style.display = 'none';
     if (userEmailEl) userEmailEl.textContent = '';
-    updateSyncStatus('');
+    if (offlineNotice) offlineNotice.style.display = offline ? 'block' : 'none';
   }
 }
 
@@ -49,169 +63,88 @@ async function supabaseLogin(email, password) {
     if (typeof toast === 'function') toast('Servicio de nube no disponible');
     return false;
   }
+  const loginBtn = document.getElementById('cloudLoginBtn');
+  if (loginBtn) { loginBtn.disabled = true; loginBtn.textContent = 'Entrando…'; }
+
   const { data, error } = await sb.auth.signInWithPassword({ email, password });
+  if (loginBtn) { loginBtn.disabled = false; loginBtn.textContent = 'Entrar en Orbit'; }
+
   if (error) {
     if (typeof toast === 'function') toast(error.message || 'Error al iniciar sesión');
     return false;
   }
-  if (typeof toast === 'function') toast('Nube conectada');
-  updateCloudUI(data.session?.user || null);
-  if (data.session) {
-    autoSyncOnInit(data.session);
-  }
+  if (typeof toast === 'function') toast('Bienvenida a Orbit');
+  localStorage.setItem('orbitKnownUser', email);
+  updateAppAuthState(data.session?.user || null);
   return true;
 }
 
 async function supabaseLogout() {
   const sb = getSupabase();
-  if (!sb) return;
-  clearTimeout(syncDebounceTimer);
-  const { error } = await sb.auth.signOut();
-  if (error) {
-    if (typeof toast === 'function') toast(error.message || 'Error al cerrar sesión');
-    return;
+  localStorage.removeItem('orbitKnownUser');
+  if (sb) {
+    await sb.auth.signOut().catch(() => {});
   }
   if (typeof toast === 'function') toast('Sesión cerrada');
-  updateCloudUI(null);
+  updateAppAuthState(null);
 }
 
-// Sincronización automática al iniciar o detectar sesión
-async function autoSyncOnInit(session) {
-  if (!session || !session.user) return;
+async function initSupabaseAuth() {
   const sb = getSupabase();
-  if (!sb) return;
-
-  updateSyncStatus('Comprobando…');
+  if (!sb) {
+    // Si no carga Supabase JS pero hay usuario conocido, no bloquear el acceso local
+    updateAppAuthState(null);
+    return;
+  }
 
   try {
-    const { data, error } = await sb
-      .from('orbit_state')
-      .select('orbit_data, orbit_timer, updated_at')
-      .eq('user_id', session.user.id)
-      .maybeSingle();
+    const { data: { session } } = await sb.auth.getSession();
+    updateAppAuthState(session?.user || null);
 
-    if (error) {
-      console.warn('Error al comprobar estado en la nube:', error);
-      updateSyncStatus('Nube conectada');
-      return;
-    }
-
-    const localUpdatedAt = localStorage.getItem('orbitLocalUpdatedAt');
-    const localTime = localUpdatedAt ? new Date(localUpdatedAt).getTime() : 0;
-
-    // 1. Si no hay datos en la nube y sí hay en local -> subir a la nube
-    if (!data || !data.orbit_data || !data.updated_at) {
-      performAutoUpload();
-      return;
-    }
-
-    const cloudTime = new Date(data.updated_at).getTime();
-    const timeDiff = cloudTime - localTime;
-
-    // 2. Si la nube es más reciente (diferencia > 2 segundos) -> descargar
-    if (timeDiff > 2000) {
-      localStorage.setItem('orbitV9', JSON.stringify(data.orbit_data));
-      if (data.orbit_timer) {
-        localStorage.setItem('orbitTimer', JSON.stringify(data.orbit_timer));
-      } else {
-        localStorage.removeItem('orbitTimer');
+    sb.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT') {
+        localStorage.removeItem('orbitKnownUser');
+        updateAppAuthState(null);
+      } else if (session?.user) {
+        updateAppAuthState(session.user);
       }
-      localStorage.setItem('orbitLocalUpdatedAt', data.updated_at);
-
-      if (typeof load === 'function') load();
-      if (typeof render === 'function') render();
-      if (typeof syncUrgeTimer === 'function') syncUrgeTimer();
-      if (typeof renderArchive === 'function') renderArchive();
-
-      updateSyncStatus('Sincronizado');
-      return;
-    }
-
-    // 3. Si el estado local es más reciente (diferencia > 2 segundos) -> subir
-    if (timeDiff < -2000) {
-      performAutoUpload();
-      return;
-    }
-
-    // 4. Si están prácticamente a la par -> sincronizado
-    updateSyncStatus('Sincronizado');
+    });
   } catch (err) {
-    console.error('Error en sincronización inicial:', err);
-    updateSyncStatus('Nube conectada');
+    console.warn('Error verificando sesión de Supabase (posible offline):', err);
+    updateAppAuthState(null, true);
   }
+
+  window.addEventListener('online', () => {
+    sb.auth.getSession().then(({ data: { session } }) => {
+      updateAppAuthState(session?.user || null, false);
+    }).catch(() => updateAppAuthState(null, true));
+  });
+
+  window.addEventListener('offline', () => {
+    updateAppAuthState(null, true);
+  });
 }
 
-// Programar subida automática con debounce (1.5 segundos)
-function scheduleCloudSync() {
-  if (!currentCloudUser) return;
-  updateSyncStatus('Guardando…');
-  clearTimeout(syncDebounceTimer);
-  syncDebounceTimer = setTimeout(() => {
-    performAutoUpload();
-  }, 1500);
-}
+function handleCloudLoginSubmit(e) {
+  if (e && e.preventDefault) e.preventDefault();
+  const emailInput = document.getElementById('cloudEmail');
+  const passInput = document.getElementById('cloudPassword');
+  const email = emailInput ? emailInput.value.trim() : '';
+  const password = passInput ? passInput.value : '';
 
-async function performAutoUpload() {
-  const sb = getSupabase();
-  if (!sb) return;
-
-  const { data: { session } } = await sb.auth.getSession();
-  if (!session || !session.user) {
-    updateCloudUI(null);
+  if (!email || !password) {
+    if (typeof toast === 'function') toast('Introduce email y contraseña');
     return;
   }
-  currentCloudUser = session.user;
 
-  if (isSyncing) {
-    pendingSync = true;
-    return;
-  }
-  isSyncing = true;
-  updateSyncStatus('Guardando…');
-
-  let orbitData = null;
-  try { orbitData = JSON.parse(localStorage.getItem('orbitV9')); } catch (e) {}
-  if (!orbitData && typeof load === 'function') orbitData = load();
-
-  let orbitTimer = null;
-  try {
-    const raw = localStorage.getItem('orbitTimer');
-    if (raw) orbitTimer = JSON.parse(raw);
-  } catch (e) {}
-
-  let localIso = localStorage.getItem('orbitLocalUpdatedAt');
-  if (!localIso) {
-    localIso = new Date().toISOString();
-    localStorage.setItem('orbitLocalUpdatedAt', localIso);
-  }
-
-  const payload = {
-    user_id: session.user.id,
-    orbit_data: orbitData,
-    orbit_timer: orbitTimer,
-    updated_at: localIso
-  };
-
-  const { error } = await sb
-    .from('orbit_state')
-    .upsert(payload, { onConflict: 'user_id' });
-
-  isSyncing = false;
-
-  if (error) {
-    console.warn('Error en subida automática:', error);
-    updateSyncStatus('Error');
-  } else {
-    updateSyncStatus('Sincronizado');
-  }
-
-  if (pendingSync) {
-    pendingSync = false;
-    scheduleCloudSync();
-  }
+  supabaseLogin(email, password);
 }
 
-// Subida manual
+function handleCloudLogout() {
+  supabaseLogout();
+}
+
+// Subida manual a la nube
 async function uploadToCloud() {
   const sb = getSupabase();
   if (!sb) {
@@ -226,7 +159,7 @@ async function uploadToCloud() {
   }
 
   let orbitData = null;
-  try { orbitData = JSON.parse(localStorage.getItem('orbitV9')); } catch (e) { if (typeof load === 'function') orbitData = load(); }
+  try { orbitData = JSON.parse(localStorage.getItem('orbitV9')); } catch (e) {}
   if (!orbitData && typeof load === 'function') orbitData = load();
 
   let orbitTimer = null;
@@ -236,8 +169,6 @@ async function uploadToCloud() {
   } catch (e) {}
 
   const nowIso = new Date().toISOString();
-  localStorage.setItem('orbitLocalUpdatedAt', nowIso);
-
   const payload = {
     user_id: session.user.id,
     orbit_data: orbitData,
@@ -247,7 +178,6 @@ async function uploadToCloud() {
 
   const uploadBtn = document.getElementById('cloudUploadBtn');
   if (uploadBtn) uploadBtn.disabled = true;
-  updateSyncStatus('Guardando…');
 
   const { error } = await sb
     .from('orbit_state')
@@ -257,16 +187,14 @@ async function uploadToCloud() {
 
   if (error) {
     if (typeof toast === 'function') toast(error.message || 'Error al guardar en la nube');
-    updateSyncStatus('Error');
     return false;
   }
 
   if (typeof toast === 'function') toast('Datos guardados en la nube');
-  updateSyncStatus('Sincronizado');
   return true;
 }
 
-// Recuperación manual
+// Recuperación manual desde la nube
 async function restoreFromCloud() {
   const sb = getSupabase();
   if (!sb) {
@@ -313,12 +241,7 @@ async function restoreFromCloud() {
     localStorage.removeItem('orbitTimer');
   }
 
-  if (data.updated_at) {
-    localStorage.setItem('orbitLocalUpdatedAt', data.updated_at);
-  }
-
   if (typeof toast === 'function') toast('Datos de la nube restaurados');
-  updateSyncStatus('Sincronizado');
 
   if (typeof load === 'function') load();
   if (typeof render === 'function') render();
@@ -326,47 +249,6 @@ async function restoreFromCloud() {
   if (typeof renderArchive === 'function') renderArchive();
 
   return true;
-}
-
-async function initSupabaseAuth() {
-  const sb = getSupabase();
-  if (!sb) return;
-
-  try {
-    const { data: { session } } = await sb.auth.getSession();
-    updateCloudUI(session?.user || null);
-    if (session) {
-      autoSyncOnInit(session);
-    }
-
-    sb.auth.onAuthStateChange((event, session) => {
-      updateCloudUI(session?.user || null);
-      if (event === 'SIGNED_IN' && session) {
-        autoSyncOnInit(session);
-      }
-    });
-  } catch (err) {
-    console.error('Error inicializando auth Supabase:', err);
-  }
-}
-
-function handleCloudLoginSubmit(e) {
-  if (e && e.preventDefault) e.preventDefault();
-  const emailInput = document.getElementById('cloudEmail');
-  const passInput = document.getElementById('cloudPassword');
-  const email = emailInput ? emailInput.value.trim() : '';
-  const password = passInput ? passInput.value : '';
-
-  if (!email || !password) {
-    if (typeof toast === 'function') toast('Introduce email y contraseña');
-    return;
-  }
-
-  supabaseLogin(email, password);
-}
-
-function handleCloudLogout() {
-  supabaseLogout();
 }
 
 if (typeof document !== 'undefined') {
