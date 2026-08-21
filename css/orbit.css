@@ -650,13 +650,14 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
 }
 
 /* ==========================================================================
-   ATLAS CELESTE - LIBRO DE CONSTELACIONES
+   ATLAS CELESTE - LIBRO DE CONSTELACIONES (PÁGINAS DE LIBRO / APPLE BOOKS STYLE)
    ========================================================================== */
 #constellationBookModal .sheet {
-  padding: 20px 14px 16px 14px !important;
-  max-height: min(82vh, 600px) !important;
+  padding: 16px 10px 14px 10px !important;
+  max-height: min(84vh, 620px) !important;
   display: flex !important;
   flex-direction: column !important;
+  background: rgba(10, 7, 20, 0.94) !important;
 }
 
 .atlas-container {
@@ -667,9 +668,9 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
 
 .atlas-chapters {
   display: flex;
-  gap: 6px;
+  gap: 5px;
   overflow-x: auto;
-  padding: 2px 2px 8px 2px;
+  padding: 0 4px 8px 4px;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
 }
@@ -679,45 +680,48 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
 
 .atlas-chip {
   flex: 0 0 auto;
-  padding: 5px 12px;
-  font-size: 10px;
+  padding: 4px 10px;
+  font-size: 9.5px;
   border-radius: 99px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.65);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.55);
   cursor: pointer;
   transition: all 0.2s ease;
   letter-spacing: 0.02em;
 }
 .atlas-chip.active {
-  background: rgba(255, 255, 255, 0.12);
-  border-color: rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.25);
   color: #ffffff;
-  box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
 }
 
 .atlas-collection-info {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 11px;
-  color: rgba(255, 255, 255, 0.75);
+  font-size: 10.5px;
+  color: rgba(255, 255, 255, 0.65);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin: 4px 4px 10px 4px;
+  letter-spacing: 0.06em;
+  margin: 2px 8px 8px 8px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 .atlas-collection-info small {
-  font-size: 10px;
-  color: rgba(255, 255, 255, 0.45);
+  font-size: 9.5px;
+  color: rgba(255, 255, 255, 0.4);
   text-transform: none;
+  letter-spacing: normal;
 }
 
+/* El carrusel se comporta como el encuadernado del libro */
 .atlas-carousel {
   display: flex;
-  gap: 12px;
+  gap: 0;
   overflow-x: auto;
   scroll-snap-type: x mandatory;
-  padding: 4px 4px 12px 4px;
+  padding: 4px 0 10px 0;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
 }
@@ -725,43 +729,70 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
   display: none;
 }
 
+/* La página del libro: papel astronómico cosido, sombra de lomo y borde apilado */
 .atlas-page {
-  flex: 0 0 88%;
+  flex: 0 0 96%;
   min-width: 0;
+  margin: 0 2%;
   scroll-snap-align: center;
   scroll-snap-stop: always;
-  background: radial-gradient(circle at 50% 20%, rgba(255, 255, 255, 0.06) 0%, rgba(15, 11, 28, 0.7) 100%);
+  background: linear-gradient(90deg, #110c22 0%, #16102c 4%, #181232 50%, #16102c 96%, #100b20 100%);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 20px;
-  padding: 18px 14px 16px 14px;
+  border-radius: 3px 14px 14px 3px;
+  padding: 14px 14px 14px 18px;
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
-  box-shadow: inset 0 0 20px rgba(255, 255, 255, 0.02), 0 8px 24px rgba(0, 0, 0, 0.35);
+  box-sizing: border-box;
   position: relative;
+  /* Efecto lomo a la izquierda, sombra de volumen a la derecha y hojas apiladas */
+  box-shadow: 
+    inset 14px 0 18px -8px rgba(0, 0, 0, 0.85),
+    inset -8px 0 14px -8px rgba(0, 0, 0, 0.5),
+    2px 0 0 rgba(255, 255, 255, 0.03),
+    4px 0 0 rgba(8, 5, 16, 0.8),
+    0 10px 28px rgba(0, 0, 0, 0.6);
 }
 
-.atlas-page-num {
-  position: absolute;
-  top: 12px;
-  right: 14px;
+.atlas-page-header {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   font-size: 9px;
+  color: rgba(255, 255, 255, 0.4);
   letter-spacing: 0.08em;
-  color: rgba(255, 255, 255, 0.35);
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+.atlas-chapter-title {
+  font-family: Georgia, serif;
+  font-style: italic;
+  font-size: 9.5px;
+}
+.atlas-page-num {
   font-family: monospace;
 }
 
 .atlas-drawing-stage {
-  width: 100px;
-  height: 100px;
-  margin: 4px auto 8px auto;
+  width: 110px;
+  height: 110px;
+  margin: 6px auto 6px auto;
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.04) 0%, transparent 70%);
   border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.03) 0%, transparent 72%);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+.atlas-compass-ring {
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 1px dashed rgba(255, 255, 255, 0.08);
+  pointer-events: none;
 }
 .atlas-drawing-stage svg {
   width: 100%;
@@ -769,57 +800,68 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
 }
 
 .atlas-page.locked .atlas-drawing-stage svg {
-  opacity: 0.4;
-  filter: grayscale(0.2);
+  opacity: 0.38;
+  filter: grayscale(0.25);
 }
 
 .atlas-name {
   font-family: Georgia, serif;
-  font-size: 16px;
+  font-size: 16.5px;
+  font-weight: 500;
   color: #ffffff;
-  margin: 2px 0 4px 0;
+  margin: 2px 0 3px 0;
   letter-spacing: 0.02em;
 }
 
 .atlas-status {
-  font-size: 9.5px;
+  font-size: 9px;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  margin-bottom: 6px;
-  padding: 2px 8px;
+  margin-bottom: 5px;
+  padding: 1.5px 8px;
   border-radius: 99px;
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
 }
 .atlas-status.owned {
   color: #7de8be;
-  background: rgba(125, 232, 190, 0.1);
-  border: 1px solid rgba(125, 232, 190, 0.25);
+  background: rgba(125, 232, 190, 0.08);
+  border: 1px solid rgba(125, 232, 190, 0.2);
 }
 .atlas-status.discovered {
   color: #fcc2cd;
-  background: rgba(252, 194, 205, 0.1);
-  border: 1px solid rgba(252, 194, 205, 0.25);
+  background: rgba(252, 194, 205, 0.08);
+  border: 1px solid rgba(252, 194, 205, 0.2);
 }
 .atlas-status.in-progress {
   color: #ffeaa7;
-  background: rgba(255, 234, 167, 0.1);
-  border: 1px solid rgba(255, 234, 167, 0.25);
+  background: rgba(255, 234, 167, 0.08);
+  border: 1px solid rgba(255, 234, 167, 0.2);
 }
 .atlas-status.locked {
-  color: rgba(247, 244, 235, 0.45);
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: rgba(247, 244, 235, 0.4);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .atlas-desc {
+  font-family: Georgia, serif;
   font-size: 11px;
   line-height: 1.45;
-  color: rgba(247, 244, 235, 0.68);
-  margin: 4px 0 8px 0;
-  max-width: 92%;
+  color: rgba(247, 244, 235, 0.72);
+  margin: 4px 0 6px 0;
+  max-width: 94%;
   font-style: italic;
+}
+
+.atlas-page-footer {
+  margin-top: auto;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 4px;
 }
 
 .atlas-meta-row {
@@ -827,24 +869,22 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
   gap: 8px;
   align-items: center;
   justify-content: center;
-  margin-top: 4px;
 }
 .atlas-date {
   font-size: 9.5px;
-  color: rgba(247, 244, 235, 0.45);
+  color: rgba(247, 244, 235, 0.4);
 }
 .atlas-req {
-  font-size: 10px;
-  color: rgba(247, 244, 235, 0.45);
-  margin-top: 2px;
+  font-size: 9.5px;
+  color: rgba(247, 244, 235, 0.4);
 }
 
 .atlas-swipe-hint {
-  font-size: 9px;
-  color: rgba(247, 244, 235, 0.35);
+  font-size: 8.5px;
+  color: rgba(247, 244, 235, 0.3);
   text-align: center;
   margin-top: 4px;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 

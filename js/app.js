@@ -212,15 +212,23 @@ function renderUniverse(d){
      }
 
      return `
-       <div class="atlas-page ${owned ? 'owned' : (discovered ? 'discovered' : 'locked')}">
-         <div class="atlas-page-num">${pageNum}</div>
-         <div class="atlas-drawing-stage">${svgMarkup}</div>
-         <div class="atlas-name">${esc(c.name)}${c.extra === 'tu signo' ? '<span class="sign-tag" style="margin-left:5px; font-size:8.5px;">tu signo</span>' : ''}</div>
-         ${statusMarkup}
-         <p class="atlas-desc">${esc(c.desc || 'Constelación del firmamento.')}</p>
-         ${actionMarkup}
-       </div>
-     `;
+        <div class="atlas-page ${owned ? 'owned' : (discovered ? 'discovered' : 'locked')}">
+          <div class="atlas-page-header">
+            <span class="atlas-chapter-title">${esc(activeTab.name)}</span>
+            <span class="atlas-page-num">${pageNum}</span>
+          </div>
+          <div class="atlas-drawing-stage">
+            <div class="atlas-compass-ring"></div>
+            ${svgMarkup}
+          </div>
+          <div class="atlas-name">${esc(c.name)}${c.extra === 'tu signo' ? '<span class="sign-tag" style="margin-left:6px; font-size:8.5px;">tu signo</span>' : ''}</div>
+          ${statusMarkup}
+          <p class="atlas-desc">${esc(c.desc || 'Constelación del firmamento.')}</p>
+          <div class="atlas-page-footer">
+            ${actionMarkup}
+          </div>
+        </div>
+      `;
    }).join('');
  }
  
