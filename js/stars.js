@@ -1,16 +1,17 @@
 // Economía de estrellas: hoy, disponibles, históricas e historial de ganancias.
 // Extraído desde app.js sin romper compatibilidad.
 
-function addPoints(d,amount,kind,label,refId=null){
+function addPoints(d,amount,kind,label,refId=null,eventTs=null){
  amount=Number(amount||0);
  if(amount<=0)return;
  d.wallet=Number(d.wallet||0)+amount;
  d.lifetimeStars=Number(d.lifetimeStars||0)+amount;
  d.bank=d.wallet;
- let k=dayKey();
+ let ts=eventTs||Date.now();
+ let k=dayKey(ts);
  if(!d.pointAwards[k])d.pointAwards[k]={limits:{},actions:{},events:[]};
  if(!d.pointAwards[k].events)d.pointAwards[k].events=[];
- d.pointAwards[k].events.push({ts:Date.now(),amount,kind,label,refId:refId||null});
+ d.pointAwards[k].events.push({ts,amount,kind,label,refId:refId||null});
 }
 
 function todayPointsTotal(d){
@@ -125,14 +126,34 @@ function openTodayPointsModal(forDayKey=null){
    let amt=Number(e.amount||0);
    total+=amt;
    let timeStr=e.ts?new Date(e.ts).toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'}):'';
-   
    let kindBadge='';
-   if(e.kind==='racha')kindBadge='Racha';
-   else if(e.kind==='impulso')kindBadge='Pausa';
-   else if(e.kind==='accion')kindBadge='Diario';
-   else kindBadge=e.kind||'Orbit';
-
    let title=e.label||'Estrella ganada';
+
+   if(e.kind==='racha'){
+    kindBadge='Racha';
+   }else if(e.kind==='impulso'){
+    kindBadge='Pausa';
+   }else if(e.kind==='accion'){
+    if(e.label==='Check-in'||(e.refId&&String(e.refId).startsWith('checkin-'))){
+     kindBadge='Check-in';
+     title='Check-in diario';
+    }else if(e.label==='Algo bueno'||(Array.isArray(d.goodThings)&&d.goodThings.some(g=>g&&g.id===e.refId))){
+     kindBadge='Lo que sí pasó';
+     title='Algo bueno';
+    }else{
+     kindBadge='Diario';
+     let jItem=Array.isArray(d.journal)?d.journal.find(j=>j&&j.id===e.refId):null;
+     if(jItem&&jItem.title){
+      title=jItem.title;
+     }else if(e.label&&e.label!=='journal'){
+      title=e.label;
+     }else{
+      title='Escribir en el diario';
+     }
+    }
+   }else{
+    kindBadge=e.kind||'Orbit';
+   }
 
    return `<div class="card entry-card" style="padding:10px 12px; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center;">
     <div style="text-align:left;">

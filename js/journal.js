@@ -23,7 +23,7 @@ function saveQuickEntry(){
  d.journal.push({id:eId,ts:Date.now(),type:'rapida',title:p[0],text:t});
  save(d);
  quickText.value='';
- let got=awardDailyAction('journal',.1,.5,'Escribir',eId);
+ let got=awardDailyAction('journal',.1,.5,p[0]||'Escribir',eId);
  toast(got?'Guardado · +0,1':'Guardado');
  render();
 }

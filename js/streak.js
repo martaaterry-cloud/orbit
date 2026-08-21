@@ -19,7 +19,8 @@ function accrue(){
  milestones.forEach(x=>{
    if(elapsed>=x.ms&&!r.awardedMilestones.includes(x.key)){
      r.awardedMilestones.push(x.key);
-     addPoints(d,x.pts,'racha','Volver a mí · '+x.key);
+     let milestoneReachedTs=Number(r.since)+x.ms;
+     addPoints(d,x.pts,'racha','Volver a mí · '+x.key,null,milestoneReachedTs);
      added+=x.pts
    }
  });

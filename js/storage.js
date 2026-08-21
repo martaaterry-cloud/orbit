@@ -65,6 +65,70 @@ function load(){
  if(Array.isArray(d.journal)){d.journal.forEach(e=>{if(e&&!e.id)e.id=uid()})}
  if(Array.isArray(d.goodThings)){d.goodThings.forEach(g=>{if(g&&!g.id)g.id=uid()})}
  if(Array.isArray(d.urges)){d.urges.forEach(u=>{if(u&&!u.id)u.id=uid()})}
+
+  // Migración quirúrgica única: eventos de racha actual y limpieza del huérfano 2026-08-21
+  if(!d._streakMilestonesAndOrphanFixed_20260821){
+    let dayObj21 = d.pointAwards?.['2026-08-21'];
+    if(dayObj21 && Array.isArray(dayObj21.events)){
+      let idxOrphan = dayObj21.events.findIndex(e =>
+        e && e.kind === 'accion' && e.label === 'Escribir' && !e.refId && Number(e.amount) === 0.1
+      );
+      if(idxOrphan !== -1){
+        dayObj21.events.splice(idxOrphan, 1);
+        if(dayObj21.actions && dayObj21.actions.journal){
+          dayObj21.actions.journal = Math.max(0, Number(dayObj21.actions.journal) - 0.1);
+        }
+        d.wallet = Math.max(0, Number(d.wallet || 0) - 0.1);
+        d.lifetimeStars = Math.max(0, Number(d.lifetimeStars || 0) - 0.1);
+        d.bank = d.wallet;
+      }
+    }
+
+    let since = Number(d.returnToMe?.since || 0);
+    if(since > 0){
+      let day20Key = dayKey(since);
+      let day21Key = dayKey(since + 24 * 3600 * 1000);
+
+      if(!d.pointAwards[day20Key]) d.pointAwards[day20Key] = { limits: {}, actions: {}, events: [] };
+      if(!d.pointAwards[day20Key].events) d.pointAwards[day20Key].events = [];
+
+      let events21 = d.pointAwards[day21Key]?.events || [];
+
+      let idx4 = events21.findIndex(e => e.kind === 'racha' && e.label === 'Volver a mí · 4h');
+      if(idx4 !== -1){
+        let [ev4] = events21.splice(idx4, 1);
+        ev4.ts = since + (4 * 3600 * 1000);
+        d.pointAwards[day20Key].events.push(ev4);
+      }
+
+      let idx8 = events21.findIndex(e => e.kind === 'racha' && e.label === 'Volver a mí · 8h');
+      if(idx8 !== -1){
+        let [ev8] = events21.splice(idx8, 1);
+        ev8.ts = since + (8 * 3600 * 1000);
+        d.pointAwards[day20Key].events.push(ev8);
+      }
+
+      let ev12 = events21.find(e => e.kind === 'racha' && e.label === 'Volver a mí · 12h');
+      if(ev12){
+        ev12.ts = since + (12 * 3600 * 1000);
+      }
+
+      let ev2 = d.pointAwards[day20Key].events.find(e => e.kind === 'racha' && e.label === 'Volver a mí · 2h');
+      if(ev2){
+        ev2.ts = since + (2 * 3600 * 1000);
+      }
+
+      if(Array.isArray(d.pointAwards[day20Key].events)){
+        d.pointAwards[day20Key].events.sort((a,b) => (a.ts||0) - (b.ts||0));
+      }
+      if(Array.isArray(events21)){
+        events21.sort((a,b) => (a.ts||0) - (b.ts||0));
+      }
+    }
+
+    d._streakMilestonesAndOrphanFixed_20260821 = true;
+  }
+
  save(d, false);
  if(!localStorage.getItem('orbitLocalUpdatedAt')){
    localStorage.setItem('orbitLocalUpdatedAt', new Date().toISOString());
