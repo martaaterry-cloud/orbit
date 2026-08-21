@@ -595,6 +595,50 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
   border: 1px solid var(--rose2) !important;
 }
 
+/* Tarjetas de balance estelar en Mi Progreso Estelar */
+.universe-stat-chip {
+  background: linear-gradient(145deg, rgba(38, 25, 64, 0.65), rgba(16, 12, 28, 0.85)) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-radius: 18px !important;
+  padding: 12px 14px !important;
+  box-sizing: border-box !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25), inset 0 0 12px rgba(255, 255, 255, 0.03) !important;
+  text-align: left !important;
+}
+
+.universe-stat-chip small {
+  display: flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+  font-size: 10px !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.08em !important;
+  color: rgba(225, 218, 255, 0.85) !important;
+  margin-bottom: 4px !important;
+}
+
+.universe-stat-chip .stat-num-row {
+  display: flex !important;
+  align-items: baseline !important;
+  gap: 3px !important;
+}
+
+.universe-stat-chip strong {
+  font-family: Georgia, serif !important;
+  font-size: 26px !important;
+  font-weight: 600 !important;
+  color: #ffffff !important;
+  line-height: 1.1 !important;
+  text-shadow: 0 0 12px rgba(255, 255, 255, 0.35) !important;
+}
+
+.universe-stat-chip .star-unit {
+  font-size: 14px !important;
+  color: var(--rose2) !important;
+  opacity: 0.9 !important;
+}
+
 /* Contenedor del panel Constelación en curso (Mi Progreso Estelar) */
 #universeDetailsStage {
   min-height: 220px !important;
