@@ -85,6 +85,7 @@ function syncUrgeTimer(){
  let state=getTimerState();
  let startBtn=document.getElementById('startTimerBtn');
  let sBtn=document.getElementById('surviveBtn');
+ let cancelBtn=document.getElementById('cancelTimerBtn');
  
  if(!state){
   if(timerInterval){clearInterval(timerInterval);timerInterval=null}
@@ -92,6 +93,7 @@ function syncUrgeTimer(){
   updateTimerDisplay(600);
   if(startBtn)startBtn.disabled=false;
   if(sBtn)sBtn.disabled=true;
+  if(cancelBtn)cancelBtn.style.display='none';
   return;
  }
  
@@ -104,6 +106,7 @@ function syncUrgeTimer(){
    updateTimerDisplay(0);
    if(startBtn)startBtn.disabled=false;
    if(sBtn)sBtn.disabled=false;
+   if(cancelBtn)cancelBtn.style.display='none';
    if(!state.completedNotified){
     toast('Ya han pasado 10 minutos');
     saveTimerState({activeUrge:state.activeUrge,running:false,remainingMs:0,completedNotified:true});
@@ -113,6 +116,7 @@ function syncUrgeTimer(){
    updateTimerDisplay(secLeft);
    if(startBtn)startBtn.disabled=true;
    if(sBtn)sBtn.disabled=true;
+   if(cancelBtn)cancelBtn.style.display='inline-block';
    if(!timerInterval){
     timerInterval=setInterval(syncUrgeTimer,1000);
    }
@@ -123,13 +127,15 @@ function syncUrgeTimer(){
   updateTimerDisplay(secLeft);
   if(startBtn)startBtn.disabled=false;
   if(sBtn)sBtn.disabled=(secLeft>0);
+  if(cancelBtn)cancelBtn.style.display=(secLeft>0)?'inline-block':'none';
  }
 }
 
 function startUrgeTimer(){
  let state=getTimerState();
- let remMs=(state&&!state.running&&state.remainingMs>0)?state.remainingMs:600*1000;
- let uId=(state&&state.activeUrge)?state.activeUrge:null;
+ let isResuming=state&&!state.running&&(state.remainingMs>0);
+ let remMs=isResuming?state.remainingMs:600*1000;
+ let uId=isResuming?state.activeUrge:null;
  
  if(!uId){
   let d=load(),u={id:uid(),ts:Date.now(),goalId:urgeGoal.value,hope:urgeHope.value.trim(),fear:urgeFear.value.trim(),alternative:urgeAlternative.value.trim(),intensity:+urgeIntensity.value,survived:false};
@@ -163,6 +169,7 @@ function resetUrgeTimer(){
  clearTimerState();
  activeUrge=null;
  syncUrgeTimer();
+ toast('Pausa cancelada');
 }
 
 function updateTimer(){

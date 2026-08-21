@@ -337,7 +337,15 @@
   <div class="field"><label>¿Qué temo encontrar?</label><textarea id="urgeFear" placeholder="Lo que me da miedo ver..."></textarea></div>
   <div class="field"><label>Ansiedad ahora: <span id="urgeIntensityLabel">6</span>/10</label><input type="range" min="1" max="10" value="6" id="urgeIntensity" oninput="urgeIntensityLabel.textContent=this.value"></div>
   <div class="field"><label>Durante 10 minutos puedo...</label><input id="urgeAlternative" placeholder="Seguir trabajando, salir un momento, escribir..."></div>
-  <div class="pause"><div class="kicker">pausa</div><div class="timer" id="timer">10:00</div><button class="btn btn-main" id="startTimerBtn" onclick="startUrgeTimer()">Empezar 10 minutos</button> <button class="btn btn-soft" id="surviveBtn" onclick="surviveUrge()" disabled>Lo he atravesado</button></div>
+  <div class="pause">
+    <div class="kicker">pausa</div>
+    <div class="timer" id="timer">10:00</div>
+    <div style="display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
+      <button class="btn btn-main" id="startTimerBtn" onclick="startUrgeTimer()">Empezar 10 minutos</button>
+      <button class="btn btn-soft" id="surviveBtn" onclick="surviveUrge()" disabled>Lo he atravesado</button>
+      <button class="btn btn-line" id="cancelTimerBtn" onclick="resetUrgeTimer()" style="display:none;">Cancelar pausa</button>
+    </div>
+  </div>
   <button class="btn btn-line btn-wide" style="margin-top:9px" onclick="closeModal('urgeModal')">Cerrar</button>
 </div></div>
 
