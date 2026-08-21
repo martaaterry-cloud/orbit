@@ -437,3 +437,62 @@ window.addEventListener('resize', () => {
   let u = document.getElementById('universe');
   if (u && u.classList.contains('active')) renderUniverse(load());
 });
+
+// ==========================================================================
+// PWA & SERVICE WORKER UPDATES
+// ==========================================================================
+let newWorkerWaiting = null;
+let refreshing = false;
+
+function initPWAUpdate() {
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js').then((reg) => {
+      if (reg.waiting) {
+        newWorkerWaiting = reg.waiting;
+        showUpdateBanner();
+      }
+
+      reg.addEventListener('updatefound', () => {
+        const installingWorker = reg.installing;
+        if (!installingWorker) return;
+
+        installingWorker.addEventListener('statechange', () => {
+          if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+            newWorkerWaiting = installingWorker;
+            showUpdateBanner();
+          }
+        });
+      });
+
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+          reg.update().catch(() => {});
+        }
+      });
+    }).catch((err) => {
+      console.warn('Registro Service Worker:', err);
+    });
+
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (!refreshing) {
+        refreshing = true;
+        window.location.reload();
+      }
+    });
+  }
+}
+
+function showUpdateBanner() {
+  const banner = document.getElementById('updateBanner');
+  if (banner) banner.style.display = 'flex';
+}
+
+function applyAppUpdate() {
+  if (newWorkerWaiting) {
+    newWorkerWaiting.postMessage({ type: 'SKIP_WAITING' });
+  } else {
+    window.location.reload();
+  }
+}
+
+initPWAUpdate();

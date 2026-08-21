@@ -951,5 +951,46 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
   user-select: none;
 }
 
+/* ==========================================================================
+   BANNER DE ACTUALIZACIÓN (PWA)
+   ========================================================================== */
+.update-banner {
+  position: fixed;
+  bottom: calc(75px + env(safe-area-inset-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - 32px);
+  max-width: 400px;
+  background: rgba(22, 16, 36, 0.94);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 16px;
+  padding: 10px 14px;
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  z-index: 99999;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.5);
+  box-sizing: border-box;
+}
+.update-banner span {
+  font-size: 12px;
+  font-weight: 500;
+  color: #f7f4eb;
+}
+.update-banner button {
+  background: var(--soft);
+  color: #70414a;
+  border: none;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 6px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
 
 
