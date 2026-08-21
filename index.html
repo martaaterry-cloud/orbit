@@ -256,14 +256,40 @@
     <div class="entry-meta" style="margin:8px 3px 10px"><span id="urgeResultsCount">0 resultados</span><button class="btn btn-line" style="padding:6px 9px" onclick="toggleSort('urges')">Orden: <span id="urgesSortLabel">recientes</span></button></div><div id="urgeArchiveList"></div>
   </div>
 
-  <div class="card" style="margin-top:20px; text-align:center; padding:18px;">
-    <div style="font-size:14px; font-weight:600; margin-bottom:4px;">Copia de seguridad</div>
-    <p style="font-size:12px; color:var(--muted); margin-bottom:12px;">Guarda tus datos en un archivo o restáuralos en otro navegador o dispositivo.</p>
-    <div style="display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
-      <button class="btn btn-line" onclick="exportBackup()"><svg class="icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>Exportar datos</button>
-      <button class="btn btn-line" onclick="triggerImportBackup()"><svg class="icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>Importar datos</button>
+  <div class="card" style="margin-top:20px; padding:18px;">
+    <div style="text-align:center;">
+      <div style="font-size:14px; font-weight:600; margin-bottom:4px;">Copia de seguridad y Nube</div>
+      <p style="font-size:12px; color:var(--muted); margin-bottom:12px;">Guarda tus datos en un archivo o conéctate con tu nube privada de Orbit.</p>
+      <div style="display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
+        <button class="btn btn-line" onclick="exportBackup()"><svg class="icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>Exportar datos</button>
+        <button class="btn btn-line" onclick="triggerImportBackup()"><svg class="icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>Importar datos</button>
+      </div>
+      <input type="file" id="backupFileInput" accept=".json,application/json" style="display:none" onchange="handleBackupFile(event)">
     </div>
-    <input type="file" id="backupFileInput" accept=".json,application/json" style="display:none" onchange="handleBackupFile(event)">
+
+    <!-- Sección de Nube Supabase -->
+    <div class="cloud-auth-box" style="border-top:1px solid var(--line); padding-top:14px; margin-top:14px;">
+      <div id="cloudLoginForm">
+        <div style="font-size:12px; font-weight:600; color:var(--ink); margin-bottom:8px; text-align:left; display:flex; align-items:center; gap:6px;">
+          <svg class="icon" viewBox="0 0 24 24" style="width:16px; height:16px; stroke:var(--wine);"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg>
+          <span>Conectar con mi nube</span>
+        </div>
+        <form onsubmit="handleCloudLoginSubmit(event)" style="display:flex; flex-direction:column; gap:8px;">
+          <input id="cloudEmail" type="email" placeholder="Email de tu nube" style="padding:9px 12px; font-size:12px;" autocomplete="username">
+          <input id="cloudPassword" type="password" placeholder="Contraseña" style="padding:9px 12px; font-size:12px;" autocomplete="current-password">
+          <button type="submit" class="btn btn-main btn-wide" style="padding:9px 14px; font-size:12px;" id="cloudLoginBtn">Conectar con mi nube</button>
+        </form>
+      </div>
+
+      <div id="cloudLoggedSection" style="display:none; text-align:center; padding:4px 0;">
+        <div style="display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:600; color:#2e7d32; background:rgba(46,125,50,0.08); border:1px solid rgba(46,125,50,0.2); padding:4px 10px; border-radius:99px; margin-bottom:6px;">
+          <span style="display:inline-block; width:7px; height:7px; border-radius:50%; background:#2e7d32;"></span>
+          <span>Nube conectada</span>
+        </div>
+        <div style="font-size:11px; color:var(--muted); margin-bottom:10px;" id="cloudUserEmail"></div>
+        <button class="btn btn-line btn-sm" onclick="handleCloudLogout()" style="font-size:11px; padding:5px 12px;" id="cloudLogoutBtn">Cerrar sesión</button>
+      </div>
+    </div>
   </div>
 </section>
 
@@ -511,7 +537,9 @@
 <div class="toast" id="toast"></div>
 
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/storage.js"></script>
+  <script src="js/supabase.js"></script>
   <script src="js/stars.js"></script>
   <script src="js/streak.js"></script>
   <script src="js/journal.js"></script>
