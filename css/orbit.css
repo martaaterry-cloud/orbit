@@ -812,61 +812,126 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
 }
 
 /* ==========================================================================
-   LÁMINA DE ATLAS ASTRONÓMICO (FOLIO ENCUADERNADO CON EFECTO DE HOJA)
+   LÁMINA DE ATLAS ASTRONÓMICO (MOTOR DE SLICES FLEXIBLES 3D)
    ========================================================================== */
 .atlas-page.atlas-folio {
   flex: 0 0 96% !important;
   margin: 0 2% !important;
+  height: 410px !important;
   min-height: 410px !important;
-  background: linear-gradient(135deg, rgba(22, 16, 38, 0.96) 0%, rgba(13, 9, 23, 0.98) 100%) !important;
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
-  border-radius: 4px 18px 18px 4px !important;
-  padding: 14px 16px 14px 20px !important;
-  box-sizing: border-box !important;
-  display: flex !important;
-  flex-direction: column !important;
-  justify-content: space-between !important;
-  align-items: stretch !important;
-  text-align: center !important;
   position: relative !important;
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
   scroll-snap-align: center !important;
   scroll-snap-stop: always !important;
+  perspective: 1200px !important;
+  perspective-origin: center 80% !important;
   transform-style: preserve-3d !important;
-  transform-origin: left center !important;
   will-change: transform;
-  /* Lomo cosido a la izquierda, hojas apiladas a la derecha, sombra de volumen y curl dinámico */
+}
+
+.atlas-slices-stage {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  transform-style: preserve-3d;
+  pointer-events: none;
+}
+
+.atlas-slice {
+  flex: 1 0 10%;
+  width: 10%;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+  transform-style: preserve-3d;
+  transform-origin: left 85%;
+  will-change: transform;
+  pointer-events: auto;
+}
+
+.atlas-slice-content {
+  position: absolute;
+  top: 0;
+  width: 1000%;
+  height: 100%;
+  pointer-events: auto;
+}
+
+.atlas-slice-shade {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0.6) 0%, rgba(35, 20, 55, 0.75) 100%);
+  transition: opacity 0.05s ease;
+  z-index: 15;
+}
+
+/* Base interior común a toda lámina del libro */
+.atlas-folio-inner {
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  padding: 14px 16px 14px 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: stretch;
+  text-align: center;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 4px 18px 18px 4px;
   box-shadow: 
-    var(--curl-shadow, none),
     inset 16px 0 22px -8px rgba(0, 0, 0, 0.9),
     inset -6px 0 14px -6px rgba(0, 0, 0, 0.5),
     2px 0 0 rgba(255, 255, 255, 0.04),
     4px 0 0 rgba(8, 5, 16, 0.85),
-    0 12px 32px rgba(0, 0, 0, 0.65) !important;
-  overflow: hidden !important;
+    0 12px 32px rgba(0, 0, 0, 0.65);
 }
 
-/* Reverso de la esquina inferior derecha al levantarse la hoja */
-.atlas-page.atlas-folio::after {
-  content: '';
-  position: absolute;
-  right: 0;
-  bottom: 0;
-  width: 0;
-  height: 0;
-  pointer-events: none;
-  border-style: solid;
-  border-width: 0;
-  border-color: transparent transparent rgba(38, 26, 60, 0.95) transparent;
-  filter: drop-shadow(-3px -3px 5px rgba(0, 0, 0, 0.65));
-  border-radius: 0 0 18px 0;
-  opacity: 0;
-  transition: opacity 0.1s ease;
-  z-index: 10;
+/* Tipo A: Portadilla de Capítulo (Composición solemne y ceremonial) */
+.atlas-chapter-cover-inner {
+  background: linear-gradient(145deg, rgba(32, 20, 60, 0.98) 0%, rgba(13, 9, 26, 0.99) 100%) !important;
+  border-color: rgba(230, 205, 255, 0.18) !important;
+  box-shadow: 
+    inset 18px 0 24px -8px rgba(0, 0, 0, 0.95),
+    inset -6px 0 14px -6px rgba(0, 0, 0, 0.5),
+    2px 0 0 rgba(255, 230, 255, 0.06),
+    4px 0 0 rgba(10, 6, 20, 0.9),
+    0 14px 36px rgba(0, 0, 0, 0.7) !important;
 }
 
-.atlas-page.atlas-folio.curling::after {
-  opacity: 1;
-  border-width: 0 0 52px 52px;
+.atlas-chapter-name {
+  font-family: Georgia, serif !important;
+  font-size: 21px !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.32em !important;
+  color: #ffffff !important;
+  text-shadow: 0 0 16px rgba(255, 230, 255, 0.6) !important;
+  margin-bottom: 6px !important;
+  padding-left: 0.32em !important;
+}
+
+.atlas-chapter-desc {
+  font-family: Georgia, serif !important;
+  font-style: italic !important;
+  font-size: 12.5px !important;
+  line-height: 1.6 !important;
+  color: rgba(247, 244, 235, 0.85) !important;
+  margin: 0 auto !important;
+  max-width: 290px !important;
+}
+
+/* Tipo B: Folio de Constelación */
+.atlas-constellation-folio-inner {
+  background: linear-gradient(135deg, rgba(22, 16, 38, 0.96) 0%, rgba(13, 9, 23, 0.98) 100%) !important;
+}
+
+/* Tipo C: Capítulo Bloqueado / Sellado */
+.atlas-chapter-locked-inner {
+  background: linear-gradient(135deg, rgba(18, 14, 28, 0.96) 0%, rgba(10, 8, 18, 0.98) 100%) !important;
+  border-color: rgba(255, 255, 255, 0.06) !important;
 }
 
 .atlas-folio-header {
@@ -893,15 +958,6 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
   color: rgba(225, 218, 255, 0.45) !important;
 }
 
-/* Portadillas y Aperturas de Capítulos del Atlas */
-.atlas-page.atlas-folio.atlas-chapter-cover {
-  background: linear-gradient(135deg, rgba(28, 18, 50, 0.98) 0%, rgba(13, 9, 24, 0.98) 100%) !important;
-}
-
-.atlas-page.atlas-folio.atlas-chapter-locked {
-  background: linear-gradient(135deg, rgba(20, 14, 32, 0.96) 0%, rgba(11, 8, 20, 0.98) 100%) !important;
-}
-
 .atlas-chapter-symbol {
   width: 100%;
   height: 170px;
@@ -914,29 +970,29 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
 }
 
 .atlas-chapter-symbol .compass-ring {
-  width: 88px;
-  height: 88px;
+  width: 96px;
+  height: 96px;
   border-radius: 50%;
   border: 1px dashed rgba(225, 218, 255, 0.25);
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 0 24px rgba(160, 120, 230, 0.12);
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.03) 0%, transparent 70%);
+  box-shadow: 0 0 28px rgba(160, 120, 230, 0.14);
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.04) 0%, transparent 72%);
 }
 
 .atlas-chapter-symbol .spark {
-  font-size: 26px;
+  font-size: 28px;
   color: var(--rose2);
-  text-shadow: 0 0 14px rgba(255, 200, 220, 0.8);
+  text-shadow: 0 0 16px rgba(255, 200, 220, 0.85);
 }
 
 .atlas-chapter-title-tag {
   font-size: 9.5px;
   text-transform: uppercase;
-  letter-spacing: 0.18em;
-  color: rgba(225, 218, 255, 0.6);
-  margin-bottom: 4px;
+  letter-spacing: 0.22em;
+  color: rgba(225, 218, 255, 0.65);
+  margin-bottom: 6px;
 }
 
 /* Cielo rectangular abierto (170-190px) */
