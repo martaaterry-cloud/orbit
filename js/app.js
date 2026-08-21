@@ -347,141 +347,160 @@ function renderUniverse(d){
      captionDetails.innerHTML = `<div class="constellation-caption" style="position:static;color:#fff;padding:0;"><strong style="font-size:14px;color:var(--rose2);">Exploración completa</strong><br><small style="color:rgba(255,255,255,0.5);font-size:11px;">Desbloquea una nueva región en Exploración para seguir descubriendo el universo.</small></div>`;
    }
  }
- 
- // Render constellation book tabbed navigation
- const bookTabs = [
-   { id: 'cielo-1', name: 'Primer cielo', region: 'cielo-1', consts: ['lyra', 'cassiopeia', 'ursa-major'] },
-   { id: 'zodiaco', name: 'Zodiaco', region: 'zodiaco', col: 'zodiaco' },
-   { id: 'norte', name: 'Cielo del norte', region: 'cielo-1', consts: ['cygnus'] },
-   { id: 'invierno', name: 'Cielo de invierno', region: 'orion', col: 'invierno' },
-   { id: 'profundo', name: 'Espacio profundo', region: 'profundo', col: 'profundo' }
- ];
- if (typeof window.currentBookTab === 'undefined') window.currentBookTab = 'cielo-1';
- 
- let tabsHtml = bookTabs.map(tab => {
-   let active = window.currentBookTab === tab.id;
-   let isTabUnlocked = d.unlockedRegions && d.unlockedRegions.includes(tab.region);
-   let label = tab.name + (isTabUnlocked ? '' : ' 🔒');
-   return `<button class="atlas-chip ${active ? 'active' : ''}" onclick="window.currentBookTab='${tab.id}'; render()">${label}</button>`;
- }).join('');
- 
- let activeTab = bookTabs.find(t => t.id === window.currentBookTab) || bookTabs[0];
- let isTabUnlocked = d.unlockedRegions && d.unlockedRegions.includes(activeTab.region);
- let tabConsts = [];
- if (activeTab.consts) {
-   tabConsts = constellationDefs.filter(c => activeTab.consts.includes(c.id));
- } else if (activeTab.col) {
-   tabConsts = constellationDefs.filter(c => c.collection === activeTab.col);
- }
- let ownedCount = isTabUnlocked ? tabConsts.filter(c => d.claimed && d.claimed[c.id]).length : 0;
- 
-  let romanNumerals = ['I', 'II', 'III', 'IV', 'V', 'VI'];
-  let chapterIndex = bookTabs.findIndex(t => t.id === activeTab.id);
-  let romanStr = romanNumerals[chapterIndex >= 0 ? chapterIndex : 0] || 'I';
 
-  let pagesHtml = '';
-  if (!isTabUnlocked) {
-    let regNames = {
-      'zodiaco': 'Cinturón Zodiacal',
-      'orion': 'Nebulosa de Orión',
-      'profundo': 'Espacio profundo'
-    };
-    let regName = regNames[activeTab.region] || activeTab.region;
-    pagesHtml = `
-      <div class="atlas-page atlas-folio locked-region">
-        <div class="atlas-folio-header">
-          <span class="atlas-folio-chapter">${romanStr} · ${esc(activeTab.name).toUpperCase()}</span>
-          <span class="atlas-folio-num">BLOQUEADO</span>
-        </div>
-        <div class="atlas-sky-canvas" style="display:flex; flex-direction:column; align-items:center; justify-content:center;">
-          <svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" style="width:40px; height:40px; margin-bottom:8px;"><circle cx="12" cy="12" r="10"/><path d="m16.24 7.76-2.12 6.36-6.36 2.12 2.12-6.36z"/></svg>
-          <div class="atlas-status locked" style="margin-top:4px;">Región por explorar</div>
-        </div>
-        <div class="atlas-folio-body">
-          <div class="atlas-folio-name">${esc(activeTab.name.toUpperCase().split('').join(' '))}</div>
-          <p class="atlas-folio-desc">Desbloquea la región <strong>${regName}</strong> desde la nave espacial para cartografiar este capítulo.</p>
-        </div>
-        <div class="atlas-folio-footer">
-          <button class="btn btn-soft" style="font-size:10px; padding:6px 14px;" onclick="closeModal('constellationBookModal'); openShipModal(); setShipTab('regiones');">Ir a Exploración</button>
-        </div>
-      </div>
-    `;
-  } else {
-    pagesHtml = tabConsts.map((c, idx) => {
-      let owned = d.claimed && d.claimed[c.id];
-      let discovered = !owned && total >= c.need;
-      let isTarget = !owned && !discovered && next && (next.id === c.id);
-      
-      let svgMarkup = '';
-      let statusMarkup = '';
-      let actionMarkup = '';
-      let pageNum = String(idx + 1).padStart(2, '0') + ' / ' + String(tabConsts.length).padStart(2, '0');
+  // 5 Capítulos celestes del Atlas (un único libro continuo)
+  const bookChapters = [
+    { id: 'cielo-1', name: 'Primer cielo', roman: 'I', region: 'cielo-1', consts: ['lyra', 'cassiopeia', 'ursa-major'], desc: 'El firmamento visible a simple vista.' },
+    { id: 'zodiaco', name: 'Zodiaco', roman: 'II', region: 'zodiaco', col: 'zodiaco', desc: 'Las doce constelaciones del cinturón solar.' },
+    { id: 'norte', name: 'Cielo del norte', roman: 'III', region: 'cielo-1', consts: ['cygnus'], desc: 'Guías celestes del hemisferio septentrional.' },
+    { id: 'invierno', name: 'Cielo de invierno', roman: 'IV', region: 'orion', col: 'invierno', desc: 'Estrellas brillantes de las noches frías.' },
+    { id: 'profundo', name: 'Espacio profundo', roman: 'V', region: 'profundo', col: 'profundo', desc: 'Horizontes lejanos más allá de la galaxia.' }
+  ];
 
-      if (owned) {
-        let acqDate = new Date(d.claimed[c.id]).toLocaleDateString('es-ES', {day:'numeric', month:'short'});
-        svgMarkup = constellationSvg(c, true, 1.0);
-        statusMarkup = `<div class="atlas-status owned">✦ En tu universo</div>`;
-        actionMarkup = `
-          <div class="atlas-meta-row">
-            <span class="atlas-date">Adquirida: ${acqDate}</span>
-            <button class="btn btn-line btn-sm" style="padding:3px 8px; font-size:9px; border-radius:8px;" onclick="verFichaConstelacion('${c.id}')">Ficha</button>
-          </div>`;
-      } else if (discovered) {
-        svgMarkup = constellationSvg(c, true, 0.7);
-        statusMarkup = `<div class="atlas-status discovered">✧ Descubierta</div>`;
-        actionMarkup = `<button class="btn btn-main btn-sm" style="padding:6px 14px; font-size:10px; margin-top:4px;" onclick="guardarConstelacion('${c.id}', ${c.cost})">Guardar en universo · ${c.cost} ★</button>`;
-      } else if (isTarget) {
-        let prevNeed = idx > 0 ? tabConsts[idx - 1].need : 0;
-        let pVal = Math.max(0, Math.min(1, (total - prevNeed) / (c.need - prevNeed)));
-        svgMarkup = constellationSvg(c, false, pVal);
-        statusMarkup = `<div class="atlas-status in-progress">En curso (${total.toFixed(1).replace('.', ',')} / ${c.need} ★)</div>`;
-        actionMarkup = `<div class="atlas-req">Faltan ${(c.need - total).toFixed(1).replace('.', ',')} estrellas</div>`;
-      } else {
-        svgMarkup = constellationSvg(c, false, 0.0);
-        statusMarkup = `<div class="atlas-status locked">Por descubrir</div>`;
-        actionMarkup = `<div class="atlas-req">Requiere ${c.need} estrellas históricas</div>`;
-      }
+  let regNames = {
+    'cielo-1': 'Primer cielo',
+    'zodiaco': 'Cinturón Zodiacal',
+    'orion': 'Nebulosa de Orión',
+    'profundo': 'Espacio profundo'
+  };
 
-      let nameSpaced = c.name.toUpperCase().split('').join(' ');
+  // Generación continua de todas las páginas del libro
+  let allPagesHtml = '';
+  let indexChipsHtml = '';
 
-      return `
-        <div class="atlas-page atlas-folio ${owned ? 'owned' : (discovered ? 'discovered' : (isTarget ? 'in-progress' : 'locked'))}" data-page-idx="${idx}">
+  bookChapters.forEach((ch) => {
+    let isUnlocked = d.unlockedRegions && d.unlockedRegions.includes(ch.region);
+    let chConsts = [];
+    if (ch.consts) {
+      chConsts = constellationDefs.filter(c => ch.consts.includes(c.id));
+    } else if (ch.col) {
+      chConsts = constellationDefs.filter(c => c.collection === ch.col);
+    }
+    let ownedInCh = isUnlocked ? chConsts.filter(c => d.claimed && d.claimed[c.id]).length : 0;
+
+    indexChipsHtml += `<button class="atlas-chip" onclick="jumpToAtlasChapter('chapter-${ch.id}')">${ch.roman} · ${ch.name}${isUnlocked ? '' : ' 🔒'}</button>`;
+
+    if (!isUnlocked) {
+      // Portadilla de Capítulo Sellado (No genera páginas de constelaciones internas)
+      let regName = regNames[ch.region] || ch.region;
+      allPagesHtml += `
+        <div class="atlas-page atlas-folio atlas-chapter-locked" id="chapter-${ch.id}">
           <div class="atlas-folio-header">
-            <span class="atlas-folio-chapter">${romanStr} · ${esc(activeTab.name).toUpperCase()}</span>
-            <span class="atlas-folio-num">FOLIO ${pageNum}</span>
+            <span class="atlas-folio-chapter">CAPÍTULO ${ch.roman}</span>
+            <span class="atlas-folio-num">SELLADO 🔒</span>
           </div>
-          
-          <div class="atlas-sky-canvas">
-            ${svgMarkup}
+          <div class="atlas-chapter-symbol">
+            <div class="compass-ring">
+              <svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" style="width:36px; height:36px;"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            </div>
           </div>
-
           <div class="atlas-folio-body">
-            <div class="atlas-folio-name">${esc(nameSpaced)}${c.extra === 'tu signo' ? '<span class="sign-tag" style="margin-left:8px; font-size:8.5px; vertical-align:middle; letter-spacing:normal;">tu signo</span>' : ''}</div>
-            <p class="atlas-folio-desc">${esc(c.desc || 'Constelación del firmamento.')}</p>
+            <div class="atlas-chapter-title-tag">CAPÍTULO ${ch.roman}</div>
+            <div class="atlas-folio-name">${esc(ch.name.toUpperCase().split('').join(' '))}</div>
+            <p class="atlas-folio-desc">Región aún no cartografiada.<br>Desbloquea la región <strong>${regName}</strong> desde la nave espacial para abrir este capítulo.</p>
           </div>
-
           <div class="atlas-folio-footer">
-            <div class="atlas-folio-status-badge">${statusMarkup}</div>
-            ${actionMarkup ? `<div class="atlas-folio-action">${actionMarkup}</div>` : ''}
+            <button class="btn btn-soft" style="font-size:10px; padding:6px 16px;" onclick="closeModal('constellationBookModal'); openShipModal(); setShipTab('regiones');">Ir a Exploración</button>
           </div>
         </div>
       `;
-    }).join('');
-  }
-  
+    } else {
+      // 1. Portadilla de Capítulo Abierto
+      allPagesHtml += `
+        <div class="atlas-page atlas-folio atlas-chapter-cover" id="chapter-${ch.id}">
+          <div class="atlas-folio-header">
+            <span class="atlas-folio-chapter">LIBRO I · FIRMAMENTO</span>
+            <span class="atlas-folio-num">CAPÍTULO ${ch.roman}</span>
+          </div>
+          <div class="atlas-chapter-symbol">
+            <div class="compass-ring">
+              <span class="spark">✦</span>
+            </div>
+          </div>
+          <div class="atlas-folio-body">
+            <div class="atlas-chapter-title-tag">CAPÍTULO ${ch.roman}</div>
+            <div class="atlas-folio-name">${esc(ch.name.toUpperCase().split('').join(' '))}</div>
+            <p class="atlas-folio-desc">${esc(ch.desc)}</p>
+          </div>
+          <div class="atlas-folio-footer">
+            <span class="atlas-status owned" style="margin:0;">✦ ${ownedInCh} de ${chConsts.length} descubiertas</span>
+          </div>
+        </div>
+      `;
+
+      // 2. Páginas de Constelaciones de este capítulo
+      chConsts.forEach((c, idx) => {
+        let owned = d.claimed && d.claimed[c.id];
+        let discovered = !owned && total >= c.need;
+        let isTarget = !owned && !discovered && next && (next.id === c.id);
+        
+        let svgMarkup = '';
+        let statusMarkup = '';
+        let actionMarkup = '';
+        let pageNum = String(idx + 1).padStart(2, '0') + ' / ' + String(chConsts.length).padStart(2, '0');
+
+        if (owned) {
+          let acqDate = new Date(d.claimed[c.id]).toLocaleDateString('es-ES', {day:'numeric', month:'short'});
+          svgMarkup = constellationSvg(c, true, 1.0);
+          statusMarkup = `<div class="atlas-status owned">✦ En tu universo</div>`;
+          actionMarkup = `
+            <div class="atlas-meta-row">
+              <span class="atlas-date">Adquirida: ${acqDate}</span>
+              <button class="btn btn-line btn-sm" style="padding:3px 8px; font-size:9px; border-radius:8px;" onclick="verFichaConstelacion('${c.id}')">Ficha</button>
+            </div>`;
+        } else if (discovered) {
+          svgMarkup = constellationSvg(c, true, 0.7);
+          statusMarkup = `<div class="atlas-status discovered">✧ Descubierta</div>`;
+          actionMarkup = `<button class="btn btn-main btn-sm" style="padding:6px 14px; font-size:10px; margin-top:4px;" onclick="guardarConstelacion('${c.id}', ${c.cost})">Guardar en universo · ${c.cost} ★</button>`;
+        } else if (isTarget) {
+          let prevNeed = idx > 0 ? chConsts[idx - 1].need : 0;
+          let pVal = Math.max(0, Math.min(1, (total - prevNeed) / (c.need - prevNeed)));
+          svgMarkup = constellationSvg(c, false, pVal);
+          statusMarkup = `<div class="atlas-status in-progress">En curso (${total.toFixed(1).replace('.', ',')} / ${c.need} ★)</div>`;
+          actionMarkup = `<div class="atlas-req">Faltan ${(c.need - total).toFixed(1).replace('.', ',')} estrellas</div>`;
+        } else {
+          svgMarkup = constellationSvg(c, false, 0.0);
+          statusMarkup = `<div class="atlas-status locked">Por descubrir</div>`;
+          actionMarkup = `<div class="atlas-req">Requiere ${c.need} estrellas históricas</div>`;
+        }
+
+        let nameSpaced = c.name.toUpperCase().split('').join(' ');
+
+        allPagesHtml += `
+          <div class="atlas-page atlas-folio ${owned ? 'owned' : (discovered ? 'discovered' : (isTarget ? 'in-progress' : 'locked'))}">
+            <div class="atlas-folio-header">
+              <span class="atlas-folio-chapter">${ch.roman} · ${esc(ch.name).toUpperCase()}</span>
+              <span class="atlas-folio-num">FOLIO ${pageNum}</span>
+            </div>
+            
+            <div class="atlas-sky-canvas">
+              ${svgMarkup}
+            </div>
+
+            <div class="atlas-folio-body">
+              <div class="atlas-folio-name">${esc(nameSpaced)}${c.extra === 'tu signo' ? '<span class="sign-tag" style="margin-left:8px; font-size:8.5px; vertical-align:middle; letter-spacing:normal;">tu signo</span>' : ''}</div>
+              <p class="atlas-folio-desc">${esc(c.desc || 'Constelación del firmamento.')}</p>
+            </div>
+
+            <div class="atlas-folio-footer">
+              <div class="atlas-folio-status-badge">${statusMarkup}</div>
+              ${actionMarkup ? `<div class="atlas-folio-action">${actionMarkup}</div>` : ''}
+            </div>
+          </div>
+        `;
+      });
+    }
+  });
+
   constellationBook.innerHTML = `
     <div class="atlas-container">
       <div class="atlas-chapters">
-        ${tabsHtml}
-      </div>
-      <div class="atlas-collection-info">
-        <span>${activeTab.name}</span>
-        <small>${isTabUnlocked ? `${ownedCount} de ${tabConsts.length} descubiertas` : 'Bloqueada'}</small>
+        ${indexChipsHtml}
       </div>
       <div class="atlas-carousel">
-        ${pagesHtml}
+        ${allPagesHtml}
       </div>
-      ${isTabUnlocked && tabConsts.length > 1 ? '<div class="atlas-swipe-hint">← Desliza para pasar página →</div>' : ''}
+      <div class="atlas-swipe-hint">← Desliza para pasar de página y capítulo →</div>
     </div>
   `;
 
@@ -710,6 +729,13 @@ function initAtlasPageTurn(carouselEl) {
   };
   carouselEl.addEventListener('scroll', carouselEl._atlasScrollHandler, { passive: true });
   requestAnimationFrame(update3DPageTurns);
+}
+
+function jumpToAtlasChapter(targetId) {
+  let el = document.getElementById(targetId);
+  if (el) {
+    el.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+  }
 }
 
 function openShopModal(){document.getElementById('shopModal').classList.add('show')}
