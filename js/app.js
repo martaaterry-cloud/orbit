@@ -34,7 +34,8 @@ function drawOrbit(d){let el=bigOrbit;el.innerHTML='<div class="orbit-circle o1"
 
 function constellationSvg(def, unlocked, progress) {
   let N = def.pts.length;
-  let achieved = unlocked ? N : Math.floor(N * progress);
+  let pVal = unlocked ? 1 : Math.max(0, Math.min(1, Number(progress) || 0));
+  let achieved = unlocked ? N : Math.floor(N * pVal);
   let nextTarget = unlocked ? -1 : (achieved < N ? achieved : -1);
   
   let lines = def.edges.map(([a, b]) => {
@@ -45,13 +46,21 @@ function constellationSvg(def, unlocked, progress) {
   
   let stars = def.pts.map((p, i) => {
     let cls = 'ghost-star';
-    let r = 1.8;
+    let isMain = (def.id === 'lyra' && i === 0);
+    let r = isMain ? 1.9 : 1.8;
+    
     if (i < achieved) {
-      cls = 'star';
-      r = 2.6;
+      if (isMain) {
+        let level = pVal >= 0.75 ? 'main-star-full' : (pVal >= 0.35 ? 'main-star-mid' : 'main-star-low');
+        cls = `star ${level}`;
+        r = pVal >= 0.75 ? 3.6 : (pVal >= 0.35 ? 3.2 : 2.8);
+      } else {
+        cls = 'star';
+        r = 2.6;
+      }
     } else if (i === nextTarget) {
       cls = 'target-star';
-      r = 2.2;
+      r = isMain ? 2.3 : 2.2;
     }
     return `<circle class="${cls}" cx="${p[0]}%" cy="${p[1]}%" r="${r}"/>`;
   }).join('');
@@ -77,11 +86,20 @@ function renderUniverse(d){
  if (next) {
    let current = next;
    constellationStage.style.display = 'block';
-   constellationStage.style.top = (current.y || 25) + '%';
-   constellationStage.style.left = (current.x || 30) + '%';
-   constellationStage.style.width = (current.size || 180) + 'px';
-   constellationStage.style.height = (current.size || 180) + 'px';
-   constellationStage.style.transform = `rotate(${current.rot || 0}deg)`;
+   
+   // Cálculo responsive proporcional al viewport (Mobile-first)
+   let vw = window.innerWidth || document.documentElement.clientWidth || 360;
+   let vh = window.innerHeight || document.documentElement.clientHeight || 640;
+   
+   // Límites: mínimo 200px en pantallas pequeñas, máximo 340px en pantallas grandes/desktop
+   // Escala con el ancho útil (~75%) y alto útil disponible dejando aire y espacio para el toolbar
+   let size = Math.round(Math.max(200, Math.min(vw * 0.75, (vh - 140) * 0.55, 340)));
+   
+   constellationStage.style.width = size + 'px';
+   constellationStage.style.height = size + 'px';
+   constellationStage.style.left = '50%';
+   constellationStage.style.top = '44%';
+   constellationStage.style.transform = `translate(-50%, -50%) rotate(${current.rot || 0}deg)`;
    
    let idx = available.indexOf(current);
    let prevNeed = idx > 0 ? available[idx - 1].need : 0;
@@ -125,7 +143,7 @@ function renderUniverse(d){
    let active = window.currentBookTab === tab.id;
    let isTabUnlocked = d.unlockedRegions && d.unlockedRegions.includes(tab.region);
    let label = tab.name + (isTabUnlocked ? '' : ' 🔒');
-    return `<button class="chip ${active ? 'active' : ''}" style="padding:6px 12px; font-size:10px; border-radius:99px; white-space:nowrap; flex-shrink:0; background:${active ? 'var(--wine)' : 'rgba(255,255,255,0.04)'}; border:1px solid ${active ? 'var(--rose2)' : 'rgba(255,255,255,0.1)'}; color:${active ? '#fff' : 'rgba(255,255,255,0.6)'}; cursor:pointer;" onclick="window.currentBookTab='${tab.id}'; render()">${label}</button>`;
+   return `<button class="chip ${active ? 'active' : ''}" style="padding:6px 12px; font-size:10px; border-radius:99px; background:${active ? 'var(--wine)' : 'rgba(255,255,255,0.04)'}; border:1px solid ${active ? 'var(--rose2)' : 'rgba(255,255,255,0.1)'}; color:${active ? '#fff' : 'rgba(255,255,255,0.6)'}; cursor:pointer;" onclick="window.currentBookTab='${tab.id}'; render()">${label}</button>`;
  }).join('');
  
  let activeTab = bookTabs.find(t => t.id === window.currentBookTab) || bookTabs[0];
@@ -385,3 +403,8 @@ function openInfoModal(){document.getElementById('infoModal').classList.add('sho
 function openShipModal(){document.getElementById('shipModal').classList.add('show')}
 function openUniverseDetailsModal(){document.getElementById('universeDetailsModal').classList.add('show')}
 function openConstellationBookModal(){document.getElementById('constellationBookModal').classList.add('show')}
+
+window.addEventListener('resize', () => {
+  let u = document.getElementById('universe');
+  if (u && u.classList.contains('active')) renderUniverse(load());
+});

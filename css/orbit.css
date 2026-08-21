@@ -603,6 +603,18 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
   filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.95)) !important;
 }
 
+.constellation-stage .star.main-star-low {
+  filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.85)) drop-shadow(0 0 8px rgba(230, 205, 255, 0.35)) !important;
+}
+
+.constellation-stage .star.main-star-mid {
+  filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.95)) drop-shadow(0 0 12px rgba(230, 205, 255, 0.55)) !important;
+}
+
+.constellation-stage .star.main-star-full {
+  filter: drop-shadow(0 0 8px rgba(255, 255, 255, 1)) drop-shadow(0 0 16px rgba(230, 205, 255, 0.8)) !important;
+}
+
 .constellation-stage .target-star {
   fill: rgba(255, 255, 255, 0.9) !important;
   opacity: 0.55 !important;
