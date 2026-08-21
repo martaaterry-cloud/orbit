@@ -466,8 +466,13 @@
   </div>
   <button class="btn btn-main btn-wide" onclick="applyDateRange()">Aplicar</button>
   <button class="btn btn-line btn-wide" style="margin-top:7px" onclick="closeModal('dateRangeModal')">Cancelar</button>
-<div class="modal" id="photoModal" onclick="closeModal('photoModal')"><div class="sheet" style="padding:14px; max-width:440px; text-align:center;" onclick="event.stopPropagation()">
-  <img id="photoModalImg" src="" style="width:100%; max-height:72vh; object-fit:contain; border-radius:12px; margin-bottom:12px; background:var(--soft);">
+</div></div>
+
+<!-- Modal Visor de Fotos -->
+<div class="modal" id="photoModal" onclick="closeModal('photoModal')"><div class="sheet" style="padding:14px; max-width:90vw; max-height:85vh; width:100%; max-width:420px; display:flex; flex-direction:column; align-items:center; box-sizing:border-box;" onclick="event.stopPropagation()">
+  <div style="flex:1; width:100%; display:flex; align-items:center; justify-content:center; overflow:hidden; margin-bottom:12px;">
+    <img id="photoModalImg" src="" style="max-width:100%; max-height:68vh; object-fit:contain; border-radius:12px; display:block; background:var(--soft);">
+  </div>
   <button class="btn btn-line btn-wide" onclick="closeModal('photoModal')">Cerrar</button>
 </div></div>
 
