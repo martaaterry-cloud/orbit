@@ -795,51 +795,31 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
   letter-spacing: normal;
 }
 
-/* El carrusel se comporta como el encuadernado del libro */
+/* El carrusel con perspectiva 3D para paso de páginas */
 .atlas-carousel {
-  display: flex;
-  gap: 0;
-  overflow-x: auto;
-  scroll-snap-type: x mandatory;
-  padding: 4px 0 10px 0;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
+  display: flex !important;
+  gap: 0 !important;
+  overflow-x: auto !important;
+  scroll-snap-type: x mandatory !important;
+  padding: 6px 0 14px 0 !important;
+  -webkit-overflow-scrolling: touch !important;
+  scrollbar-width: none !important;
+  perspective: 1200px !important;
+  perspective-origin: center center !important;
 }
 .atlas-carousel::-webkit-scrollbar {
-  display: none;
-}
-
-/* La página del libro: papel astronómico cosido, sombra de lomo y borde apilado */
-.atlas-page {
-  flex: 0 0 96%;
-  min-width: 0;
-  margin: 0 2%;
-  scroll-snap-align: center;
-  scroll-snap-stop: always;
-  background: linear-gradient(90deg, #110c22 0%, #16102c 4%, #181232 50%, #16102c 96%, #100b20 100%);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 3px 14px 14px 3px;
-  padding: 14px 14px 14px 18px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  box-sizing: border-box;
-  position: relative;
-  /* Efecto lomo a la izquierda, sombra de volumen a la derecha y hojas apiladas */
-  box-shadow: 
-    inset 14px 0 18px -8px rgba(0, 0, 0, 0.85),
-    inset -8px 0 14px -8px rgba(0, 0, 0, 0.5),
-    2px 0 0 rgba(255, 255, 255, 0.03),
-    4px 0 0 rgba(8, 5, 16, 0.8),
-    0 10px 28px rgba(0, 0, 0, 0.6);
+  display: none !important;
 }
 
 /* ==========================================================================
-   PÁGINA PILOTO ATLAS: LIRA (LÁMINA ASTRONÓMICA)
+   LÁMINA DE ATLAS ASTRONÓMICO (FOLIO ENCUADERNADO CON EFECTO DE HOJA)
    ========================================================================== */
-.atlas-page.atlas-folio-lyra {
+.atlas-page.atlas-folio {
+  flex: 0 0 96% !important;
+  margin: 0 2% !important;
+  min-height: 410px !important;
   background: linear-gradient(135deg, rgba(22, 16, 38, 0.96) 0%, rgba(13, 9, 23, 0.98) 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
   border-radius: 4px 18px 18px 4px !important;
   padding: 14px 16px 14px 20px !important;
   box-sizing: border-box !important;
@@ -848,7 +828,13 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
   justify-content: space-between !important;
   align-items: stretch !important;
   text-align: center !important;
-  min-height: 410px !important;
+  position: relative !important;
+  scroll-snap-align: center !important;
+  scroll-snap-stop: always !important;
+  transform-style: preserve-3d !important;
+  transform-origin: left center !important;
+  will-change: transform;
+  /* Lomo cosido a la izquierda, hojas apiladas a la derecha y sombra de volumen */
   box-shadow: 
     inset 16px 0 22px -8px rgba(0, 0, 0, 0.9),
     inset -6px 0 14px -6px rgba(0, 0, 0, 0.5),
@@ -882,7 +868,7 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
 }
 
 /* Cielo rectangular abierto (170-190px) */
-.atlas-folio-lyra .atlas-sky-canvas {
+.atlas-sky-canvas {
   width: 100% !important;
   height: 180px !important;
   min-height: 180px !important;
@@ -896,13 +882,18 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
   overflow: hidden !important;
 }
 
-.atlas-folio-lyra .atlas-sky-canvas svg {
+.atlas-sky-canvas svg {
   width: 100% !important;
   height: 100% !important;
   max-width: 260px !important;
   max-height: 180px !important;
   display: block !important;
   overflow: visible !important;
+}
+
+.atlas-page.atlas-folio.locked .atlas-sky-canvas svg {
+  opacity: 0.4 !important;
+  filter: grayscale(0.3) !important;
 }
 
 .atlas-folio-body {
@@ -950,62 +941,13 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
   justify-content: center !important;
 }
 
-.atlas-page-header {
-  width: 100%;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+.atlas-swipe-hint {
+  text-align: center;
   font-size: 9px;
-  color: rgba(255, 255, 255, 0.4);
-  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.35);
+  margin-top: 4px;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
-  margin-bottom: 2px;
-}
-.atlas-chapter-title {
-  font-family: Georgia, serif;
-  font-style: italic;
-  font-size: 9.5px;
-}
-.atlas-page-num {
-  font-family: monospace;
-}
-
-.atlas-drawing-stage {
-  width: 110px;
-  height: 110px;
-  margin: 6px auto 6px auto;
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.03) 0%, transparent 72%);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-}
-.atlas-compass-ring {
-  position: absolute;
-  inset: -4px;
-  border-radius: 50%;
-  border: 1px dashed rgba(255, 255, 255, 0.08);
-  pointer-events: none;
-}
-.atlas-drawing-stage svg {
-  width: 100%;
-  height: 100%;
-}
-
-.atlas-page.locked .atlas-drawing-stage svg {
-  opacity: 0.38;
-  filter: grayscale(0.25);
-}
-
-.atlas-name {
-  font-family: Georgia, serif;
-  font-size: 16.5px;
-  font-weight: 500;
-  color: #ffffff;
-  margin: 2px 0 3px 0;
-  letter-spacing: 0.02em;
 }
 
 .atlas-status {
