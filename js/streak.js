@@ -140,7 +140,7 @@ function startUrgeTimer(){
  if(!uId){
   let d=load(),u={id:uid(),ts:Date.now(),goalId:urgeGoal.value,hope:urgeHope.value.trim(),fear:urgeFear.value.trim(),alternative:urgeAlternative.value.trim(),intensity:+urgeIntensity.value,survived:false};
   d.urges.push(u);
-  addPoints(d,.2,'impulso','Me detuve antes de comprobar');
+  addPoints(d,.2,'impulso','Me detuve antes de comprobar',u.id);
   save(d);
   uId=u.id;
  }
@@ -164,12 +164,80 @@ function resumeUrgeTimer(){
  startUrgeTimer();
 }
 
+function deleteUrge(id,askConfirm=true){
+ if(!id)return;
+ if(askConfirm){
+  let ok=confirm('¿Eliminar este registro de impulso?');
+  if(!ok)return;
+ }
+ let d=load(),u=d.urges.find(x=>x.id===id);
+ if(!u)return;
+ 
+ let ptsToRevert=0;
+ let foundRef=false;
+ 
+ if(d.pointAwards){
+  Object.keys(d.pointAwards).forEach(k=>{
+   let dayObj=d.pointAwards[k];
+   if(dayObj&&Array.isArray(dayObj.events)){
+    let keep=[];
+    dayObj.events.forEach(e=>{
+     if(e&&e.refId===id){
+      ptsToRevert+=Number(e.amount||0);
+      foundRef=true;
+     }else{
+      keep.push(e);
+     }
+    });
+    dayObj.events=keep;
+   }
+  });
+ }
+ 
+ if(!foundRef){
+  ptsToRevert=u.survived?0.5:0.2;
+  let k=dayKey(u.ts);
+  if(d.pointAwards&&d.pointAwards[k]&&Array.isArray(d.pointAwards[k].events)){
+   let idx02=d.pointAwards[k].events.findIndex(e=>e.kind==='impulso'&&Number(e.amount)===0.2);
+   if(idx02!==-1)d.pointAwards[k].events.splice(idx02,1);
+   if(u.survived){
+    let idx03=d.pointAwards[k].events.findIndex(e=>e.kind==='impulso'&&Number(e.amount)===0.3);
+    if(idx03!==-1)d.pointAwards[k].events.splice(idx03,1);
+   }
+  }
+ }
+ 
+ if(ptsToRevert>0){
+  d.wallet=Math.max(0,Number(d.wallet||0)-ptsToRevert);
+  d.lifetimeStars=Math.max(0,Number(d.lifetimeStars||0)-ptsToRevert);
+  d.bank=d.wallet;
+ }
+ 
+ d.urges=d.urges.filter(x=>x.id!==id);
+ save(d);
+ 
+ if(askConfirm)toast('Registro eliminado');
+ render();
+ if(typeof renderArchive==='function')renderArchive();
+}
+
 function resetUrgeTimer(){
+ let state=getTimerState();
+ let uId=(state&&state.activeUrge)||activeUrge;
+ 
+ if(uId){
+  let d=load(),u=d.urges.find(x=>x.id===uId);
+  if(u&&!u.survived){
+   deleteUrge(uId,false);
+  }
+ }
+ 
  if(timerInterval){clearInterval(timerInterval);timerInterval=null}
  clearTimerState();
  activeUrge=null;
  syncUrgeTimer();
  toast('Pausa cancelada');
+ render();
 }
 
 function updateTimer(){
@@ -183,7 +251,7 @@ function surviveUrge(){
   let d=load(),u=d.urges.find(x=>x.id===uId);
   if(u&&!u.survived){
    u.survived=true;
-   addPoints(d,.3,'impulso','Atravesé el impulso sin comprobar');
+   addPoints(d,.3,'impulso','Atravesé el impulso sin comprobar',uId);
    save(d);
   }
  }

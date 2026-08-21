@@ -1,7 +1,7 @@
 // Economía de estrellas: hoy, disponibles, históricas e historial de ganancias.
 // Extraído desde app.js sin romper compatibilidad.
 
-function addPoints(d,amount,kind,label){
+function addPoints(d,amount,kind,label,refId=null){
  amount=Number(amount||0);
  if(amount<=0)return;
  d.wallet=Number(d.wallet||0)+amount;
@@ -10,7 +10,7 @@ function addPoints(d,amount,kind,label){
  let k=dayKey();
  if(!d.pointAwards[k])d.pointAwards[k]={limits:{},actions:{},events:[]};
  if(!d.pointAwards[k].events)d.pointAwards[k].events=[];
- d.pointAwards[k].events.push({ts:Date.now(),amount,kind,label});
+ d.pointAwards[k].events.push({ts:Date.now(),amount,kind,label,refId:refId||null});
 }
 
 function todayPointsTotal(d){

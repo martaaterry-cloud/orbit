@@ -132,8 +132,71 @@ function entryHTML(e){
  return `<div class="card entry-card"><div class="entry-meta"><span class="entry-type">${esc(e.type.replaceAll('-',' '))}</span><span>${new Date(e.ts).toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'})}</span></div>${e.title?`<h3>${esc(e.title)}</h3>`:''}<p>${esc(e.text)}</p></div>`
 }
 
+let swipeTouchState={startX:0,startY:0,currentEl:null,isHorizontal:null,currentTx:0};
+
+function handleSwipeTouchStart(e,el){
+ let touch=e.touches[0];
+ swipeTouchState.startX=touch.clientX;
+ swipeTouchState.startY=touch.clientY;
+ swipeTouchState.currentEl=el;
+ swipeTouchState.isHorizontal=null;
+ swipeTouchState.currentTx=0;
+ el.style.transition='none';
+}
+
+function handleSwipeTouchMove(e,el){
+ if(swipeTouchState.currentEl!==el)return;
+ let touch=e.touches[0];
+ let dx=touch.clientX-swipeTouchState.startX;
+ let dy=touch.clientY-swipeTouchState.startY;
+ 
+ if(swipeTouchState.isHorizontal===null){
+  if(Math.abs(dx)>6||Math.abs(dy)>6){
+   swipeTouchState.isHorizontal=Math.abs(dx)>Math.abs(dy);
+  }
+ }
+ 
+ if(swipeTouchState.isHorizontal){
+  let tx=Math.min(0,Math.max(-85,dx));
+  swipeTouchState.currentTx=tx;
+  el.style.transform=`translateX(${tx}px)`;
+  if(Math.abs(dx)>8&&e.cancelable){
+   e.preventDefault();
+  }
+ }
+}
+
+function handleSwipeTouchEnd(e,el){
+ if(swipeTouchState.currentEl!==el)return;
+ el.style.transition='transform 0.22s cubic-bezier(0.25, 1, 0.5, 1)';
+ if(swipeTouchState.currentTx<-40){
+  el.style.transform='translateX(-75px)';
+ }else{
+  el.style.transform='translateX(0px)';
+ }
+ swipeTouchState.currentEl=null;
+}
+
 function goodHTML(g){return `<div class="card entry-card"><div class="entry-meta"><span class="entry-type">lo que sí pasó</span><span>${new Date(g.ts).toLocaleDateString('es-ES',{day:'2-digit',month:'short'})}</span></div><h3>${esc(g.text)}</h3>${g.meaning?`<p>${esc(g.meaning)}</p>`:''}</div>`}
-function urgeHTML(u,d){let g=d.goals.find(x=>x.id===u.goalId);return `<div class="card entry-card"><div class="entry-meta"><span class="entry-type">${g?esc(g.name):'impulso'}</span><span>${u.survived?'atravesado':'registrado'}</span></div><p>Ansiedad: ${u.intensity}/10${u.hope?'<br>Esperaba: '+esc(u.hope):''}${u.fear?'<br>Temía: '+esc(u.fear):''}</p></div>`}
+
+function urgeHTML(u,d){
+ let g=d.goals.find(x=>x.id===u.goalId);
+ return `<div class="swipe-row">
+  <div class="swipe-action-bg">
+    <button class="swipe-delete-btn" onclick="deleteUrge('${u.id}')">
+      <svg class="icon" viewBox="0 0 24 24"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+      <span>Eliminar</span>
+    </button>
+  </div>
+  <div class="card entry-card swipe-front" ontouchstart="handleSwipeTouchStart(event,this)" ontouchmove="handleSwipeTouchMove(event,this)" ontouchend="handleSwipeTouchEnd(event,this)">
+    <div class="entry-meta">
+      <span class="entry-type">${g?esc(g.name):'impulso'}</span>
+      <span>${u.survived?'atravesado':'registrado'} · ${new Date(u.ts).toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'})}</span>
+    </div>
+    <p>Ansiedad: ${u.intensity}/10${u.hope?'<br>Esperaba: '+esc(u.hope):''}${u.fear?'<br>Temía: '+esc(u.fear):''}</p>
+  </div>
+ </div>`;
+}
 
 function setJournalFilter(f,btn){journalFilter=f;document.querySelectorAll('#archiveJournalTabs button').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderArchiveJournal()}
 
