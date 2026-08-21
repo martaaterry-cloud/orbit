@@ -125,7 +125,7 @@ function renderUniverse(d){
    let active = window.currentBookTab === tab.id;
    let isTabUnlocked = d.unlockedRegions && d.unlockedRegions.includes(tab.region);
    let label = tab.name + (isTabUnlocked ? '' : ' 🔒');
-   return `<button class="chip ${active ? 'active' : ''}" style="padding:6px 12px; font-size:10px; border-radius:99px; background:${active ? 'var(--wine)' : 'rgba(255,255,255,0.04)'}; border:1px solid ${active ? 'var(--rose2)' : 'rgba(255,255,255,0.1)'}; color:${active ? '#fff' : 'rgba(255,255,255,0.6)'}; cursor:pointer;" onclick="window.currentBookTab='${tab.id}'; render()">${label}</button>`;
+    return `<button class="chip ${active ? 'active' : ''}" style="padding:6px 12px; font-size:10px; border-radius:99px; white-space:nowrap; flex-shrink:0; background:${active ? 'var(--wine)' : 'rgba(255,255,255,0.04)'}; border:1px solid ${active ? 'var(--rose2)' : 'rgba(255,255,255,0.1)'}; color:${active ? '#fff' : 'rgba(255,255,255,0.6)'}; cursor:pointer;" onclick="window.currentBookTab='${tab.id}'; render()">${label}</button>`;
  }).join('');
  
  let activeTab = bookTabs.find(t => t.id === window.currentBookTab) || bookTabs[0];
