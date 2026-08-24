@@ -345,23 +345,18 @@ function initSkySwipe(){
   }, { passive: true });
 }
 
-function navigateSky(dir){
-  let d = (typeof load === 'function') ? load() : null;
-  if(!d) return;
-  let unlockedSkies = skyRegionsList.filter(r => d.unlockedRegions && d.unlockedRegions.includes(r.id));
-  if(unlockedSkies.length <= 1) return;
-  
-  let newIndex = (currentSkyIndex + dir + unlockedSkies.length) % unlockedSkies.length;
-  setSkyIndex(newIndex);
-}
+let currentSkyId = 'cielo-1';
 
-function setSkyIndex(idx){
+function setSkyById(regionId){
   let d = (typeof load === 'function') ? load() : null;
   if(!d) return;
-  let unlockedSkies = skyRegionsList.filter(r => d.unlockedRegions && d.unlockedRegions.includes(r.id));
-  if(!unlockedSkies.length) return;
+  let isUnlocked = d.unlockedRegions && d.unlockedRegions.includes(regionId);
+  if(!isUnlocked && regionId !== 'cielo-1'){
+    let target = skyRegionsList.find(r => r.id === regionId);
+    return toast(`Región "${target ? target.name : regionId}" bloqueada. Desbloquéala desde la nave.`);
+  }
   
-  currentSkyIndex = Math.max(0, Math.min(idx, unlockedSkies.length - 1));
+  currentSkyId = regionId;
   
   let stage = document.getElementById('constellationStage');
   if(stage){
@@ -375,6 +370,18 @@ function setSkyIndex(idx){
   }
 }
 
+function navigateSky(dir){
+  let d = (typeof load === 'function') ? load() : null;
+  if(!d) return;
+  let unlockedSkies = skyRegionsList.filter(r => d.unlockedRegions && d.unlockedRegions.includes(r.id));
+  if(unlockedSkies.length <= 1) return;
+  
+  let currentIndex = unlockedSkies.findIndex(r => r.id === currentSkyId);
+  if(currentIndex === -1) currentIndex = 0;
+  let nextIdx = (currentIndex + dir + unlockedSkies.length) % unlockedSkies.length;
+  setSkyById(unlockedSkies[nextIdx].id);
+}
+
 function renderUniverse(d){
   initSkySwipe();
   let total=Number(d.lifetimeStars||0),wallet=Number(d.wallet||0);
@@ -385,36 +392,21 @@ function renderUniverse(d){
   let unlockedSkies = skyRegionsList.filter(r => d.unlockedRegions && d.unlockedRegions.includes(r.id));
   if(!unlockedSkies.length) unlockedSkies = [skyRegionsList[0]];
   
-  if (currentSkyIndex >= unlockedSkies.length) {
-    currentSkyIndex = 0;
+  // Ensure currentSkyId is an unlocked sky
+  let currentRegion = unlockedSkies.find(r => r.id === currentSkyId);
+  if(!currentRegion) {
+    currentRegion = unlockedSkies[0];
+    currentSkyId = currentRegion.id;
   }
-  let currentRegion = unlockedSkies[currentSkyIndex];
 
-  // Update navigation controls
-  let titleEl = document.getElementById('skyHeaderTitle');
-  if(titleEl) {
-    titleEl.textContent = `${currentRegion.name} · ${currentRegion.roman}`;
-  }
-  let prevBtn = document.getElementById('skyNavPrev');
-  let nextBtn = document.getElementById('skyNavNext');
-  if(prevBtn && nextBtn) {
-    if(unlockedSkies.length > 1){
-      prevBtn.style.display = 'grid';
-      nextBtn.style.display = 'grid';
-    } else {
-      prevBtn.style.display = 'none';
-      nextBtn.style.display = 'none';
-    }
-  }
-  let dotsEl = document.getElementById('skyDotsIndicator');
-  if(dotsEl) {
-    if(unlockedSkies.length > 1){
-      dotsEl.innerHTML = unlockedSkies.map((r, i) => `<span class="sky-dot ${i === currentSkyIndex ? 'active' : ''}" onclick="setSkyIndex(${i})" title="${esc(r.name)}"></span>`).join('');
-      dotsEl.style.display = 'flex';
-    } else {
-      dotsEl.innerHTML = '';
-      dotsEl.style.display = 'none';
-    }
+  // Render top discrete tabs
+  let navTabsEl = document.getElementById('skyNavTabs');
+  if(navTabsEl) {
+    navTabsEl.innerHTML = skyRegionsList.map(r => {
+      let isUnlocked = d.unlockedRegions && d.unlockedRegions.includes(r.id);
+      let isActive = (r.id === currentRegion.id);
+      return `<button class="sky-tab-btn ${isActive ? 'active' : ''} ${isUnlocked ? '' : 'locked'}" onclick="setSkyById('${r.id}')">${esc(r.name)}${isUnlocked ? '' : ' 🔒'}</button>`;
+    }).join('');
   }
 
   // Determine overall in-progress constellation across all unlocked regions
