@@ -3,26 +3,33 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const ALLOWED_ORIGIN = "https://martaaterry-cloud.github.io";
+const PROD_ORIGIN = "https://martaaterry-cloud.github.io";
+const DEV_ORIGINS = new Set([
+  "http://localhost:3000",
+  "http://localhost:5173",
+  "http://localhost:8080",
+  "http://127.0.0.1:3000",
+  "http://127.0.0.1:5173",
+  "http://127.0.0.1:5500",
+  "http://127.0.0.1:8080",
+]);
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
+function getCorsHeaders(req: Request) {
+  const origin = req.headers.get("origin") || "";
+  const allowed = (origin === PROD_ORIGIN || DEV_ORIGINS.has(origin)) ? origin : PROD_ORIGIN;
+  return {
+    "Access-Control-Allow-Origin": allowed,
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+  };
+}
 
 serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
+
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
-
-  // Comprobación de origen en producción
-  const origin = req.headers.get("origin") || "";
-  const isAllowedOrigin = origin === ALLOWED_ORIGIN || origin.endsWith("github.io") || origin.includes("localhost") || origin.includes("127.0.0.1");
-  const responseCors = {
-    ...corsHeaders,
-    "Access-Control-Allow-Origin": isAllowedOrigin ? origin : ALLOWED_ORIGIN,
-  };
 
   try {
     const { username, password, captcha_token } = await req.json();
@@ -30,7 +37,7 @@ serve(async (req) => {
     if (!username || !password || typeof username !== "string" || typeof password !== "string") {
       return new Response(
         JSON.stringify({ error: "Introduce usuario y contraseña válidos." }),
-        { headers: { ...responseCors, "Content-Type": "application/json" }, status: 400 }
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
       );
     }
 
@@ -42,24 +49,32 @@ serve(async (req) => {
     if (!supabaseUrl || !supabaseServiceKey || !supabaseAnonKey) {
       return new Response(
         JSON.stringify({ error: "Configuración del servidor incompleta." }),
-        { headers: { ...responseCors, "Content-Type": "application/json" }, status: 500 }
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
       );
     }
 
-    // Verificación opcional de Cloudflare Turnstile si el secret está configurado en Supabase
-    if (turnstileSecret && captcha_token) {
+    // Verificación obligatoria de Cloudflare Turnstile si está configurado el secreto en Supabase
+    if (turnstileSecret) {
+      const token = typeof captcha_token === "string" ? captcha_token.trim() : "";
+      if (!token) {
+        return new Response(
+          JSON.stringify({ error: "Verificación de seguridad requerida." }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 403 }
+        );
+      }
+
       const form = new FormData();
       form.append("secret", turnstileSecret);
-      form.append("response", captcha_token);
+      form.append("response", token);
       const cfRes = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
         method: "POST",
         body: form,
       });
       const cfData = await cfRes.json();
-      if (!cfData.success) {
+      if (!cfData || cfData.success !== true) {
         return new Response(
-          JSON.stringify({ error: "Verificación de seguridad fallida. Inténtalo de nuevo." }),
-          { headers: { ...responseCors, "Content-Type": "application/json" }, status: 403 }
+          JSON.stringify({ error: "Verificación de seguridad no válida. Inténtalo de nuevo." }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 403 }
         );
       }
     }
@@ -82,7 +97,7 @@ serve(async (req) => {
       // Respuesta genérica para evitar enumeración de usuarios
       return new Response(
         JSON.stringify({ error: "Usuario o contraseña incorrectos." }),
-        { headers: { ...responseCors, "Content-Type": "application/json" }, status: 400 }
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
       );
     }
 
@@ -91,7 +106,7 @@ serve(async (req) => {
     if (userErr || !userData?.user?.email) {
       return new Response(
         JSON.stringify({ error: "Usuario o contraseña incorrectos." }),
-        { headers: { ...responseCors, "Content-Type": "application/json" }, status: 400 }
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
       );
     }
 
@@ -108,19 +123,19 @@ serve(async (req) => {
     if (authErr || !authData.session) {
       return new Response(
         JSON.stringify({ error: "Usuario o contraseña incorrectos." }),
-        { headers: { ...responseCors, "Content-Type": "application/json" }, status: 400 }
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
       );
     }
 
     // 4. Retornar sesión segura al cliente
     return new Response(
       JSON.stringify({ session: authData.session }),
-      { headers: { ...responseCors, "Content-Type": "application/json" }, status: 200 }
+      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
     );
   } catch (err) {
     return new Response(
       JSON.stringify({ error: "Error en el servidor al autenticar." }),
-      { headers: { ...responseCors, "Content-Type": "application/json" }, status: 500 }
+      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
     );
   }
 });
