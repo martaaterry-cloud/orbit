@@ -15,14 +15,36 @@ function saveCheckin(){
 
 const prompts=[['Lo que pesa hoy','Una frase basta.'],['Algo que hoy sí fue mío','Puede ser pequeño o cotidiano.'],['Lo que no necesito resolver esta noche','Déjalo aquí.'],['Una cosa que me sorprendió de mí','Sin juzgarla.'],['Qué sigue orbitando','Algo que todavía está, aunque haya cambiado.']];
 
+function saveGratitudeEntry(){
+  let g1 = document.getElementById('gratitude1')?.value.trim() || '';
+  let g2 = document.getElementById('gratitude2')?.value.trim() || '';
+  let g3 = document.getElementById('gratitude3')?.value.trim() || '';
+  let items = [g1, g2, g3].filter(Boolean);
+  if(!items.length) return toast('Escribe al menos un agradecimiento');
+  
+  let d = load();
+  let eId = uid();
+  let text = items.map((x, i) => `${i + 1}. ${x}`).join('\n');
+  d.journal.push({ id: eId, ts: Date.now(), type: 'agradecimiento', title: '3 cosas que agradecer hoy', text });
+  save(d);
+  
+  if(document.getElementById('gratitude1')) document.getElementById('gratitude1').value = '';
+  if(document.getElementById('gratitude2')) document.getElementById('gratitude2').value = '';
+  if(document.getElementById('gratitude3')) document.getElementById('gratitude3').value = '';
+  
+  let got = awardDailyAction('journal', 0.1, 0.5, 'Agradecimiento', eId);
+  toast(got ? 'Agradecimientos guardados · +0,1' : 'Agradecimientos guardados');
+  render();
+}
+
 function saveQuickEntry(){
- let t=quickText.value.trim();
+ let t=document.getElementById('quickText')?.value.trim();
  if(!t)return toast('Escribe aunque sea una línea');
  let d=load(),p=prompts[new Date().getDate()%prompts.length];
  let eId=uid();
  d.journal.push({id:eId,ts:Date.now(),type:'rapida',title:p[0],text:t});
  save(d);
- quickText.value='';
+ if(document.getElementById('quickText')) document.getElementById('quickText').value='';
  let got=awardDailyAction('journal',.1,.5,p[0]||'Escribir',eId);
  toast(got?'Guardado · +0,1':'Guardado');
  render();

@@ -684,7 +684,58 @@ function unlockRegion(id, cost){
 }
 
 
-function render(){let d=accrue(),now=Date.now(),p=prompts[new Date().getDate()%prompts.length];todayDate.textContent=new Date().toLocaleDateString('es-ES',{weekday:'short',day:'numeric',month:'short'});dailyPromptTitle.textContent=p[0];dailyPromptSub.textContent=p[1];let c=d.checkins[dayKey()];if(c){needToday.value=c.need||'';forMeToday.value=c.forMe||'';mood=c.mood||3;document.querySelectorAll('#moodScale button').forEach((b,i)=>b.classList.toggle('sel',i+1===mood))}
+const reflectionPrompts = [
+  ['¿Qué emoción ha estado más presente hoy?', 'Obsérvala sin juzgarla ni intentar cambiarla de inmediato.'],
+  ['¿Qué límite has respetado o necesitas cuidar hoy?', 'Con los demás o en tus propias autoexigencias.'],
+  ['¿Qué pequeña cosa has hecho hoy por tu bienestar?', 'Un respiro, descansar o comer algo rico también cuenta.'],
+  ['¿A quién te alegra tener en tu vida hoy?', 'Recuerda un vínculo o gesto que te dé tranquilidad.'],
+  ['¿Qué pensamiento duro puedes suavizar hoy?', 'Practica mirarte con un poco más de compasión.'],
+  ['¿Qué parte de tu energía quieres reservar solo para ti?', 'No todo requiere tu respuesta inmediata.'],
+  ['¿Qué aprendizaje te deja lo vivido hoy?', 'Incluso en los días difíciles hay pequeñas certezas.'],
+  ['¿Qué te gustaría recordar de la persona que eres hoy?', 'Desde la calma y el proceso que estás construyendo.']
+];
+
+function getStoredReflectionIndex(){
+  let idx = localStorage.getItem('orbitReflectionIndex');
+  if(idx === null || isNaN(Number(idx))) {
+    let dayNum = new Date().getDate();
+    idx = dayNum % reflectionPrompts.length;
+    localStorage.setItem('orbitReflectionIndex', String(idx));
+  }
+  return Number(idx) % reflectionPrompts.length;
+}
+
+function nextReflectionPrompt(){
+  let curr = getStoredReflectionIndex();
+  let next = (curr + 1) % reflectionPrompts.length;
+  localStorage.setItem('orbitReflectionIndex', String(next));
+  renderReflectionPrompt();
+}
+
+function renderReflectionPrompt(){
+  let tEl = document.getElementById('reflectionPromptTitle');
+  let sEl = document.getElementById('reflectionPromptSub');
+  if(!tEl || !sEl) return;
+  let idx = getStoredReflectionIndex();
+  let p = reflectionPrompts[idx] || reflectionPrompts[0];
+  tEl.textContent = p[0];
+  sEl.textContent = p[1];
+}
+
+function render(){
+  let d=accrue(),now=Date.now(),p=(typeof prompts!=='undefined'&&prompts.length)?prompts[new Date().getDate()%prompts.length]:['Hoy',''];
+  if(typeof todayDate!=='undefined'&&todayDate) todayDate.textContent=new Date().toLocaleDateString('es-ES',{weekday:'short',day:'numeric',month:'short'});
+  let dpTitle=document.getElementById('dailyPromptTitle'), dpSub=document.getElementById('dailyPromptSub');
+  if(dpTitle) dpTitle.textContent=p[0];
+  if(dpSub) dpSub.textContent=p[1];
+  renderReflectionPrompt();
+  let c=d.checkins[dayKey()];
+  if(c){
+    if(typeof needToday!=='undefined'&&needToday) needToday.value=c.need||'';
+    if(typeof forMeToday!=='undefined'&&forMeToday) forMeToday.value=c.forMe||'';
+    mood=c.mood||5;
+    document.querySelectorAll('#moodScale button').forEach((b,i)=>b.classList.toggle('sel',i+1===mood));
+  }
  drawOrbit(d);
  populatePillarSelect(d);
  orbitItems.innerHTML=(d.orbit||[]).length?d.orbit.map(o=>{

@@ -121,7 +121,8 @@ function renderDayDetail(d){
     if(Array.isArray(d.goodThings)) d.goodThings.filter(g=>g && g.ts && dayKey(g.ts)===selectedDay).forEach(g=>html+=goodHTML(g, d));
     if(Array.isArray(d.urges)) d.urges.filter(u=>u && u.ts && dayKey(u.ts)===selectedDay).forEach(u=>html+=urgeHTML(u,d));
   }
-  dayDetail.innerHTML=html||'<div class="empty">No guardaste nada este día.</div>';
+  let addBtnHtml = `<button class="btn btn-dashed btn-wide" style="margin-top:12px; display:inline-flex; align-items:center; justify-content:center; gap:6px;" onclick="openAddMemoryPastDay('${selectedDay}')"><svg class="icon" viewBox="0 0 24 24" style="width:14px; height:14px; stroke:currentColor;"><path d="M12 5v14M5 12h14"/></svg><span>Añadir recuerdo a este día</span></button>`;
+  dayDetail.innerHTML=(html||'<div class="empty">No guardaste nada este día.</div>') + addBtnHtml;
   if(typeof loadPhotoThumbnails==='function')loadPhotoThumbnails();
 }
 
@@ -206,4 +207,145 @@ function renderUrgeArchive(){
  urgeArchiveList.innerHTML=arr.length?arr.map(u=>urgeHTML(u,d)).join(''):'<div class="empty">No hay impulsos que coincidan.</div>'
 }
 
-function renderArchive(){let d=load();renderCalendar(d);renderDayDetail(d);renderArchiveJournal();renderGoodArchive();urgeFilter.innerHTML='<option value="all">Todos los impulsos</option>'+d.goals.map(g=>`<option value="${g.id}">${esc(g.name)}</option>`).join('');renderUrgeArchive()}
+function renderArchive(){let d=load();renderCalendar(d);renderDayDetail(d);renderArchiveJournal();renderGoodArchive();if(document.getElementById('urgeFilter'))document.getElementById('urgeFilter').innerHTML='<option value="all">Todos los impulsos</option>'+(d.goals||[]).map(g=>`<option value="${g.id}">${esc(g.name)}</option>`).join('');renderUrgeArchive()}
+
+let selectedPastMemoryDay = null;
+let selectedPastMemoryPhotoBlob = null;
+
+function openAddMemoryPastDay(dayStr){
+  selectedPastMemoryDay = dayStr || selectedDay || (typeof dayKey === 'function' ? dayKey() : new Date().toISOString().split('T')[0]);
+  let dt = new Date(selectedPastMemoryDay + 'T12:00:00');
+  let titleEl = document.getElementById('addPastMemoryModalTitle');
+  if(titleEl) titleEl.textContent = `Añadir recuerdo (${dt.toLocaleDateString('es-ES', {day:'numeric', month:'short'})})`;
+  
+  let textInput = document.getElementById('pastMemoryText');
+  let meaningInput = document.getElementById('pastMemoryMeaning');
+  if(textInput) textInput.value = '';
+  if(meaningInput) meaningInput.value = '';
+  
+  let sel = document.getElementById('pastMemoryPillarSelect');
+  if(sel){
+    let d = (typeof load === 'function') ? load() : null;
+    let pillars = (d && Array.isArray(d.orbit)) ? d.orbit : [];
+    sel.innerHTML = '<option value="">Sin asociar</option>' + pillars.map(p => `<option value="${esc(p.id)}">${esc(p.name)}</option>`).join('');
+  }
+  
+  clearPastMemoryPhotoSelect();
+  let modal = document.getElementById('addPastMemoryModal');
+  if(modal) modal.classList.add('show');
+}
+
+function triggerPastMemoryPhotoSelect(){
+  let input = document.getElementById('pastMemoryPhotoInput');
+  if(input) input.click();
+}
+
+async function handlePastMemoryPhotoSelect(event){
+  let file = event.target.files && event.target.files[0];
+  if(!file) return;
+  if(!file.type.startsWith('image/')){
+    return toast('Por favor, selecciona un archivo de imagen.');
+  }
+  if(typeof navigator !== 'undefined' && !navigator.onLine){
+    clearPastMemoryPhotoSelect();
+    return toast('Necesitas conexión para adjuntar fotos.');
+  }
+  try {
+    toast('Procesando foto…');
+    let compressedBlob = (typeof compressImageFile === 'function')
+      ? await compressImageFile(file, 1600, 0.8)
+      : file;
+    selectedPastMemoryPhotoBlob = compressedBlob;
+    let objUrl = URL.createObjectURL(compressedBlob);
+    let previewWrap = document.getElementById('pastMemoryPhotoPreviewWrap');
+    let previewImg = document.getElementById('pastMemoryPhotoPreviewImg');
+    let fileNameEl = document.getElementById('pastMemoryPhotoFileName');
+    if(previewImg) previewImg.src = objUrl;
+    if(fileNameEl) fileNameEl.textContent = file.name || 'Foto lista';
+    if(previewWrap) previewWrap.style.display = 'flex';
+  } catch (err) {
+    console.error('Error al procesar foto:', err);
+    clearPastMemoryPhotoSelect();
+    toast('No se pudo procesar la foto.');
+  }
+}
+
+function clearPastMemoryPhotoSelect(){
+  selectedPastMemoryPhotoBlob = null;
+  let input = document.getElementById('pastMemoryPhotoInput');
+  if(input) input.value = '';
+  let previewWrap = document.getElementById('pastMemoryPhotoPreviewWrap');
+  let previewImg = document.getElementById('pastMemoryPhotoPreviewImg');
+  if(previewImg) previewImg.src = '';
+  if(previewWrap) previewWrap.style.display = 'none';
+}
+
+async function savePastMemory(){
+  let textInput = document.getElementById('pastMemoryText');
+  let meaningInput = document.getElementById('pastMemoryMeaning');
+  let t = textInput ? textInput.value.trim() : '';
+  if(!t) return toast('Escribe algo que quieras guardar');
+  
+  const isOffline = typeof navigator !== 'undefined' && !navigator.onLine;
+  if(selectedPastMemoryPhotoBlob && isOffline){
+    return toast('Necesitas conexión para subir una foto.');
+  }
+  
+  let targetDay = selectedPastMemoryDay || selectedDay || (typeof dayKey === 'function' ? dayKey() : new Date().toISOString().split('T')[0]);
+  let d = (typeof load === 'function') ? load() : null;
+  if(!d) return;
+  if(!Array.isArray(d.goodThings)) d.goodThings = [];
+  
+  let gId = (typeof uid === 'function') ? uid() : ('good-' + Date.now());
+  let sel = document.getElementById('pastMemoryPillarSelect');
+  let pId = sel ? sel.value.trim() : '';
+  let itemTs = new Date(targetDay + 'T12:00:00').getTime();
+  let item = { id: gId, ts: itemTs, text: t, meaning: meaningInput ? meaningInput.value.trim() : '' };
+  if(pId) item.pillarId = pId;
+  
+  let submitBtn = document.getElementById('savePastMemoryBtn');
+  if(selectedPastMemoryPhotoBlob){
+    let sb = typeof getSupabase === 'function' ? getSupabase() : null;
+    if(!sb) return toast('Servicio en la nube no disponible para fotos.');
+    const { data: { session } } = await sb.auth.getSession();
+    if(!session || !session.user){
+      return toast('Inicia sesión en la nube para adjuntar fotos.');
+    }
+    if(submitBtn){ submitBtn.disabled = true; submitBtn.textContent = 'Subiendo foto…'; }
+    const photoPath = `${session.user.id}/good-things/${gId}.jpg`;
+    try {
+      const { error: uploadError } = await sb.storage
+        .from('orbit-media')
+        .upload(photoPath, selectedPastMemoryPhotoBlob, {
+          contentType: 'image/jpeg',
+          upsert: true
+        });
+      if(uploadError){
+        console.error('Error al subir foto:', uploadError);
+        if(submitBtn){ submitBtn.disabled = false; submitBtn.textContent = 'Guardar recuerdo'; }
+        return toast('Error al subir la foto.');
+      }
+      item.photoPath = photoPath;
+    } catch(err){
+      console.error('Error al subir foto:', err);
+      if(submitBtn){ submitBtn.disabled = false; submitBtn.textContent = 'Guardar recuerdo'; }
+      return toast('Error de red al subir la foto.');
+    }
+  }
+  
+  d.goodThings.push(item);
+  save(d);
+  if(submitBtn){ submitBtn.disabled = false; submitBtn.textContent = 'Guardar recuerdo'; }
+  closeModal('addPastMemoryModal');
+  
+  let isToday = (typeof dayKey === 'function' && targetDay === dayKey());
+  if(isToday){
+    let got = (typeof awardDailyAction === 'function') ? awardDailyAction('goodThing', 0.1, 0.5, 'Algo bueno', gId) : false;
+    toast(got ? 'Recuerdo guardado · +0,1' : 'Recuerdo guardado');
+  } else {
+    toast('Recuerdo guardado en el archivo (0 estrellas)');
+  }
+  
+  renderArchive();
+  if(typeof render === 'function') render();
+}

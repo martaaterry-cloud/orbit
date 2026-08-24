@@ -13,7 +13,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <title>Orbit</title>
 
-  <link rel="stylesheet" href="css/orbit.css?v=1.2.19">
+  <link rel="stylesheet" href="css/orbit.css?v=1.2.20">
 </head>
 <body>
 <!-- Pantalla de Acceso Inicial -->
@@ -88,12 +88,21 @@
     </div>
   </div>
 
-  <div class="section-head"><h2>Una línea para hoy</h2><small>opcional</small></div>
+  <div class="section-head"><h2>3 cosas que agradecer hoy</h2><small>opcional</small></div>
   <div class="card prompt-card">
-    <div class="prompt-title" id="dailyPromptTitle"></div>
-    <div class="prompt-sub" id="dailyPromptSub"></div>
-    <textarea id="quickText" placeholder="Hoy..."></textarea>
-    <button class="btn btn-soft btn-wide" style="margin-top:8px" onclick="saveQuickEntry()">Guardar</button>
+    <div class="prompt-sub" style="margin-bottom:10px;">Tres detalles pequeños o importantes que agradeces de este día.</div>
+    <div style="display:flex; flex-direction:column; gap:8px;">
+      <input id="gratitude1" type="text" placeholder="1. Algo sencillo o tranquilo...">
+      <input id="gratitude2" type="text" placeholder="2. Un momento, gesto o persona...">
+      <input id="gratitude3" type="text" placeholder="3. Algo de ti o de tu día...">
+    </div>
+    <button class="btn btn-soft btn-wide" style="margin-top:10px;" onclick="saveGratitudeEntry()">Guardar agradecimientos</button>
+  </div>
+
+  <div class="section-head"><h2>Pregunta para reflexionar hoy</h2><button class="icon-button" style="padding:4px;" onclick="nextReflectionPrompt()" title="Cambiar pregunta"><svg class="icon" viewBox="0 0 24 24" style="width:16px; height:16px;"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg></button></div>
+  <div class="card prompt-card" id="reflectionCard">
+    <div class="prompt-title" id="reflectionPromptTitle" style="font-size:15px; margin-bottom:4px;"></div>
+    <div class="prompt-sub" id="reflectionPromptSub"></div>
   </div>
 
   <div class="quote">“Lo invisible también deja gravedad.”<small>Hay cosas que no se ven y aun así forman parte de lo que somos.</small></div>
@@ -385,7 +394,7 @@
     <button class="btn btn-line" onclick="handleCloudLogout()" style="font-size:12px; padding:8px 16px; color:var(--wine);" id="cloudLogoutBtn">
       Cerrar sesión
     </button>
-    <div style="font-size:11px; color:var(--muted); opacity:0.6; margin-top:14px;">Orbit v1.2.19</div>
+    <div style="font-size:11px; color:var(--muted); opacity:0.6; margin-top:14px;">Orbit v1.2.20</div>
   </div>
 </section>
 
@@ -682,6 +691,36 @@
   <button class="btn btn-line btn-wide" style="margin-top:20px" onclick="closeModal('constellationDetailModal')">Cerrar</button>
 </div></div>
 
+<!-- Modal Añadir Recuerdo a Día Pasado -->
+<div class="modal" id="addPastMemoryModal"><div class="sheet">
+  <h3 id="addPastMemoryModalTitle">Añadir recuerdo</h3>
+  <p class="prompt-sub" id="addPastMemoryModalSub">Guarda un momento o vivencia de este día.</p>
+  <div class="field"><label>¿Qué quiero recordar de este día?</label><input id="pastMemoryText" placeholder="Un momento, algo que hice o sentí..."></div>
+  <div class="field"><label>¿Por qué quiero guardarlo? (opcional)</label><input id="pastMemoryMeaning" placeholder="Me hizo sentir bien, tranquila..."></div>
+  <div class="field"><label>¿Con qué pilar lo relacionas?</label>
+    <select id="pastMemoryPillarSelect">
+      <option value="">Sin asociar</option>
+    </select>
+  </div>
+  <div class="field" style="margin-bottom:12px;">
+    <input type="file" id="pastMemoryPhotoInput" accept="image/*" style="display:none" onchange="handlePastMemoryPhotoSelect(event)">
+    <div style="display:flex; align-items:center; gap:8px;">
+      <button type="button" class="btn btn-line btn-sm" id="pastMemoryPhotoBtn" onclick="triggerPastMemoryPhotoSelect()" style="display:inline-flex; align-items:center; gap:5px; font-size:11px;">
+        <svg class="icon" viewBox="0 0 24 24" style="width:14px; height:14px; stroke:currentColor;"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+        <span>Añadir foto</span>
+      </button>
+    </div>
+    <div id="pastMemoryPhotoPreviewWrap" style="display:none; align-items:center; gap:10px; margin-top:8px; padding:6px 10px; background:var(--soft); border-radius:12px; border:1px solid var(--line);">
+      <img id="pastMemoryPhotoPreviewImg" style="width:44px; height:44px; object-fit:cover; border-radius:8px; border:1px solid var(--line);">
+      <div style="flex:1; font-size:11px; color:var(--ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" id="pastMemoryPhotoFileName">Foto seleccionada</div>
+      <button type="button" class="btn btn-line btn-sm" onclick="clearPastMemoryPhotoSelect()" style="padding:4px 8px; font-size:11px; color:var(--wine);" title="Quitar foto">✕</button>
+    </div>
+  </div>
+  <div class="prompt-sub" style="font-size:10px; margin-bottom:12px; opacity:0.8;">Este registro se asociará a la fecha seleccionada (0 estrellas por registrarse fuera de su día).</div>
+  <button class="btn btn-main btn-wide" id="savePastMemoryBtn" onclick="savePastMemory()">Guardar recuerdo</button>
+  <button class="btn btn-line btn-wide" style="margin-top:8px;" onclick="closeModal('addPastMemoryModal')">Cancelar</button>
+</div></div>
+
 <div class="update-banner" id="updateBanner">
   <span>Hay una nueva versión de Orbit</span>
   <button onclick="applyAppUpdate()">Actualizar</button>
@@ -690,14 +729,14 @@
 <div class="toast" id="toast"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="data/templates.js?v=1.2.19"></script>
-  <script src="data/constellations.js?v=1.2.19"></script>
-  <script src="js/storage.js?v=1.2.19"></script>
-  <script src="js/supabase.js?v=1.2.19"></script>
-  <script src="js/stars.js?v=1.2.19"></script>
-  <script src="js/streak.js?v=1.2.19"></script>
-  <script src="js/journal.js?v=1.2.19"></script>
-  <script src="js/archive.js?v=1.2.19"></script>
-  <script src="js/app.js?v=1.2.19"></script>
+  <script src="data/templates.js?v=1.2.20"></script>
+  <script src="data/constellations.js?v=1.2.20"></script>
+  <script src="js/storage.js?v=1.2.20"></script>
+  <script src="js/supabase.js?v=1.2.20"></script>
+  <script src="js/stars.js?v=1.2.20"></script>
+  <script src="js/streak.js?v=1.2.20"></script>
+  <script src="js/journal.js?v=1.2.20"></script>
+  <script src="js/archive.js?v=1.2.20"></script>
+  <script src="js/app.js?v=1.2.20"></script>
 </body>
 </html>
