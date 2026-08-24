@@ -1,8 +1,8 @@
 // Diario, Lo que no envié, cartas para mi yo futuro y de autocuidado.
 // Extraído desde app.js sin romper compatibilidad.
 
-let mood=3;
-for(let i=1;i<=5;i++){let b=document.createElement('button');b.textContent=i;b.onclick=()=>{mood=i;document.querySelectorAll('#moodScale button').forEach(x=>x.classList.remove('sel'));b.classList.add('sel')};if(i===3)b.classList.add('sel');moodScale.appendChild(b)}
+let mood=5;
+for(let i=1;i<=10;i++){let b=document.createElement('button');b.textContent=i;b.onclick=()=>{mood=i;document.querySelectorAll('#moodScale button').forEach(x=>x.classList.remove('sel'));b.classList.add('sel')};if(i===5)b.classList.add('sel');moodScale.appendChild(b)}
 
 function saveCheckin(){
  let d=load(),k=dayKey(),cId='checkin-'+k;

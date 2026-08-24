@@ -109,8 +109,12 @@ function renderDayDetail(d){
     }
     let c=d.checkins?.[selectedDay];
     if(c){
+      let parts = [];
+      if(c.mood !== undefined && c.mood !== null && c.mood !== '') parts.push(`Estado: ${c.mood}/10`);
+      if(c.need) parts.push(`Una cosa que necesitaba hoy: ${esc(c.need)}`);
+      if(c.forMe) parts.push(`Una cosa que quería hacer por mí: ${esc(c.forMe)}`);
       let checkinContent=`<div class="entry-meta"><span class="entry-type">check-in</span><span>${c.ts?new Date(c.ts).toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'}):''}</span></div>
-      <p>Estado: ${c.mood}/5${c.need?'<br>Necesitaba: '+esc(c.need):''}${c.forMe?'<br>Por mí: '+esc(c.forMe):''}</p>`;
+      <p>${parts.join('<br>')}</p>`;
       html+=wrapSwipe(checkinContent, `deleteCheckin('${selectedDay}')`, 'entry-card');
     }
     if(Array.isArray(d.journal)) d.journal.filter(e=>e && e.ts && dayKey(e.ts)===selectedDay).forEach(e=>html+=entryHTML(e));

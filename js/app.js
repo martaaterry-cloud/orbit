@@ -235,7 +235,8 @@ function drawOrbit(d){
     p.style.left=x.toFixed(1)+'%';
     p.style.top=y.toFixed(1)+'%';
 
-    let memories=(d.goodThings||[]).filter(g=>g&&g.pillarId===o.id).slice(-3);
+    let todayKeyStr = (typeof dayKey === 'function') ? dayKey() : new Date().toISOString().split('T')[0];
+    let memories=(d.goodThings||[]).filter(g=>g && g.pillarId===o.id && dayKey(g.ts)===todayKeyStr).slice(-3);
     let html=`<span class="planet-name">${esc(o.name)}</span>`;
     if(memories.length){
       html+=`<span class="planet-sparks">${memories.map(m=>`<button type="button" class="planet-spark" onclick="event.stopPropagation(); showPillarMemory('${esc(m.id)}')" title="${esc(m.text)}">✦</button>`).join('')}</span>`;

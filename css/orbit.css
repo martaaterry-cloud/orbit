@@ -34,8 +34,8 @@ header{display:flex;align-items:center;justify-content:space-between;padding:3px
 .nav-card h3{font-family:Georgia,serif;font-size:17px;font-weight:500;margin:14px 0 3px}
 .nav-card p{font-size:10px;line-height:1.4;color:var(--muted);margin:0}
 .checkin{padding:15px}
-.scale{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:9px}
-.scale button{border:1px solid var(--line);background:white;border-radius:12px;padding:9px 0;color:var(--muted);font-size:12px}
+.scale{display:grid;grid-template-columns:repeat(10,1fr);gap:4px;margin-top:9px}
+.scale button{border:1px solid var(--line);background:white;border-radius:9px;padding:8px 0;color:var(--muted);font-size:11px;min-width:0}
 .scale button.sel{background:var(--soft);border-color:var(--rose2);color:var(--wine);font-weight:700}
 .field{margin:13px 0;min-width:0}
 .field label{display:block;font-size:11px;font-weight:700;margin-bottom:6px}
