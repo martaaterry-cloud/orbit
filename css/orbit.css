@@ -317,19 +317,32 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
 
 .sky-constellation-item {
   position: absolute;
+  transform: translate(-50%, -50%);
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   pointer-events: auto;
   cursor: pointer;
   transition: transform 0.25s ease, filter 0.25s ease;
 }
 
-.sky-constellation-item svg {
-  height: 100%;
+.sky-constellation-box {
+  display: block;
+  position: relative;
+  overflow: visible;
+  transition: transform 0.25s ease;
+}
+
+.sky-constellation-box svg {
   width: 100%;
+  height: 100%;
   display: block;
   overflow: visible;
+}
+
+.sky-constellation-item:hover {
+  transform: translate(-50%, -50%) scale(1.04);
 }
 
 .sky-constellation-item.claimed .star,
@@ -343,10 +356,6 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
   stroke: rgba(255, 235, 200, 0.75);
   stroke-width: 1.3;
   filter: drop-shadow(0 0 4px rgba(245, 200, 120, 0.4));
-}
-
-.sky-constellation-item.claimed:hover {
-  transform: translate(-50%, -50%) scale(1.04);
 }
 
 .sky-constellation-item.in-progress .star {
@@ -373,15 +382,13 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
 }
 
 .sky-constellation-name {
-  position: absolute;
-  bottom: -10px;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 9px;
+  margin-top: 6px;
+  font-size: 10px;
   font-family: Georgia, serif;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
   white-space: nowrap;
   pointer-events: none;
+  text-align: center;
   text-shadow: 0 1px 4px rgba(0,0,0,0.9);
 }
 

@@ -362,8 +362,10 @@ function renderUniverse(d){
       let statusHint = isClaimed ? ' (Iluminada)' : (isNext ? ' (En curso)' : (isDiscovered ? ' (Descubierta)' : ' (Por descubrir)'));
       
       skyHtml += `
-        <div class="sky-constellation-item ${stateClass}" style="width:${size}px; height:${size}px; left:${c.x || 50}%; top:${c.y || 35}%; transform:translate(-50%, -50%) rotate(${c.rot || 0}deg);" onclick="verFichaConstelacion('${c.id}')" title="${esc(c.name)}${statusHint}">
-          ${svgMarkup}
+        <div class="sky-constellation-item ${stateClass}" style="left:${c.x || 50}%; top:${c.y || 35}%;" onclick="verFichaConstelacion('${c.id}')" title="${esc(c.name)}${statusHint}">
+          <div class="sky-constellation-box" style="width:${size}px; height:${size}px; transform: rotate(${c.rot || 0}deg);">
+            ${svgMarkup}
+          </div>
           <div class="sky-constellation-name">${esc(c.name)}${isClaimed ? ' ✦' : ''}</div>
         </div>
       `;
