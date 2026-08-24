@@ -204,12 +204,73 @@ function defaults(){
  {id:'o5',name:'Proyectos',meaning:'algo que también es mío'}]}
 }
 
+function isOrbitStateVirginOrEmpty(d) {
+  if (!d || typeof d !== 'object') return true;
+
+  // 1. Registros en el diario
+  if (Array.isArray(d.journal) && d.journal.length > 0) return false;
+
+  // 2. Recuerdos (lo que sí pasó / goodThings)
+  if (Array.isArray(d.goodThings) && d.goodThings.length > 0) return false;
+
+  // 3. Impulsos registrados
+  if (Array.isArray(d.urges) && d.urges.length > 0) return false;
+
+  // 4. Tropiezos registrados
+  if (Array.isArray(d.slips) && d.slips.length > 0) return false;
+
+  // 5. Check-ins completados
+  if (d.checkins && typeof d.checkins === 'object' && Object.keys(d.checkins).length > 0) return false;
+
+  // 6. Eventos de estrellas ganadas en pointAwards
+  if (d.pointAwards && typeof d.pointAwards === 'object') {
+    const hasEvents = Object.values(d.pointAwards).some(dayObj =>
+      dayObj && Array.isArray(dayObj.events) && dayObj.events.length > 0
+    );
+    if (hasEvents) return false;
+  }
+
+  // 7. Hitos otorgados de racha
+  if (d.returnToMe && Array.isArray(d.returnToMe.awardedMilestones) && d.returnToMe.awardedMilestones.length > 0) return false;
+
+  // 8. Estrellas acumuladas en cartera o históricas
+  if (Number(d.wallet || 0) > 0 || Number(d.lifetimeStars || 0) > 0 || Number(d.bank || 0) > 0) return false;
+
+  // 9. Recompensas reclamadas
+  if (d.claimed && typeof d.claimed === 'object' && Object.keys(d.claimed).length > 0) return false;
+
+  // 10. Perfil personalizado
+  if (d.profile && typeof d.profile === 'object') {
+    if (d.profile.displayName && String(d.profile.displayName).trim() !== '') return false;
+    if (d.profile.birthDate) return false;
+  }
+
+  // 11. Pilares personalizados
+  if (Array.isArray(d.orbit)) {
+    if (d.orbit.length !== 5) return false;
+    const defaultIds = ['o1', 'o2', 'o3', 'o4', 'o5'];
+    const hasCustom = d.orbit.some(o => !o || !defaultIds.includes(o.id));
+    if (hasCustom) return false;
+  }
+
+  // 12. Boosters activos o en inventario
+  if (d.boosters) {
+    if (Array.isArray(d.boosters.active) && d.boosters.active.length > 0) return false;
+    if (Array.isArray(d.boosters.inventory) && d.boosters.inventory.length > 0) return false;
+    if (d.boosters.progress && Number(d.boosters.progress.survivedUrgesCount || 0) > 0) return false;
+  }
+
+  return true;
+}
+
 function load(userId){
  let d;
+ let isVirgin = false;
  let key = getUserStorageKey('orbitV9', userId);
  try{d=JSON.parse(localStorage.getItem(key))}catch{}
  if(!d){
   d=defaults();
+  isVirgin = true;
  }
  const insta=d.goals?.find(g=>g.id==='insta');if(insta){insta.name='No comprobar cambios en Instagram';insta.sub='No mirar seguidores, seguidos o cambios para calmar la ansiedad'}
  if(!d.goodThings)d.goodThings=[];
@@ -258,7 +319,7 @@ function load(userId){
 
  save(d, false, userId);
  let localUpKey = getUserStorageKey('orbitLocalUpdatedAt', userId);
- if(!localStorage.getItem(localUpKey)){
+ if(!localStorage.getItem(localUpKey) && !isVirgin){
    localStorage.setItem(localUpKey, new Date().toISOString());
  }
  return d;

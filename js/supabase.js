@@ -144,7 +144,7 @@ function updateCloudHeaderStatus(status) {
   }
 }
 
-function updateSyncStatus(status) {
+function updateSyncStatus(status, customMessage) {
   if (typeof document === 'undefined') return;
   updateCloudHeaderStatus(status);
   const statusText = document.getElementById('cloudStatusText');
@@ -166,7 +166,7 @@ function updateSyncStatus(status) {
   }
 
   if (status === 'conflict') {
-    statusText.textContent = 'Cambios pendientes de revisar';
+    statusText.textContent = customMessage || 'Cambios pendientes de revisar';
     if (statusDot) statusDot.style.background = '#c27d38';
     if (statusBadge) {
       statusBadge.style.color = '#c27d38';
@@ -174,15 +174,15 @@ function updateSyncStatus(status) {
       statusBadge.style.background = 'rgba(194,125,56,0.08)';
     }
   } else if (status === 'saving') {
-    statusText.textContent = 'Nube · Guardando…';
+    statusText.textContent = customMessage || 'Nube · Guardando…';
     if (statusDot) statusDot.style.background = '#2e7d32';
     if (statusBadge) {
       statusBadge.style.color = '#2e7d32';
       statusBadge.style.borderColor = 'rgba(46,125,50,0.2)';
       statusBadge.style.background = 'rgba(46,125,50,0.08)';
     }
-  } else if (status === 'error') {
-    statusText.textContent = 'Error de sincronización';
+  } else if (status === 'error' || status === 'session_expired') {
+    statusText.textContent = customMessage || (status === 'session_expired' ? 'Sesión expirada · Vuelve a entrar' : 'Error de sincronización');
     if (statusDot) statusDot.style.background = '#c27d38';
     if (statusBadge) {
       statusBadge.style.color = '#c27d38';
@@ -190,7 +190,7 @@ function updateSyncStatus(status) {
       statusBadge.style.background = 'rgba(194,125,56,0.08)';
     }
   } else if (status === 'synced') {
-    statusText.textContent = 'Nube conectada · Sincronizado';
+    statusText.textContent = customMessage || 'Nube conectada · Sincronizado';
     if (statusDot) statusDot.style.background = '#2e7d32';
     if (statusBadge) {
       statusBadge.style.color = '#2e7d32';
@@ -198,7 +198,7 @@ function updateSyncStatus(status) {
       statusBadge.style.background = 'rgba(46,125,50,0.08)';
     }
   } else {
-    statusText.textContent = 'Nube conectada';
+    statusText.textContent = customMessage || 'Nube conectada';
     if (statusDot) statusDot.style.background = '#2e7d32';
     if (statusBadge) {
       statusBadge.style.color = '#2e7d32';
@@ -693,19 +693,128 @@ async function supabaseLogout() {
   updateAppAuthState(null);
 }
 
+// Comprobación de errores de sesión expirada o token no autorizado
+function isSessionExpiredError(err) {
+  if (!err) return false;
+  const msg = String(err.message || '').toLowerCase();
+  const code = String(err.code || '');
+  const status = Number(err.status || 0);
+  return (
+    status === 401 ||
+    code === 'PGRST301' ||
+    code === '401' ||
+    msg.includes('jwt expired') ||
+    msg.includes('invalid jwt') ||
+    msg.includes('token is expired') ||
+    msg.includes('unauthorized') ||
+    msg.includes('refresh_token_not_found')
+  );
+}
+
+let hasNotifiedSessionExpiry = false;
+
+// Verificación y renovación de sesión activa
+async function ensureValidSession() {
+  const sb = getSupabase();
+  if (!sb) return null;
+
+  try {
+    const { data: { session }, error } = await sb.auth.getSession();
+    if (error || !session || !session.user) {
+      const { data: refreshData, error: refreshError } = await sb.auth.refreshSession();
+      if (refreshError || !refreshData?.session?.user) {
+        updateAppAuthState(null);
+        updateSyncStatus('session_expired');
+        if (typeof toast === 'function' && !hasNotifiedSessionExpiry) {
+          hasNotifiedSessionExpiry = true;
+          toast('Tu sesión ha expirado. Por favor, vuelve a iniciar sesión.');
+        }
+        return null;
+      }
+      hasNotifiedSessionExpiry = false;
+      currentCloudUser = refreshData.session.user;
+      return refreshData.session;
+    }
+
+    const expiresAt = (session.expires_at || 0) * 1000;
+    if (expiresAt > 0 && (expiresAt - Date.now()) < 60000) {
+      const { data: refreshData } = await sb.auth.refreshSession();
+      if (refreshData?.session) {
+        currentCloudUser = refreshData.session.user;
+        return refreshData.session;
+      }
+    }
+
+    hasNotifiedSessionExpiry = false;
+    currentCloudUser = session.user;
+    return session;
+  } catch (err) {
+    updateSyncStatus('error');
+    return null;
+  }
+}
+
+// Creación de copia de seguridad local antes de operaciones críticas
+function createPreSyncBackup(userId, label, data, timer) {
+  if (!userId || typeof localStorage === 'undefined' || !data) return;
+  try {
+    const backupKey = `orbit_backup_pre_${label}_${userId}_${Date.now()}`;
+    const payload = {
+      app: 'orbit',
+      label,
+      userId,
+      savedAt: Date.now(),
+      savedAtIso: new Date().toISOString(),
+      orbitData: data || null,
+      orbitTimer: timer || null
+    };
+    localStorage.setItem(backupKey, JSON.stringify(payload));
+    cleanOldBackups(userId, label);
+  } catch (e) {}
+}
+
+function cleanOldBackups(userId, label) {
+  try {
+    const prefix = `orbit_backup_pre_${label}_${userId}_`;
+    const matching = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith(prefix)) {
+        matching.push(k);
+      }
+    }
+    if (matching.length > 5) {
+      matching.sort();
+      const toRemove = matching.slice(0, matching.length - 5);
+      toRemove.forEach(k => {
+        try { localStorage.removeItem(k); } catch (e) {}
+      });
+    }
+  } catch (e) {}
+}
+
 // Aplicar estado de la nube de forma segura y aislada por usuario
 function safeApplyCloudState(cloudData, cloudTimer, cloudUpdatedAt, userId) {
   const uid = userId || currentCloudUser?.id || (typeof getOrbitActiveUserId === 'function' ? getOrbitActiveUserId() : null);
-  if (!uid) return;
+  if (!uid || !cloudData) return;
+
+  const v9Key = typeof getUserStorageKey === 'function' ? getUserStorageKey('orbitV9', uid) : `orbitV9:${uid}`;
+  const timerKey = typeof getUserStorageKey === 'function' ? getUserStorageKey('orbitTimer', uid) : `orbitTimer:${uid}`;
+  const localUpKey = typeof getUserStorageKey === 'function' ? getUserStorageKey('orbitLocalUpdatedAt', uid) : `orbitLocalUpdatedAt:${uid}`;
+  const cloudUpKey = typeof getUserStorageKey === 'function' ? getUserStorageKey('orbitLastCloudUpdatedAt', uid) : `orbitLastCloudUpdatedAt:${uid}`;
+  const unsyncKey = typeof getUserStorageKey === 'function' ? getUserStorageKey('orbitHasUnsyncedChanges', uid) : `orbitHasUnsyncedChanges:${uid}`;
+
+  // Respaldo del estado local previo si contiene datos reales
+  let currentLocalData = null;
+  let currentLocalTimer = null;
+  try { currentLocalData = JSON.parse(localStorage.getItem(v9Key)); } catch (e) {}
+  try { currentLocalTimer = JSON.parse(localStorage.getItem(timerKey)); } catch (e) {}
+  if (currentLocalData && typeof isOrbitStateVirginOrEmpty === 'function' && !isOrbitStateVirginOrEmpty(currentLocalData)) {
+    createPreSyncBackup(uid, 'cloud_apply', currentLocalData, currentLocalTimer);
+  }
 
   if (typeof window !== 'undefined') window.isApplyingCloudState = true;
   try {
-    const v9Key = typeof getUserStorageKey === 'function' ? getUserStorageKey('orbitV9', uid) : 'orbitV9';
-    const timerKey = typeof getUserStorageKey === 'function' ? getUserStorageKey('orbitTimer', uid) : 'orbitTimer';
-    const localUpKey = typeof getUserStorageKey === 'function' ? getUserStorageKey('orbitLocalUpdatedAt', uid) : 'orbitLocalUpdatedAt';
-    const cloudUpKey = typeof getUserStorageKey === 'function' ? getUserStorageKey('orbitLastCloudUpdatedAt', uid) : 'orbitLastCloudUpdatedAt';
-    const unsyncKey = typeof getUserStorageKey === 'function' ? getUserStorageKey('orbitHasUnsyncedChanges', uid) : 'orbitHasUnsyncedChanges';
-
     localStorage.setItem(v9Key, JSON.stringify(cloudData));
     if (cloudTimer) {
       localStorage.setItem(timerKey, JSON.stringify(cloudTimer));
@@ -730,78 +839,123 @@ function safeApplyCloudState(cloudData, cloudTimer, cloudUpdatedAt, userId) {
 
 // Sincronización automática al iniciar, recuperar foco o conexión
 async function autoSyncOnInit(session) {
-  if (!session || !session.user) return;
   const sb = getSupabase();
-  if (!sb || (typeof navigator !== 'undefined' && !navigator.onLine)) return;
+  if (!sb || (typeof navigator !== 'undefined' && !navigator.onLine)) {
+    updateSyncStatus('offline');
+    return;
+  }
 
-  const uid = session.user.id;
+  const validSession = await ensureValidSession();
+  if (!validSession || !validSession.user) {
+    return;
+  }
+
+  const uid = validSession.user.id;
+  currentCloudUser = validSession.user;
+
   if (typeof migrateLegacyStorageIfVerified === 'function') {
-    migrateLegacyStorageIfVerified(session.user);
+    migrateLegacyStorageIfVerified(validSession.user);
   }
   if (typeof syncUserProfileFromCloud === 'function') {
-    syncUserProfileFromCloud(session.user);
+    syncUserProfileFromCloud(validSession.user);
   }
 
   try {
-    const { data, error } = await sb
+    let { data: cloudRow, error } = await sb
       .from('orbit_state')
       .select('orbit_data, orbit_timer, updated_at')
       .eq('user_id', uid)
       .maybeSingle();
+
+    if (error && isSessionExpiredError(error)) {
+      const refreshed = await ensureValidSession();
+      if (refreshed) {
+        const retryRes = await sb
+          .from('orbit_state')
+          .select('orbit_data, orbit_timer, updated_at')
+          .eq('user_id', uid)
+          .maybeSingle();
+        cloudRow = retryRes.data;
+        error = retryRes.error;
+      }
+    }
 
     if (error) {
       updateSyncStatus('error');
       return;
     }
 
-    const localUpKey = typeof getUserStorageKey === 'function' ? getUserStorageKey('orbitLocalUpdatedAt', uid) : 'orbitLocalUpdatedAt';
-    const cloudUpKey = typeof getUserStorageKey === 'function' ? getUserStorageKey('orbitLastCloudUpdatedAt', uid) : 'orbitLastCloudUpdatedAt';
-    const unsyncKey = typeof getUserStorageKey === 'function' ? getUserStorageKey('orbitHasUnsyncedChanges', uid) : 'orbitHasUnsyncedChanges';
+    const v9Key = typeof getUserStorageKey === 'function' ? getUserStorageKey('orbitV9', uid) : `orbitV9:${uid}`;
+    const cloudUpKey = typeof getUserStorageKey === 'function' ? getUserStorageKey('orbitLastCloudUpdatedAt', uid) : `orbitLastCloudUpdatedAt:${uid}`;
+    const unsyncKey = typeof getUserStorageKey === 'function' ? getUserStorageKey('orbitHasUnsyncedChanges', uid) : `orbitHasUnsyncedChanges:${uid}`;
 
-    let localUpdatedAt = localStorage.getItem(localUpKey);
-    if (!localUpdatedAt) {
-      localUpdatedAt = new Date().toISOString();
-      localStorage.setItem(localUpKey, localUpdatedAt);
-    }
-    const hasUnsynced = localStorage.getItem(unsyncKey) === 'true';
+    let localData = null;
+    try { localData = JSON.parse(localStorage.getItem(v9Key)); } catch (e) {}
+    if (!localData && typeof load === 'function') localData = load(uid);
 
-    // Caso D: No existe fila en la nube -> crearla con el estado local actual del usuario
-    if (!data || !data.orbit_data || !data.updated_at) {
-      performAutoUpload();
+    const isLocalVirgin = typeof isOrbitStateVirginOrEmpty === 'function'
+      ? isOrbitStateVirginOrEmpty(localData)
+      : false;
+
+    const hasCloudRow = Boolean(cloudRow && cloudRow.orbit_data && typeof cloudRow.orbit_data === 'object');
+    const isCloudVirgin = hasCloudRow && typeof isOrbitStateVirginOrEmpty === 'function'
+      ? isOrbitStateVirginOrEmpty(cloudRow.orbit_data)
+      : false;
+    const hasRealCloudData = hasCloudRow && !isCloudVirgin;
+
+    // CASO 1: Dispositivo nuevo / local virgen Y la nube tiene datos reales -> DESCARGAR SIEMPRE
+    if (isLocalVirgin && hasRealCloudData) {
+      safeApplyCloudState(cloudRow.orbit_data, cloudRow.orbit_timer, cloudRow.updated_at, uid);
+      updateSyncStatus('synced');
       return;
     }
 
-    const cloudUpdatedAt = data.updated_at;
+    // CASO 2: La nube NO tiene datos reales Y local tiene progreso real -> SUBIR LOCAL
+    if (!hasRealCloudData && !isLocalVirgin) {
+      await performAutoUpload();
+      return;
+    }
+
+    // CASO 3: Ambos están vírgenes
+    if (isLocalVirgin && !hasRealCloudData) {
+      localStorage.setItem(unsyncKey, 'false');
+      hasConflict = false;
+      updateSyncStatus('synced');
+      return;
+    }
+
+    // CASO 4: Ambos tienen datos reales -> Comparar marcas de tiempo
+    const cloudUpdatedAt = cloudRow.updated_at;
     const cloudTime = new Date(cloudUpdatedAt).getTime();
     const lastKnownCloud = localStorage.getItem(cloudUpKey);
     const lastKnownCloudTime = lastKnownCloud ? new Date(lastKnownCloud).getTime() : 0;
-    const localTime = new Date(localUpdatedAt).getTime();
+    const hasUnsynced = localStorage.getItem(unsyncKey) === 'true';
 
-    const isCloudNewer = lastKnownCloudTime > 0 
-      ? cloudTime > (lastKnownCloudTime + 1000) 
-      : cloudTime > (localTime + 1000);
+    const isCloudNewer = lastKnownCloudTime > 0
+      ? cloudTime > (lastKnownCloudTime + 1000)
+      : false;
 
-    // Conflicto REAL: La nube cambió Y este contexto local tiene cambios no sincronizados
-    if (isCloudNewer && hasUnsynced) {
+    // Conflicto REAL: La nube cambió remotamente Y este cliente tiene cambios locales no sincronizados
+    if (isCloudNewer && hasUnsynced && !isLocalVirgin) {
       hasConflict = true;
       updateSyncStatus('conflict');
       return;
     }
 
-    // Caso A: La nube es más nueva y el contexto local NO tiene cambios pendientes -> Descargar
+    // Nube más nueva y local sin cambios pendientes -> Descargar
     if (isCloudNewer && !hasUnsynced) {
-      safeApplyCloudState(data.orbit_data, data.orbit_timer, cloudUpdatedAt, uid);
+      safeApplyCloudState(cloudRow.orbit_data, cloudRow.orbit_timer, cloudUpdatedAt, uid);
       updateSyncStatus('synced');
       return;
     }
 
-    // Caso B: El contexto local tiene cambios pendientes y la nube no ha cambiado remotamente -> Subir
+    // Local con cambios pendientes y nube no ha cambiado -> Subir
     if (hasUnsynced && !isCloudNewer) {
-      performAutoUpload();
+      await performAutoUpload();
       return;
     }
 
-    // Caso C: Ambos están al día y sin cambios pendientes
+    // Ambos sincronizados y coherentes
     localStorage.setItem(cloudUpKey, cloudUpdatedAt);
     localStorage.setItem(unsyncKey, 'false');
     hasConflict = false;
@@ -824,19 +978,21 @@ function scheduleCloudSync() {
   }, 1500);
 }
 
-// Subida automática a Supabase
+// Subida automática a Supabase con guardias anti-pisado
 async function performAutoUpload() {
   const sb = getSupabase();
-  if (!sb || (typeof navigator !== 'undefined' && !navigator.onLine)) return;
-  if (typeof window !== 'undefined' && window.isApplyingCloudState) return;
-
-  const { data: { session } } = await sb.auth.getSession();
-  if (!session || !session.user) {
-    updateAppAuthState(null);
+  if (!sb || (typeof navigator !== 'undefined' && !navigator.onLine)) {
+    updateSyncStatus('offline');
     return;
   }
-  currentCloudUser = session.user;
-  const uid = session.user.id;
+  if (typeof window !== 'undefined' && window.isApplyingCloudState) return;
+
+  const validSession = await ensureValidSession();
+  if (!validSession || !validSession.user) {
+    return;
+  }
+  currentCloudUser = validSession.user;
+  const uid = validSession.user.id;
 
   if (isSyncing) {
     pendingSync = true;
@@ -846,15 +1002,19 @@ async function performAutoUpload() {
   updateSyncStatus('saving');
 
   try {
-    const v9Key = typeof getUserStorageKey === 'function' ? getUserStorageKey('orbitV9', uid) : 'orbitV9';
-    const timerKey = typeof getUserStorageKey === 'function' ? getUserStorageKey('orbitTimer', uid) : 'orbitTimer';
-    const localUpKey = typeof getUserStorageKey === 'function' ? getUserStorageKey('orbitLocalUpdatedAt', uid) : 'orbitLocalUpdatedAt';
-    const cloudUpKey = typeof getUserStorageKey === 'function' ? getUserStorageKey('orbitLastCloudUpdatedAt', uid) : 'orbitLastCloudUpdatedAt';
-    const unsyncKey = typeof getUserStorageKey === 'function' ? getUserStorageKey('orbitHasUnsyncedChanges', uid) : 'orbitHasUnsyncedChanges';
+    const v9Key = typeof getUserStorageKey === 'function' ? getUserStorageKey('orbitV9', uid) : `orbitV9:${uid}`;
+    const timerKey = typeof getUserStorageKey === 'function' ? getUserStorageKey('orbitTimer', uid) : `orbitTimer:${uid}`;
+    const localUpKey = typeof getUserStorageKey === 'function' ? getUserStorageKey('orbitLocalUpdatedAt', uid) : `orbitLocalUpdatedAt:${uid}`;
+    const cloudUpKey = typeof getUserStorageKey === 'function' ? getUserStorageKey('orbitLastCloudUpdatedAt', uid) : `orbitLastCloudUpdatedAt:${uid}`;
+    const unsyncKey = typeof getUserStorageKey === 'function' ? getUserStorageKey('orbitHasUnsyncedChanges', uid) : `orbitHasUnsyncedChanges:${uid}`;
 
     let orbitData = null;
     try { orbitData = JSON.parse(localStorage.getItem(v9Key)); } catch (e) {}
     if (!orbitData && typeof load === 'function') orbitData = load(uid);
+
+    const isLocalVirgin = typeof isOrbitStateVirginOrEmpty === 'function'
+      ? isOrbitStateVirginOrEmpty(orbitData)
+      : false;
 
     let orbitTimer = null;
     try {
@@ -862,26 +1022,57 @@ async function performAutoUpload() {
       if (raw) orbitTimer = JSON.parse(raw);
     } catch (e) {}
 
-    let localIso = localStorage.getItem(localUpKey);
-    if (!localIso) {
-      localIso = new Date().toISOString();
-      localStorage.setItem(localUpKey, localIso);
-    }
-
-    // Verificar si la nube cambió remotamente antes de sobrescribir
-    const { data: cloudCheck } = await sb
+    // 1. Verificar estado actual de la nube antes de cualquier sobreescritura
+    let { data: cloudCheck, error: checkErr } = await sb
       .from('orbit_state')
-      .select('updated_at')
+      .select('orbit_data, orbit_timer, updated_at')
       .eq('user_id', uid)
       .maybeSingle();
 
+    if (checkErr && isSessionExpiredError(checkErr)) {
+      const refreshed = await ensureValidSession();
+      if (refreshed) {
+        const retryRes = await sb
+          .from('orbit_state')
+          .select('orbit_data, orbit_timer, updated_at')
+          .eq('user_id', uid)
+          .maybeSingle();
+        cloudCheck = retryRes.data;
+        checkErr = retryRes.error;
+      }
+    }
+
+    if (checkErr) {
+      isSyncing = false;
+      updateSyncStatus('error');
+      return;
+    }
+
+    const hasRealCloudData = Boolean(
+      cloudCheck &&
+      cloudCheck.orbit_data &&
+      typeof isOrbitStateVirginOrEmpty === 'function' &&
+      !isOrbitStateVirginOrEmpty(cloudCheck.orbit_data)
+    );
+
+    // GUARDIA ANTI-PISADO ESTRICTA:
+    // Un estado local virgen jamás puede sobrescribir una nube que tiene datos reales
+    if (isLocalVirgin && hasRealCloudData) {
+      console.warn('[SYNC GUARD] Intento de sobreescribir nube con estado virgen bloqueado. Descargando datos de la nube.');
+      isSyncing = false;
+      safeApplyCloudState(cloudCheck.orbit_data, cloudCheck.orbit_timer, cloudCheck.updated_at, uid);
+      updateSyncStatus('synced');
+      return;
+    }
+
+    // Guardia de conflicto: Nube modificada remotamente mientras local tiene cambios no vírgenes
     if (cloudCheck && cloudCheck.updated_at) {
       const cloudTime = new Date(cloudCheck.updated_at).getTime();
       const lastKnownCloud = localStorage.getItem(cloudUpKey);
       const lastKnownCloudTime = lastKnownCloud ? new Date(lastKnownCloud).getTime() : 0;
       const hasUnsynced = localStorage.getItem(unsyncKey) === 'true';
 
-      if (lastKnownCloudTime > 0 && cloudTime > (lastKnownCloudTime + 1000) && hasUnsynced) {
+      if (lastKnownCloudTime > 0 && cloudTime > (lastKnownCloudTime + 1000) && hasUnsynced && !isLocalVirgin) {
         hasConflict = true;
         isSyncing = false;
         updateSyncStatus('conflict');
@@ -889,25 +1080,44 @@ async function performAutoUpload() {
       }
     }
 
+    // 2. Backup de seguridad antes de la subida
+    createPreSyncBackup(uid, 'cloud_upload', orbitData, orbitTimer);
+
+    const nowIso = new Date().toISOString();
+    localStorage.setItem(localUpKey, nowIso);
+
     const payload = {
       user_id: uid,
       orbit_data: orbitData,
       orbit_timer: orbitTimer,
-      updated_at: localIso
+      updated_at: nowIso
     };
 
-    const { data: upsertData, error } = await sb
+    let { data: upsertData, error: upsertErr } = await sb
       .from('orbit_state')
       .upsert(payload, { onConflict: 'user_id' })
       .select('updated_at')
       .maybeSingle();
 
+    if (upsertErr && isSessionExpiredError(upsertErr)) {
+      const refreshed = await ensureValidSession();
+      if (refreshed) {
+        const retryRes = await sb
+          .from('orbit_state')
+          .upsert(payload, { onConflict: 'user_id' })
+          .select('updated_at')
+          .maybeSingle();
+        upsertData = retryRes.data;
+        upsertErr = retryRes.error;
+      }
+    }
+
     isSyncing = false;
 
-    if (error) {
+    if (upsertErr) {
       updateSyncStatus('error');
     } else {
-      const confirmedTime = upsertData?.updated_at || localIso;
+      const confirmedTime = upsertData?.updated_at || nowIso;
       localStorage.setItem(cloudUpKey, confirmedTime);
       localStorage.setItem(unsyncKey, 'false');
       hasConflict = false;
@@ -922,120 +1132,6 @@ async function performAutoUpload() {
     pendingSync = false;
     scheduleCloudSync();
   }
-}
-
-// Subida manual
-async function uploadToCloud() {
-  const sb = getSupabase();
-  if (!sb) {
-    if (typeof toast === 'function') toast('Servicio de nube no disponible');
-    return false;
-  }
-
-  const { data: { session } } = await sb.auth.getSession();
-  if (!session || !session.user) {
-    if (typeof toast === 'function') toast('Inicia sesión en la nube primero');
-    return false;
-  }
-  const uid = session.user.id;
-  const v9Key = typeof getUserStorageKey === 'function' ? getUserStorageKey('orbitV9', uid) : 'orbitV9';
-  const timerKey = typeof getUserStorageKey === 'function' ? getUserStorageKey('orbitTimer', uid) : 'orbitTimer';
-  const localUpKey = typeof getUserStorageKey === 'function' ? getUserStorageKey('orbitLocalUpdatedAt', uid) : 'orbitLocalUpdatedAt';
-  const cloudUpKey = typeof getUserStorageKey === 'function' ? getUserStorageKey('orbitLastCloudUpdatedAt', uid) : 'orbitLastCloudUpdatedAt';
-  const unsyncKey = typeof getUserStorageKey === 'function' ? getUserStorageKey('orbitHasUnsyncedChanges', uid) : 'orbitHasUnsyncedChanges';
-
-  let orbitData = null;
-  try { orbitData = JSON.parse(localStorage.getItem(v9Key)); } catch (e) { if (typeof load === 'function') orbitData = load(uid); }
-  if (!orbitData && typeof load === 'function') orbitData = load(uid);
-
-  let orbitTimer = null;
-  try {
-    const raw = localStorage.getItem(timerKey);
-    if (raw) orbitTimer = JSON.parse(raw);
-  } catch (e) {}
-
-  const nowIso = new Date().toISOString();
-  localStorage.setItem(localUpKey, nowIso);
-
-  const payload = {
-    user_id: uid,
-    orbit_data: orbitData,
-    orbit_timer: orbitTimer,
-    updated_at: nowIso
-  };
-
-  const uploadBtn = document.getElementById('cloudUploadBtn');
-  if (uploadBtn) uploadBtn.disabled = true;
-  updateSyncStatus('saving');
-
-  const { data: upsertData, error } = await sb
-    .from('orbit_state')
-    .upsert(payload, { onConflict: 'user_id' })
-    .select('updated_at')
-    .maybeSingle();
-
-  if (uploadBtn) uploadBtn.disabled = false;
-
-  if (error) {
-    if (typeof toast === 'function') toast(error.message || 'Error al guardar en la nube');
-    updateSyncStatus('error');
-    return false;
-  }
-
-  const confirmedTime = upsertData?.updated_at || nowIso;
-  localStorage.setItem(cloudUpKey, confirmedTime);
-  localStorage.setItem(unsyncKey, 'false');
-  hasConflict = false;
-  if (typeof toast === 'function') toast('Datos guardados en la nube');
-  updateSyncStatus('synced');
-  return true;
-}
-
-// Recuperación manual
-async function restoreFromCloud() {
-  const sb = getSupabase();
-  if (!sb) {
-    if (typeof toast === 'function') toast('Servicio de nube no disponible');
-    return false;
-  }
-
-  const { data: { session } } = await sb.auth.getSession();
-  if (!session || !session.user) {
-    if (typeof toast === 'function') toast('Inicia sesión en la nube primero');
-    return false;
-  }
-  const uid = session.user.id;
-
-  const restoreBtn = document.getElementById('cloudRestoreBtn');
-  if (restoreBtn) restoreBtn.disabled = true;
-
-  const { data, error } = await sb
-    .from('orbit_state')
-    .select('orbit_data, orbit_timer, updated_at')
-    .eq('user_id', uid)
-    .maybeSingle();
-
-  if (restoreBtn) restoreBtn.disabled = false;
-
-  if (error) {
-    if (typeof toast === 'function') toast(error.message || 'Error al leer de la nube');
-    return false;
-  }
-
-  if (!data || !data.orbit_data) {
-    if (typeof toast === 'function') toast('No hay datos guardados en la nube todavía');
-    return false;
-  }
-
-  const dateStr = data.updated_at ? new Date(data.updated_at).toLocaleString('es-ES') : '';
-  const ok = confirm(`¿Restaurar los datos guardados en la nube${dateStr ? ` (${dateStr})` : ''}?\n\nEsta acción reemplazará los datos locales en este dispositivo.`);
-  if (!ok) return false;
-
-  safeApplyCloudState(data.orbit_data, data.orbit_timer, data.updated_at, uid);
-
-  if (typeof toast === 'function') toast('Datos de la nube restaurados');
-  updateSyncStatus('synced');
-  return true;
 }
 
 function handleForegroundTrigger() {
