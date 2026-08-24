@@ -1079,9 +1079,10 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  background: radial-gradient(ellipse at 46% 40%, rgba(46, 30, 74, 0.35) 0%, transparent 75%) !important;
+  background: radial-gradient(ellipse at 50% 45%, rgba(35, 25, 55, 0.4) 0%, rgba(12, 9, 20, 0.3) 75%) !important;
   border-radius: 14px !important;
   overflow: hidden !important;
+  transition: all 0.3s ease !important;
 }
 
 .atlas-sky-canvas svg {
@@ -1093,9 +1094,65 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
   overflow: visible !important;
 }
 
+/* Constelación completada y adquirida: claramente iluminada y brillante */
+.atlas-page.atlas-folio.owned .atlas-sky-canvas {
+  background: radial-gradient(ellipse at 50% 45%, rgba(145, 90, 115, 0.38) 0%, rgba(60, 40, 95, 0.45) 45%, rgba(15, 10, 25, 0.3) 80%) !important;
+  box-shadow: inset 0 0 28px rgba(255, 235, 180, 0.12), 0 0 16px rgba(180, 130, 230, 0.12) !important;
+  border: 1px solid rgba(255, 235, 180, 0.18) !important;
+}
+
+.atlas-page.atlas-folio.owned .atlas-sky-canvas .star,
+.atlas-page.atlas-folio.owned .atlas-sky-canvas .refined-star {
+  fill: #fffdf5 !important;
+  filter: drop-shadow(0 0 6px rgba(255, 235, 180, 0.95)) drop-shadow(0 0 14px rgba(245, 210, 140, 0.75)) !important;
+}
+
+.atlas-page.atlas-folio.owned .atlas-sky-canvas .line,
+.atlas-page.atlas-folio.owned .atlas-sky-canvas .refined-line {
+  stroke: rgba(255, 235, 205, 0.85) !important;
+  stroke-width: 1.4 !important;
+  filter: drop-shadow(0 0 5px rgba(245, 200, 120, 0.55)) !important;
+}
+
+.atlas-page.atlas-folio.owned .atlas-folio-name {
+  color: #ffffff !important;
+  text-shadow: 0 0 16px rgba(255, 225, 210, 0.7) !important;
+}
+
+/* Constelaciones descubiertas pero todavía no adquiridas o en progreso: tenues */
+.atlas-page.atlas-folio.discovered .atlas-sky-canvas svg {
+  opacity: 0.6 !important;
+}
+
+.atlas-page.atlas-folio.discovered .atlas-sky-canvas .star {
+  fill: rgba(255, 255, 255, 0.5) !important;
+  filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.2)) !important;
+}
+
+.atlas-page.atlas-folio.discovered .atlas-sky-canvas .line {
+  stroke: rgba(255, 255, 255, 0.25) !important;
+  stroke-width: 1 !important;
+  filter: none !important;
+}
+
+.atlas-page.atlas-folio.in-progress .atlas-sky-canvas svg {
+  opacity: 0.5 !important;
+}
+
+.atlas-page.atlas-folio.in-progress .atlas-sky-canvas .star {
+  fill: rgba(255, 255, 255, 0.45) !important;
+  filter: none !important;
+}
+
+.atlas-page.atlas-folio.in-progress .atlas-sky-canvas .line {
+  stroke: rgba(255, 255, 255, 0.22) !important;
+  stroke-width: 0.9 !important;
+  filter: none !important;
+}
+
 .atlas-page.atlas-folio.locked .atlas-sky-canvas svg {
-  opacity: 0.4 !important;
-  filter: grayscale(0.3) !important;
+  opacity: 0.28 !important;
+  filter: grayscale(0.6) !important;
 }
 
 .atlas-folio-body {

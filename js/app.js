@@ -512,7 +512,7 @@ function renderUniverse(d){
               <button class="btn btn-line btn-sm" style="padding:3px 8px; font-size:9px; border-radius:8px;" onclick="verFichaConstelacion('${c.id}')">Ficha</button>
             </div>`;
         } else if (discovered) {
-          svgMarkup = constellationSvg(c, true, 0.7);
+          svgMarkup = constellationSvg(c, false, 1.0);
           statusMarkup = `<div class="atlas-status discovered">✧ Descubierta</div>`;
           actionMarkup = `<button class="btn btn-main btn-sm" style="padding:6px 14px; font-size:10px; margin-top:4px;" onclick="guardarConstelacion('${c.id}', ${c.cost})">Guardar en universo · ${c.cost} ★</button>`;
         } else if (isTarget) {
