@@ -123,5 +123,6 @@ WHERE NOT EXISTS (
 )
 ON CONFLICT (user_id) DO NOTHING;
 
--- 7. Conceder permisos SELECT a service_role para la Edge Function
-GRANT SELECT ON TABLE public.profiles TO service_role;
+-- 7. Conceder permisos explícitos a service_role para las Edge Functions
+GRANT SELECT, DELETE ON TABLE public.profiles TO service_role;
+GRANT SELECT, DELETE ON TABLE public.orbit_state TO service_role;

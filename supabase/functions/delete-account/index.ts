@@ -222,23 +222,39 @@ serve(async (req) => {
     }
     console.log("[AUTH_USER_DELETED] Usuario auth eliminado");
 
-    // 7. Verificación posterior razonable de limpieza
-    const { data: remainingState } = await adminClient
+    // 7. Verificación posterior robusta de limpieza
+    const { data: remainingState, error: stateCheckErr } = await adminClient
       .from("orbit_state")
       .select("user_id")
       .eq("user_id", userId)
       .maybeSingle();
 
-    const { data: remainingProfile } = await adminClient
+    if (stateCheckErr) {
+      console.error("[POST_CHECK_STATE_ERROR]", { code: stateCheckErr.code });
+      return new Response(
+        JSON.stringify({ error: "Error al verificar la eliminación del estado en la nube." }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
+      );
+    }
+
+    const { data: remainingProfile, error: profileCheckErr } = await adminClient
       .from("profiles")
       .select("user_id")
       .eq("user_id", userId)
       .maybeSingle();
 
-    if (remainingState || remainingProfile) {
+    if (profileCheckErr) {
+      console.error("[POST_CHECK_PROFILE_ERROR]", { code: profileCheckErr.code });
+      return new Response(
+        JSON.stringify({ error: "Error al verificar la eliminación del perfil." }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
+      );
+    }
+
+    if (remainingState !== null || remainingProfile !== null) {
       console.warn("[POST_CHECK_RESIDUAL_DETECTED]");
       return new Response(
-        JSON.stringify({ error: "Advertencia: se detectaron datos residuales tras la eliminación." }),
+        JSON.stringify({ error: "Se detectaron datos residuales tras la eliminación." }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
       );
     }
