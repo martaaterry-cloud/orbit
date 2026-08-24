@@ -73,6 +73,7 @@ function load(){
  if(d.profile.displayName===undefined)d.profile.displayName='';
  if(d.profile.username===undefined)d.profile.username='';
  if(d.profile.birthDate===undefined)d.profile.birthDate=null;
+ if(d.profile.birthdayStarsClaimedYear===undefined)d.profile.birthdayStarsClaimedYear=null;
  if(!d.returnToMe){
    let starts=(d.goals||[]).map(g=>Number(g.since||Date.now()));
    let sharedSince=starts.length?Math.max(...starts):Date.now();

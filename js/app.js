@@ -929,6 +929,29 @@ function activateFocusArea(areaId){
   render();
 }
 
+function getProfileBirthInfo(birthDateStr){
+  if(!birthDateStr) return null;
+  let parts=birthDateStr.split('-');
+  if(parts.length!==3) return null;
+  let y=parseInt(parts[0],10), m=parseInt(parts[1],10)-1, day=parseInt(parts[2],10);
+  if(isNaN(y)||isNaN(m)||isNaN(day)) return null;
+  let now=new Date();
+  let age = now.getFullYear() - y;
+  let hasHadBirthdayThisYear = (now.getMonth() > m) || (now.getMonth() === m && now.getDate() >= day);
+  if(!hasHadBirthdayThisYear) age--;
+  let isToday = (now.getMonth() === m && now.getDate() === day);
+  
+  let nextBday = new Date(now.getFullYear(), m, day);
+  let todayZero = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  if(nextBday < todayZero) {
+    nextBday = new Date(now.getFullYear()+1, m, day);
+  }
+  let diffMs = nextBday - todayZero;
+  let daysUntil = Math.round(diffMs / (1000 * 60 * 60 * 24));
+  
+  return { age, isToday, daysUntil };
+}
+
 function renderProfile(d){
   if(!d) d=load();
   let dn=document.getElementById('profileDisplayName');
@@ -937,6 +960,93 @@ function renderProfile(d){
   if(dn && document.activeElement !== dn) dn.value = d.profile?.displayName || '';
   if(un && document.activeElement !== un) un.value = d.profile?.username || '';
   if(bd && document.activeElement !== bd) bd.value = d.profile?.birthDate || '';
+
+  let birthInfo = getProfileBirthInfo(d.profile?.birthDate);
+
+  // Recompensa automática de cumpleaños (+25 estrellas una vez por año)
+  if(birthInfo && birthInfo.isToday){
+    let currentYear = new Date().getFullYear();
+    if(d.profile.birthdayStarsClaimedYear !== currentYear){
+      d.profile.birthdayStarsClaimedYear = currentYear;
+      addPoints(d, 25, 'cumpleanos', 'Regalo de Cumpleaños 🌟', 'birthday-' + currentYear);
+      save(d);
+      toast('🎂 ¡Feliz Cumpleaños! Orbit te regala 25 estrellas 🌟');
+      let bankEl=document.getElementById('bank'), shopWalletEl=document.getElementById('shopWallet');
+      if(bankEl) bankEl.textContent=Number(d.wallet||0).toFixed(1).replace('.',',');
+      if(shopWalletEl) shopWalletEl.textContent=Number(d.wallet||0).toFixed(1).replace('.',',');
+    }
+  }
+
+  // Tarjeta de perfil en ajustes
+  let sumCard=document.getElementById('profileSummaryCard');
+  if(sumCard){
+    let name=d.profile?.displayName || '';
+    let uname=d.profile?.username || '';
+    if(name || uname || birthInfo){
+      sumCard.style.display='block';
+      let initial = (name ? name.charAt(0) : (uname ? uname.replace('@','').charAt(0) : '✦')).toUpperCase();
+      let ageText = '';
+      if(birthInfo){
+        if(birthInfo.isToday){
+          ageText = `<div style="font-size:11px; color:var(--wine); font-weight:700; margin-top:4px;">🎂 ${birthInfo.age} años · ¡Hoy es tu cumpleaños! (+25 ★ regalo)</div>`;
+        } else {
+          let bdayLabel = birthInfo.daysUntil === 1 ? 'mañana' : `en ${birthInfo.daysUntil} días`;
+          ageText = `<div style="font-size:11px; color:var(--muted); margin-top:4px;">🎂 ${birthInfo.age} años · Próximo cumple ${bdayLabel}</div>`;
+        }
+      }
+      sumCard.innerHTML = `
+        <div style="display:flex; align-items:center; gap:14px;">
+          <div style="width:46px; height:46px; border-radius:50%; background:linear-gradient(135deg,#f0cfd4,#aa5966); color:white; display:grid; place-items:center; font-family:Georgia,serif; font-size:20px; font-weight:600; flex-shrink:0; box-shadow:0 4px 12px rgba(141,76,87,0.2);">
+            ${esc(initial)}
+          </div>
+          <div style="flex:1; min-width:0;">
+            <div style="font-family:Georgia,serif; font-size:17px; font-weight:600; color:var(--ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+              ${esc(name || 'Mi Perfil Orbit')}
+            </div>
+            ${uname ? `<div style="font-size:12px; color:var(--wine); font-weight:600;">@${esc(uname.replace(/^@/,''))}</div>` : ''}
+            ${ageText}
+          </div>
+        </div>
+      `;
+    } else {
+      sumCard.style.display='none';
+    }
+  }
+
+  // Personalización del saludo en la pantalla de inicio (Today)
+  let kickerEl=document.getElementById('todayHeroKicker');
+  let titleEl=document.getElementById('todayHeroTitle');
+  let bdayBanner=document.getElementById('birthdayHeroBanner');
+  
+  if(kickerEl && titleEl){
+    let name=d.profile?.displayName;
+    if(name){
+      kickerEl.textContent = 'HOY · ' + name.toUpperCase();
+      if(birthInfo && birthInfo.isToday){
+        titleEl.textContent = '¡Feliz cumpleaños, ' + name + '! ✨';
+      } else {
+        titleEl.textContent = 'Hola, ' + name;
+      }
+    } else {
+      let tName = (typeof orbitTemplates!=='undefined' && orbitTemplates[d.templateId]?.home?.title) || 'Un lugar para volver a ti';
+      kickerEl.textContent = 'HOY';
+      titleEl.textContent = tName;
+    }
+  }
+
+  if(bdayBanner){
+    if(birthInfo && birthInfo.isToday){
+      bdayBanner.style.display='block';
+      let name=d.profile?.displayName || 'viajero';
+      bdayBanner.innerHTML=`
+        <div style="font-size:18px; margin-bottom:4px;">🎂 ✨ 🌟</div>
+        <strong style="font-size:14px; color:var(--wine);">¡Feliz Cumpleaños, ${esc(name)}!</strong>
+        <p style="font-size:12px; color:var(--ink); margin:6px 0 0; line-height:1.45;">Orbit celebra tu día especial. Tienes un regalo de <strong>+25 estrellas</strong> en tu cesta estelar para iluminar tu universo.</p>
+      `;
+    } else {
+      bdayBanner.style.display='none';
+    }
+  }
 }
 
 function saveProfile(){
@@ -951,6 +1061,7 @@ function saveProfile(){
   save(d);
   toast('Perfil guardado');
   renderProfile(d);
+  render();
 }
 
 setInterval(render,60000);render();
