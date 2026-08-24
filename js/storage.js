@@ -13,10 +13,10 @@ function defaults(){
  const n=Date.now();
  return {v:9,templateId:'ruptura',focusAreas:[{id:'ruptura',status:'active',startedAt:n,archivedAt:null}],profile:{displayName:'',username:'',birthDate:null},wallet:0,lifetimeStars:0,bank:0,claimed:{},best:0,pointAwards:{},returnToMe:{since:n,awardedMilestones:[],best:0},
  goals:[
- {id:'msg',icon:'chat',name:'No comprobar si me ha escrito',sub:'No abrir el chat solo para buscar una señal',since:n},
- {id:'insta',icon:'insta',name:'No comprobar cambios en Instagram',sub:'No mirar seguidores, seguidos o cambios para calmar la ansiedad',since:n},
- {id:'hevy',icon:'activity',name:'No entrar a Hevy a comprobar actividad',sub:'No usar el entrenamiento como información indirecta',since:n},
- {id:'signals',icon:'search',name:'No buscar señales indirectas',sub:'Historias, actividad o pistas para saber de él',since:n}],
+  {id:'msg',icon:'chat',name:'Su última conexión o si me ha escrito',sub:'Elegir no abrir la conversación solo para buscar una señal',since:n},
+  {id:'insta',icon:'insta',name:'Sus historias o seguidos en redes',sub:'Elegir no mirar cambios de perfil para calmar la ansiedad',since:n},
+  {id:'photos',icon:'search',name:'Fotos antiguas o conversaciones pasadas',sub:'Elegir no revivir el pasado cuando siento nostalgia',since:n},
+  {id:'friends',icon:'chat',name:'Preguntar a amigos comunes sobre cómo está',sub:'Elegir cuidar mi espacio y no buscar información indirecta',since:n}],
  rewards:[
  {id:'r1',name:'Café o bebida que me apetezca',cost:5},
  {id:'r2',name:'Flores para mí',cost:10},

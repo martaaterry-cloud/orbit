@@ -1107,6 +1107,104 @@ function initSwipeToRedeem(){
   });
 }
 
+function openAddNotCheckingModal(){
+  let editIdEl = document.getElementById('notCheckingEditId');
+  let titleEl = document.getElementById('notCheckingModalTitle');
+  let nameEl = document.getElementById('notCheckingName');
+  let subEl = document.getElementById('notCheckingSub');
+  if(editIdEl) editIdEl.value = '';
+  if(titleEl) titleEl.textContent = 'Añadir a la lista';
+  if(nameEl) nameEl.value = '';
+  if(subEl) subEl.value = '';
+  let modal = document.getElementById('notCheckingModal');
+  if(modal) modal.classList.add('show');
+}
+
+function openEditNotCheckingModal(id){
+  let d = load();
+  let g = (d.goals||[]).find(x => x && x.id === id);
+  if(!g) return;
+  let editIdEl = document.getElementById('notCheckingEditId');
+  let titleEl = document.getElementById('notCheckingModalTitle');
+  let nameEl = document.getElementById('notCheckingName');
+  let subEl = document.getElementById('notCheckingSub');
+  if(editIdEl) editIdEl.value = g.id;
+  if(titleEl) titleEl.textContent = 'Editar elemento';
+  if(nameEl) nameEl.value = g.name || '';
+  if(subEl) subEl.value = g.sub || '';
+  let modal = document.getElementById('notCheckingModal');
+  if(modal) modal.classList.add('show');
+}
+
+function saveNotCheckingItem(){
+  let editIdEl = document.getElementById('notCheckingEditId');
+  let nameEl = document.getElementById('notCheckingName');
+  let subEl = document.getElementById('notCheckingSub');
+  let name = nameEl ? nameEl.value.trim() : '';
+  let sub = subEl ? subEl.value.trim() : '';
+  if(!name) return toast('Escribe qué eliges no comprobar');
+  
+  let d = load();
+  if(!Array.isArray(d.goals)) d.goals = [];
+  let editId = editIdEl ? editIdEl.value : '';
+  
+  if(editId){
+    let g = d.goals.find(x => x && x.id === editId);
+    if(g){
+      g.name = name;
+      g.sub = sub;
+      toast('Elemento actualizado');
+    }
+  } else {
+    d.goals.push({
+      id: uid(),
+      icon: 'search',
+      name: name,
+      sub: sub,
+      since: Date.now()
+    });
+    toast('Elemento añadido');
+  }
+  
+  save(d);
+  closeModal('notCheckingModal');
+  render();
+}
+
+function removeNotCheckingItem(id){
+  let d = load();
+  if(!Array.isArray(d.goals)) return;
+  d.goals = d.goals.filter(x => x && x.id !== id);
+  save(d);
+  toast('Elemento eliminado');
+  render();
+}
+
+function renderNotCheckingList(d){
+  let container = document.getElementById('goals');
+  if(!container) return;
+  if(!Array.isArray(d.goals) || !d.goals.length){
+    container.innerHTML = `<div class="empty" style="padding:14px; text-align:center; font-size:12px; color:var(--muted);">No hay elementos en tu lista todavía. Toca el botón + para añadir lo que eliges no comprobar.</div>`;
+    return;
+  }
+  
+  container.innerHTML = d.goals.map(g => {
+    let iconSvg = icons[g.icon] || icons.search || `<svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m4.9 4.9 14.2 14.2"/></svg>`;
+    let contentHtml = `
+      <div style="display:flex; align-items:flex-start; gap:12px; padding:12px 14px; min-width:0; width:100%; box-sizing:border-box;">
+        <div style="width:32px; height:32px; border-radius:50%; background:var(--soft); display:grid; place-items:center; color:var(--wine); flex-shrink:0; margin-top:1px;">
+          ${iconSvg}
+        </div>
+        <div style="flex:1; min-width:0;">
+          <strong style="font-size:13.5px; font-weight:600; color:var(--ink); line-height:1.35; display:block;">${esc(g.name)}</strong>
+          ${g.sub ? `<small style="display:block; font-size:11px; color:var(--muted); line-height:1.4; margin-top:2px;">${esc(g.sub)}</small>` : ''}
+        </div>
+      </div>
+    `;
+    return wrapSwipe(contentHtml, `removeNotCheckingItem('${g.id}')`, 'good-card', `openEditNotCheckingModal('${g.id}')`);
+  }).join('');
+}
+
 function render(){
   let d=accrue(),now=Date.now(),p=(typeof prompts!=='undefined'&&prompts.length)?prompts[new Date().getDate()%prompts.length]:['Hoy',''];
   if(typeof todayDate!=='undefined'&&todayDate) todayDate.textContent=new Date().toLocaleDateString('es-ES',{weekday:'short',day:'numeric',month:'short'});
@@ -1137,16 +1235,7 @@ function render(){
   }).join(''):'';
   loadPhotoThumbnails();
  bank.textContent=Number(d.wallet||0).toFixed(1).replace('.',',');shopWallet.textContent=Number(d.wallet||0).toFixed(1).replace('.',',');shopLifetime.textContent=Number(d.lifetimeStars||0).toFixed(1).replace('.',',');todayPoints.textContent=todayPointsTotal(d).toFixed(1).replace('.',',');bestStreak.textContent=fmt(d.returnToMe?.best||d.best||0);
- goals.innerHTML=d.goals.map(g=>`<div class="card goal">
-   <div class="goal-top">
-     <div class="goal-icon">${icons[g.icon]||icons.search}</div>
-     <div><div class="goal-title">${esc(g.name)}</div><div class="goal-sub">${esc(g.sub)}</div></div>
-   </div>
-   <div class="goal-actions">
-     <button class="btn btn-soft" onclick="openUrge('${g.id}')">Tengo ganas</button>
-     <button class="btn btn-line" onclick="slip('${g.id}')">Lo he comprobado</button>
-   </div>
- </div>`).join('');
+ renderNotCheckingList(d);
  let sm=sharedMilestoneInfo(d);
  sharedStreak.textContent=fmt(now-d.returnToMe.since);
  sharedNextMilestone.textContent=sm.text;

@@ -13,7 +13,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <title>Orbit</title>
 
-  <link rel="stylesheet" href="css/orbit.css?v=1.2.33">
+  <link rel="stylesheet" href="css/orbit.css?v=1.2.34">
 </head>
 <body>
 <!-- Pantalla de Acceso Inicial -->
@@ -227,9 +227,17 @@
     <div class="progressline"><div id="sharedProgress" style="width:0%"></div></div>
   </div>
 
-  <div class="section-head"><h2>Qué estoy evitando comprobar</h2><small>todas reinician la misma racha</small></div>
+  <div class="section-head">
+    <h2>Lo que estoy eligiendo no comprobar</h2>
+    <button class="icon-button" onclick="openAddNotCheckingModal()" title="Añadir elemento" style="padding:4px;">
+      <svg class="icon" viewBox="0 0 24 24" style="width:16px; height:16px;"><path d="M12 5v14M5 12h14"/></svg>
+    </button>
+  </div>
   <div id="goals"></div>
-  <button class="btn btn-main btn-wide" style="margin-top:10px" onclick="openUrge()">Tengo ganas de mirar</button>
+  <button class="btn btn-dashed btn-wide" style="margin-top:10px;" onclick="openAddNotCheckingModal()">
+    + Añadir a la lista
+  </button>
+  <button class="btn btn-main btn-wide" style="margin-top:14px" onclick="openUrge()">Tengo ganas de mirar</button>
 </section>
 
 <section id="archive" class="page">
@@ -410,7 +418,7 @@
     <button class="btn btn-line" onclick="handleCloudLogout()" style="font-size:12px; padding:8px 16px; color:var(--wine);" id="cloudLogoutBtn">
       Cerrar sesión
     </button>
-    <div style="font-size:11px; color:var(--muted); opacity:0.6; margin-top:14px;">Orbit v1.2.33</div>
+    <div style="font-size:11px; color:var(--muted); opacity:0.6; margin-top:14px;">Orbit v1.2.34</div>
   </div>
 </section>
 
@@ -495,6 +503,23 @@
   <input type="hidden" id="slipGoalId">
   <div class="field"><label>¿Qué estaba pasando justo antes? (opcional)</label><textarea id="slipNote"></textarea></div>
   <button class="btn btn-main btn-wide" onclick="confirmSlip()">Reiniciar contador</button>
+</div></div>
+
+<!-- Modal Añadir/Editar Lo que elijo no comprobar -->
+<div class="modal" id="notCheckingModal"><div class="sheet">
+  <button class="modal-close-x" onclick="closeModal('notCheckingModal')" aria-label="Cerrar">✕</button>
+  <h3 id="notCheckingModalTitle">Añadir a la lista</h3>
+  <p class="prompt-sub" id="notCheckingModalSub">Define algo que conscientemente eliges no ir a buscar ni comprobar.</p>
+  <input type="hidden" id="notCheckingEditId" value="">
+  <div class="field" style="margin-top:14px;">
+    <label>¿Qué elijo no comprobar?</label>
+    <input id="notCheckingName" placeholder="Ej: Su última conexión, historias de Instagram...">
+  </div>
+  <div class="field">
+    <label>Motivo o recordatorio (opcional)</label>
+    <input id="notCheckingSub" placeholder="Ej: Para cuidar mi calma y no alimentar la rumiación...">
+  </div>
+  <button class="btn btn-main btn-wide" id="notCheckingSubmitBtn" onclick="saveNotCheckingItem()" style="margin-top:10px;">Guardar</button>
 </div></div>
 
 <div class="modal" id="rewardModal"><div class="sheet">
@@ -746,14 +771,14 @@
 <div class="toast" id="toast"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="data/templates.js?v=1.2.33"></script>
-  <script src="data/constellations.js?v=1.2.33"></script>
-  <script src="js/storage.js?v=1.2.33"></script>
-  <script src="js/supabase.js?v=1.2.33"></script>
-  <script src="js/stars.js?v=1.2.33"></script>
-  <script src="js/streak.js?v=1.2.33"></script>
-  <script src="js/journal.js?v=1.2.33"></script>
-  <script src="js/archive.js?v=1.2.33"></script>
-  <script src="js/app.js?v=1.2.33"></script>
+  <script src="data/templates.js?v=1.2.34"></script>
+  <script src="data/constellations.js?v=1.2.34"></script>
+  <script src="js/storage.js?v=1.2.34"></script>
+  <script src="js/supabase.js?v=1.2.34"></script>
+  <script src="js/stars.js?v=1.2.34"></script>
+  <script src="js/streak.js?v=1.2.34"></script>
+  <script src="js/journal.js?v=1.2.34"></script>
+  <script src="js/archive.js?v=1.2.34"></script>
+  <script src="js/app.js?v=1.2.34"></script>
 </body>
 </html>

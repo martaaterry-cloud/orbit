@@ -11,10 +11,10 @@ const orbitTemplates = {
       subtitle: 'Escribe, guarda pequeñas cosas y entra en las partes que necesites. No tienes que usarlo todo cada día.'
     },
     goals: [
-      { id: 'msg', icon: 'chat', name: 'No comprobar si me ha escrito', sub: 'No abrir el chat solo para buscar una señal' },
-      { id: 'insta', icon: 'insta', name: 'No comprobar cambios en Instagram', sub: 'No mirar seguidores, seguidos o cambios para calmar la ansiedad' },
-      { id: 'hevy', icon: 'activity', name: 'No entrar a Hevy a comprobar actividad', sub: 'No usar el entrenamiento como información indirecta' },
-      { id: 'signals', icon: 'search', name: 'No buscar señales indirectas', sub: 'Historias, actividad o pistas para saber de él' }
+      { id: 'msg', icon: 'chat', name: 'Su última conexión o si me ha escrito', sub: 'Elegir no abrir la conversación solo para buscar una señal' },
+      { id: 'insta', icon: 'insta', name: 'Sus historias o seguidos en redes', sub: 'Elegir no mirar cambios de perfil para calmar la ansiedad' },
+      { id: 'photos', icon: 'search', name: 'Fotos antiguas o conversaciones pasadas', sub: 'Elegir no revivir el pasado cuando siento nostalgia' },
+      { id: 'friends', icon: 'chat', name: 'Preguntar a amigos comunes sobre cómo está', sub: 'Elegir cuidar mi espacio y no buscar información indirecta' }
     ],
     journalSections: [
       { id: 'libre', title: 'Entrada libre', prompt: '¿Qué quieres dejar aquí?', hint: 'No hace falta que tenga principio ni final.' },
