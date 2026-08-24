@@ -126,3 +126,6 @@ ON CONFLICT (user_id) DO NOTHING;
 -- 7. Conceder permisos explícitos a service_role para las Edge Functions
 GRANT SELECT, DELETE ON TABLE public.profiles TO service_role;
 GRANT SELECT, DELETE ON TABLE public.orbit_state TO service_role;
+
+-- 8. Conceder permisos SELECT y UPDATE a usuarios autenticados para su propio perfil (sujeto a RLS)
+GRANT SELECT, UPDATE ON TABLE public.profiles TO authenticated;
