@@ -350,11 +350,6 @@ let currentSkyId = 'cielo-1';
 function setSkyById(regionId){
   let d = (typeof load === 'function') ? load() : null;
   if(!d) return;
-  let isUnlocked = d.unlockedRegions && d.unlockedRegions.includes(regionId);
-  if(!isUnlocked && regionId !== 'cielo-1'){
-    let target = skyRegionsList.find(r => r.id === regionId);
-    return toast(`Región "${target ? target.name : regionId}" bloqueada. Desbloquéala desde la nave.`);
-  }
   
   currentSkyId = regionId;
   
@@ -373,13 +368,11 @@ function setSkyById(regionId){
 function navigateSky(dir){
   let d = (typeof load === 'function') ? load() : null;
   if(!d) return;
-  let unlockedSkies = skyRegionsList.filter(r => d.unlockedRegions && d.unlockedRegions.includes(r.id));
-  if(unlockedSkies.length <= 1) return;
   
-  let currentIndex = unlockedSkies.findIndex(r => r.id === currentSkyId);
+  let currentIndex = skyRegionsList.findIndex(r => r.id === currentSkyId);
   if(currentIndex === -1) currentIndex = 0;
-  let nextIdx = (currentIndex + dir + unlockedSkies.length) % unlockedSkies.length;
-  setSkyById(unlockedSkies[nextIdx].id);
+  let nextIdx = (currentIndex + dir + skyRegionsList.length) % skyRegionsList.length;
+  setSkyById(skyRegionsList[nextIdx].id);
 }
 
 function renderUniverse(d){
@@ -388,24 +381,17 @@ function renderUniverse(d){
   if(typeof universeWallet!=='undefined'&&universeWallet) universeWallet.textContent=wallet.toFixed(1).replace('.',',');
   if(typeof universeLifetime!=='undefined'&&universeLifetime) universeLifetime.textContent=total.toFixed(1).replace('.',',');
   
-  // Filter unlocked skies
-  let unlockedSkies = skyRegionsList.filter(r => d.unlockedRegions && d.unlockedRegions.includes(r.id));
-  if(!unlockedSkies.length) unlockedSkies = [skyRegionsList[0]];
-  
-  // Ensure currentSkyId is an unlocked sky
-  let currentRegion = unlockedSkies.find(r => r.id === currentSkyId);
-  if(!currentRegion) {
-    currentRegion = unlockedSkies[0];
-    currentSkyId = currentRegion.id;
-  }
+  let currentRegion = skyRegionsList.find(r => r.id === currentSkyId) || skyRegionsList[0];
+  let isSkyUnlocked = (d.unlockedRegions && d.unlockedRegions.includes(currentRegion.id)) || (currentRegion.id === 'cielo-1');
 
   // Update top active sky title
   let titleEl = document.getElementById('skyHeaderTitle');
   if(titleEl) {
-    titleEl.textContent = `${currentRegion.name} · ${currentRegion.roman}`;
+    titleEl.textContent = `${currentRegion.name} · ${currentRegion.roman}${isSkyUnlocked ? '' : ' 🔒'}`;
   }
 
-  // Determine overall in-progress constellation across all unlocked regions
+  // Determine overall in-progress constellation across unlocked regions
+  let unlockedSkies = skyRegionsList.filter(r => (d.unlockedRegions && d.unlockedRegions.includes(r.id)) || r.id === 'cielo-1');
   let allUnlockedCols = unlockedSkies.map(r => r.col);
   let allAvailable = constellationDefs.filter(c => allUnlockedCols.includes(c.collection));
   allAvailable.sort((a, b) => a.need - b.need);
@@ -428,9 +414,9 @@ function renderUniverse(d){
 
     let skyHtml = '';
     regionConsts.forEach((c) => {
-      let isClaimed = !!(d.claimed && d.claimed[c.id]);
-      let isNext = (next && next.id === c.id);
-      let isDiscovered = (!isClaimed && total >= c.need);
+      let isClaimed = isSkyUnlocked && !!(d.claimed && d.claimed[c.id]);
+      let isNext = isSkyUnlocked && (next && next.id === c.id);
+      let isDiscovered = isSkyUnlocked && (!isClaimed && total >= c.need);
       
       let baseSize = c.size || 125;
       let size = Math.round(Math.max(100, Math.min(vw * 0.38, (vh - 140) * 0.28, baseSize, 160)));
@@ -439,7 +425,11 @@ function renderUniverse(d){
       let unlocked = false;
       let stateClass = '';
 
-      if (isClaimed) {
+      if (!isSkyUnlocked) {
+        unlocked = false;
+        progress = 0.0;
+        stateClass = 'locked sky-locked-layer';
+      } else if (isClaimed) {
         unlocked = true;
         progress = 1.0;
         stateClass = 'claimed illuminated';
@@ -460,10 +450,11 @@ function renderUniverse(d){
       }
 
       let svgMarkup = constellationSvg(c, unlocked, progress);
-      let statusHint = isClaimed ? ' (Iluminada)' : (isNext ? ' (En curso)' : (isDiscovered ? ' (Descubierta)' : ' (Por descubrir)'));
+      let clickAttr = isSkyUnlocked ? `onclick="verFichaConstelacion('${c.id}')"` : '';
+      let statusHint = !isSkyUnlocked ? ' (Bloqueada)' : (isClaimed ? ' (Iluminada)' : (isNext ? ' (En curso)' : (isDiscovered ? ' (Descubierta)' : ' (Por descubrir)')));
       
       skyHtml += `
-        <div class="sky-constellation-item ${stateClass}" style="left:${c.x || 50}%; top:${c.y || 35}%;" onclick="verFichaConstelacion('${c.id}')" title="${esc(c.name)}${statusHint}">
+        <div class="sky-constellation-item ${stateClass}" style="left:${c.x || 50}%; top:${c.y || 35}%;" ${clickAttr} title="${esc(c.name)}${statusHint}">
           <div class="sky-constellation-box" style="width:${size}px; height:${size}px; transform: rotate(${c.rot || 0}deg);">
             ${svgMarkup}
           </div>
@@ -471,6 +462,21 @@ function renderUniverse(d){
         </div>
       `;
     });
+
+    if (!isSkyUnlocked) {
+      skyHtml += `
+        <div class="sky-locked-overlay">
+          <div class="sky-locked-seal">
+            <div class="sky-locked-compass">
+              <svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" style="width:32px; height:32px;"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            </div>
+            <div class="sky-locked-title">Cielo sellado</div>
+            <p class="sky-locked-desc">Esta región del firmamento aún no ha sido cartografiada.<br>Desbloquéala en la <strong>Nave Espacial</strong>.</p>
+            <button class="btn btn-soft btn-sm" style="font-size:10px; padding:6px 16px; border-radius:99px; margin-top:4px;" onclick="openShipModal(); setShipTab('regiones');">Ir a Exploración</button>
+          </div>
+        </div>
+      `;
+    }
 
     constellationStage.innerHTML = skyHtml;
   }
