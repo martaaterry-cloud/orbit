@@ -1,9 +1,10 @@
 -- ==========================================================================
--- ORBIT: Migración de Historial de Estados y Seguridad Anti-Pérdida (v1.3.13)
+-- ORBIT: Migración de Historial de Estados Inmutable y Anti-Pérdida (v1.3.14)
 -- ==========================================================================
--- Esta migración crea la tabla `public.orbit_state_history` para almacenar
--- automáticamente snapshots previos antes de cualquier sobreescritura de
--- `orbit_state`, garantizando recuperación, RLS estricto y límite de 20 versiones.
+-- Esta migración crea la tabla `public.orbit_state_history` inmutable desde el
+-- cliente (solo SELECT para authenticated), con trigger BEFORE UPDATE que guarda
+-- snapshots únicamente cuando orbit_data u orbit_timer cambian realmente
+-- (IS DISTINCT FROM), manteniendo las últimas 20 versiones por usuario.
 -- ==========================================================================
 
 -- 1. Tabla de Historial de Estados
@@ -17,32 +18,26 @@ CREATE TABLE IF NOT EXISTS public.orbit_state_history (
   reason TEXT DEFAULT 'snapshot_before_update'
 );
 
--- Índice para consultas eficientes por usuario y orden cronológico
+-- Índice para consultas por usuario y orden cronológico descendente
 CREATE INDEX IF NOT EXISTS orbit_state_history_user_created_idx 
   ON public.orbit_state_history (user_id, created_at DESC);
 
 -- 2. Habilitar Row Level Security (RLS)
 ALTER TABLE public.orbit_state_history ENABLE ROW LEVEL SECURITY;
 
--- 3. Políticas de RLS (cada usuario solo accede a su propio historial)
+-- 3. Política de RLS: Inmutabilidad para authenticated (SOLO SELECT de sus propias filas)
 DROP POLICY IF EXISTS "Users can read own state history" ON public.orbit_state_history;
 CREATE POLICY "Users can read own state history"
   ON public.orbit_state_history FOR SELECT
   USING (auth.uid() = user_id);
 
+-- Eliminar explícitamente cualquier política previa de inserción o borrado para usuarios
 DROP POLICY IF EXISTS "Users can insert own state history" ON public.orbit_state_history;
-CREATE POLICY "Users can insert own state history"
-  ON public.orbit_state_history FOR INSERT
-  WITH CHECK (auth.uid() = user_id);
-
 DROP POLICY IF EXISTS "Users can delete own state history" ON public.orbit_state_history;
-CREATE POLICY "Users can delete own state history"
-  ON public.orbit_state_history FOR DELETE
-  USING (auth.uid() = user_id);
 
 -- 4. Trigger BEFORE UPDATE en public.orbit_state
--- Guarda automáticamente una copia de la fila anterior antes de sobreescribirla
--- y mantiene un límite de 20 versiones máximas por usuario.
+-- Guarda snapshot solo si hay cambios reales en orbit_data o orbit_timer (IS DISTINCT FROM)
+-- y mantiene un límite de 20 versiones por usuario de forma automática.
 CREATE OR REPLACE FUNCTION public.handle_orbit_state_before_update()
 RETURNS TRIGGER
 LANGUAGE plpgsql
@@ -50,8 +45,11 @@ SECURITY DEFINER
 SET search_path = pg_catalog, public
 AS $$
 BEGIN
-  -- Solo guardar historial si la fila anterior existía y contenía datos reales
-  IF OLD.orbit_data IS NOT NULL THEN
+  -- Solo guardar historial si la fila anterior tenía datos Y hubo un cambio real en datos o temporizador
+  IF OLD.orbit_data IS NOT NULL AND (
+    OLD.orbit_data IS DISTINCT FROM NEW.orbit_data OR
+    OLD.orbit_timer IS DISTINCT FROM NEW.orbit_timer
+  ) THEN
     INSERT INTO public.orbit_state_history (
       user_id,
       orbit_data,
@@ -89,7 +87,7 @@ CREATE TRIGGER trigger_orbit_state_backup_history
   FOR EACH ROW
   EXECUTE FUNCTION public.handle_orbit_state_before_update();
 
--- 5. Función de servidor para listar versiones del usuario actual
+-- 5. Función segura para listar el historial del usuario autenticado (límite acotado entre 1 y 50)
 CREATE OR REPLACE FUNCTION public.get_my_orbit_state_history(p_limit INT DEFAULT 20)
 RETURNS TABLE (
   history_id UUID,
@@ -102,7 +100,11 @@ LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = pg_catalog, public
 AS $$
+DECLARE
+  v_safe_limit INT;
 BEGIN
+  v_safe_limit := GREATEST(1, LEAST(COALESCE(p_limit, 20), 50));
+
   RETURN QUERY
   SELECT 
     h.id AS history_id,
@@ -120,11 +122,13 @@ BEGIN
   FROM public.orbit_state_history h
   WHERE h.user_id = auth.uid()
   ORDER BY h.created_at DESC
-  LIMIT LEAST(p_limit, 50);
+  LIMIT v_safe_limit;
 END;
 $$;
 
--- 6. Función de servidor para restaurar una versión específica desde el historial
+-- 6. Función segura para restaurar una versión específica desde el historial
+-- Al actualizar orbit_state, el trigger handle_orbit_state_before_update genera automáticamente
+-- un snapshot de respaldo del estado que está siendo sustituido.
 CREATE OR REPLACE FUNCTION public.restore_orbit_state_from_history(p_history_id UUID)
 RETURNS BOOLEAN
 LANGUAGE plpgsql
@@ -154,7 +158,9 @@ END;
 $$;
 
 -- 7. Concesión de Permisos
-GRANT SELECT, INSERT, DELETE ON TABLE public.orbit_state_history TO authenticated;
+-- Inmutabilidad desde el cliente: authenticated SOLO puede hacer SELECT
+REVOKE ALL ON TABLE public.orbit_state_history FROM PUBLIC, anon, authenticated;
+GRANT SELECT ON TABLE public.orbit_state_history TO authenticated;
 GRANT SELECT, INSERT, DELETE ON TABLE public.orbit_state_history TO service_role;
 GRANT EXECUTE ON FUNCTION public.get_my_orbit_state_history(INT) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.restore_orbit_state_from_history(UUID) TO authenticated;
