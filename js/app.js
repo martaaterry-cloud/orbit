@@ -701,6 +701,9 @@ function renderUniverse(d){
     }
   });
 
+  let prevCarousel = document.querySelector('.atlas-carousel');
+  let prevScrollLeft = (prevCarousel && prevCarousel.scrollLeft > 0) ? prevCarousel.scrollLeft : null;
+
   constellationBook.innerHTML = `
     <div class="atlas-container">
       <div class="atlas-chapters">
@@ -714,7 +717,12 @@ function renderUniverse(d){
   `;
 
   let carousel = document.querySelector('.atlas-carousel');
-  if (carousel) initAtlasPageTurn(carousel);
+  if (carousel) {
+    if (prevScrollLeft !== null) {
+      carousel.scrollLeft = prevScrollLeft;
+    }
+    initAtlasPageTurn(carousel);
+  }
  
  // Render Ship Level & Status
  const shipLevels = [
@@ -965,9 +973,32 @@ function guardarConstelacion(id, cost = 1){
   d.claimed[id] = Date.now();
   save(d);
 
+  // Capturar si el usuario estaba en el Atlas/Libro y su posición de scroll
+  let bookModal = document.getElementById('constellationBookModal');
+  let isBookOpen = bookModal && (bookModal.classList.contains('show') || bookModal.classList.contains('active'));
+  let prevCarousel = document.querySelector('.atlas-carousel');
+  let prevScrollLeft = (prevCarousel && prevCarousel.scrollLeft > 0) ? prevCarousel.scrollLeft : null;
+
   playConstellationAcquisitionCeremony(cDef, () => {
     toast(`✦ ${cDef ? cDef.name : 'Constelación'} iluminada en tu universo.`);
     render();
+
+    // Mantener la vista activa y la posición de página exacta del Atlas
+    if (isBookOpen) {
+      let bModal = document.getElementById('constellationBookModal');
+      if (bModal) {
+        bModal.classList.add('show', 'active');
+      }
+      let carousel = document.querySelector('.atlas-carousel');
+      if (carousel) {
+        if (prevScrollLeft !== null) {
+          carousel.scrollLeft = prevScrollLeft;
+        }
+        if (typeof initAtlasPageTurn === 'function') {
+          initAtlasPageTurn(carousel);
+        }
+      }
+    }
   });
 }
 
