@@ -14,7 +14,7 @@
 <title>Orbit</title>
 
   <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
-  <link rel="stylesheet" href="css/orbit.css?v=1.2.43">
+  <link rel="stylesheet" href="css/orbit.css?v=1.2.44">
 </head>
 <body>
 <!-- Pantalla de Acceso Inicial Multiusuario -->
@@ -440,10 +440,10 @@
     </div>
   </div>
 
-  <!-- B2. SEGURIDAD DE LA CUENTA -->
-  <div class="section-head"><h2>Seguridad y acceso</h2></div>
+  <!-- B2. CUENTA Y SEGURIDAD -->
+  <div class="section-head"><h2>Cuenta</h2></div>
   <div class="card" style="padding:16px;">
-    <div style="font-size:12px; color:var(--muted); margin-bottom:12px;">Gestión de tus credenciales de acceso.</div>
+    <div style="font-size:12px; color:var(--muted); margin-bottom:12px;">Gestión de tus credenciales y cuenta personal.</div>
     <div style="display:flex; flex-direction:column; gap:14px;">
       <div>
         <label style="font-size:11px; text-transform:uppercase; letter-spacing:0.05em; color:var(--muted); font-weight:600; margin-bottom:4px; display:block;">Cambiar contraseña</label>
@@ -458,6 +458,14 @@
           <input type="email" id="settingsNewEmail" placeholder="nuevo@email.com" style="flex:1; box-sizing:border-box; padding:10px 12px; font-size:13px; border-radius:10px; border:1px solid var(--line); background:#fffdfb;" autocomplete="email">
           <button type="button" class="btn btn-line" onclick="applySettingsChangeEmail()" style="font-size:11px; padding:8px 12px; white-space:nowrap;">Actualizar</button>
         </div>
+      </div>
+      <div style="border-top:1px solid var(--line); padding-top:14px; margin-top:4px;">
+        <label style="font-size:11px; text-transform:uppercase; letter-spacing:0.05em; color:var(--wine); font-weight:600; margin-bottom:4px; display:block;">Zona de peligro</label>
+        <p style="font-size:12px; color:var(--muted); margin:0 0 10px 0; line-height:1.4;">Eliminar tu cuenta borrará permanentemente todos tus datos, fotos y diario de Orbit.</p>
+        <button type="button" class="btn btn-line" onclick="openDeleteAccountModal()" style="font-size:11px; padding:8px 14px; color:var(--wine); border-color:var(--wine); display:inline-flex; align-items:center; gap:6px;">
+          <svg class="icon" viewBox="0 0 24 24" style="width:14px; height:14px; stroke:currentColor; stroke-width:2;"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+          <span>Eliminar mi cuenta</span>
+        </button>
       </div>
     </div>
   </div>
@@ -487,7 +495,7 @@
     <button class="btn btn-line" onclick="handleCloudLogout()" style="font-size:12px; padding:8px 16px; color:var(--wine);" id="cloudLogoutBtn">
       Cerrar sesión
     </button>
-    <div style="font-size:11px; color:var(--muted); opacity:0.6; margin-top:14px;">Orbit v1.2.43</div>
+    <div style="font-size:11px; color:var(--muted); opacity:0.6; margin-top:14px;">Orbit v1.2.44</div>
   </div>
 </section>
 
@@ -848,6 +856,27 @@
   </form>
 </div></div>
 
+<!-- Modal Confirmación Eliminación de Cuenta -->
+<div class="modal" id="deleteAccountModal"><div class="sheet">
+  <button class="modal-close-x" onclick="closeModal('deleteAccountModal')" aria-label="Cerrar"><svg class="icon" viewBox="0 0 24 24" style="width:14px; height:14px; stroke:currentColor; stroke-width:2;"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+  <h3 style="color:var(--wine);">Eliminar cuenta definitivamente</h3>
+  <p class="prompt-sub" style="color:var(--ink); line-height:1.5;">Esta acción es <strong style="color:var(--wine);">irreversible y permanente</strong>.</p>
+  <div style="font-size:13px; color:var(--muted); background:var(--soft); padding:12px; border-radius:12px; border:1px solid var(--line); margin:12px 0; line-height:1.5; text-align:left;">
+    Se eliminarán de forma definitiva:
+    <ul style="margin:6px 0 0 16px; padding:0;">
+      <li>Tu diario y todos los recuerdos registrados.</li>
+      <li>Todas las fotos subidas a la nube.</li>
+      <li>Tus rachas, estrellas, constelaciones y recompensas.</li>
+      <li>Tu perfil y usuario en Orbit.</li>
+    </ul>
+  </div>
+  <div class="field" style="text-align:left; margin-top:12px;">
+    <label for="deleteAccountConfirmInput" style="font-size:12px; font-weight:600; color:var(--ink);">Para confirmar, escribe <strong style="color:var(--wine);">ELIMINAR</strong> a continuación:</label>
+    <input id="deleteAccountConfirmInput" type="text" placeholder="ELIMINAR" oninput="handleDeleteAccountInput(this.value)" style="width:100%; box-sizing:border-box; padding:10px 12px; font-size:14px; border-radius:10px; border:1px solid var(--line); background:#fffdfb; margin-top:6px;">
+  </div>
+  <button id="confirmDeleteAccountBtn" class="btn btn-main btn-wide" disabled onclick="executeAccountDeletion()" style="margin-top:14px; background:var(--wine); border-color:var(--wine); opacity:0.5; cursor:not-allowed;">Eliminar mi cuenta para siempre</button>
+</div></div>
+
 <div class="update-banner" id="updateBanner">
   <span>Hay una nueva versión de Orbit</span>
   <button onclick="applyAppUpdate()">Actualizar</button>
@@ -856,14 +885,14 @@
 <div class="toast" id="toast"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="data/templates.js?v=1.2.43"></script>
-  <script src="data/constellations.js?v=1.2.43"></script>
-  <script src="js/storage.js?v=1.2.43"></script>
-  <script src="js/supabase.js?v=1.2.43"></script>
-  <script src="js/stars.js?v=1.2.43"></script>
-  <script src="js/streak.js?v=1.2.43"></script>
-  <script src="js/journal.js?v=1.2.43"></script>
-  <script src="js/archive.js?v=1.2.43"></script>
-  <script src="js/app.js?v=1.2.43"></script>
+  <script src="data/templates.js?v=1.2.44"></script>
+  <script src="data/constellations.js?v=1.2.44"></script>
+  <script src="js/storage.js?v=1.2.44"></script>
+  <script src="js/supabase.js?v=1.2.44"></script>
+  <script src="js/stars.js?v=1.2.44"></script>
+  <script src="js/streak.js?v=1.2.44"></script>
+  <script src="js/journal.js?v=1.2.44"></script>
+  <script src="js/archive.js?v=1.2.44"></script>
+  <script src="js/app.js?v=1.2.44"></script>
 </body>
 </html>

@@ -542,6 +542,84 @@ async function supabaseUpdateUsername(newUsername) {
   }
 }
 
+// Eliminación definitiva y segura de la cuenta y sus datos asociados
+async function supabaseDeleteAccount() {
+  const sb = getSupabase();
+  if (!sb || !currentCloudUser) {
+    if (typeof toast === 'function') toast('No hay sesión activa para eliminar');
+    return false;
+  }
+
+  const userIdToDelete = currentCloudUser.id;
+  const deleteBtn = document.getElementById('confirmDeleteAccountBtn');
+  if (deleteBtn) {
+    deleteBtn.disabled = true;
+    deleteBtn.textContent = 'Eliminando cuenta permanentemente…';
+  }
+
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session?.access_token) {
+      if (deleteBtn) {
+        deleteBtn.disabled = false;
+        deleteBtn.textContent = 'Eliminar mi cuenta para siempre';
+      }
+      if (typeof toast === 'function') toast('Sesión no válida. Inicia sesión de nuevo');
+      return false;
+    }
+
+    const { data, error } = await sb.functions.invoke('delete-account', {
+      headers: {
+        Authorization: `Bearer ${session.access_token}`
+      }
+    });
+
+    if (error || !data?.success) {
+      if (deleteBtn) {
+        deleteBtn.disabled = false;
+        deleteBtn.textContent = 'Eliminar mi cuenta para siempre';
+      }
+      const errMsg = error?.message || data?.error || 'No se pudo eliminar la cuenta. Inténtalo de nuevo';
+      if (typeof toast === 'function') toast(errMsg);
+      return false;
+    }
+
+    // Servidor confirmó eliminación exitosa: purgar datos locales de este usuario
+    if (typeof purgeLocalUserData === 'function') {
+      purgeLocalUserData(userIdToDelete);
+    }
+
+    clearTimeout(syncDebounceTimer);
+    clearTimeout(foregroundSyncTimer);
+    hasConflict = false;
+    signedUrlCache.clear();
+    currentCloudUser = null;
+
+    if (typeof resetTurnstile === 'function') {
+      resetTurnstile();
+    }
+
+    await sb.auth.signOut().catch(() => {});
+
+    if (typeof closeModal === 'function') {
+      closeModal('deleteAccountModal');
+    }
+    const confirmInput = document.getElementById('deleteAccountConfirmInput');
+    if (confirmInput) confirmInput.value = '';
+
+    if (typeof toast === 'function') toast('Cuenta eliminada definitivamente');
+    updateAppAuthState(null);
+    return true;
+  } catch (err) {
+    if (deleteBtn) {
+      deleteBtn.disabled = false;
+      deleteBtn.textContent = 'Eliminar mi cuenta para siempre';
+    }
+    if (typeof toast === 'function') toast('Error de conexión al eliminar la cuenta');
+    return false;
+  }
+}
+
 // Cierre de sesión seguro con limpieza total de memoria y temporizadores
 async function supabaseLogout() {
   const sb = getSupabase();

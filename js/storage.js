@@ -49,6 +49,46 @@ function getUserStorageKey(baseKey, userId) {
   return uid ? `${baseKey}:${uid}` : baseKey;
 }
 
+// Purga total y segura de los datos locales asociados a un usuario eliminado
+function purgeLocalUserData(userId) {
+  if (!userId || typeof localStorage === 'undefined') return;
+  const uid = String(userId);
+
+  // 1. Claves directas con prefijo del usuario
+  const directKeys = [
+    `orbitV9:${uid}`,
+    `orbitTimer:${uid}`,
+    `orbitLocalUpdatedAt:${uid}`,
+    `orbitLastCloudUpdatedAt:${uid}`,
+    `orbitHasUnsyncedChanges:${uid}`,
+    `orbitMigrationDone:${uid}`,
+    `orbitV9_migrated_${uid}_backup`
+  ];
+
+  directKeys.forEach(k => {
+    try { localStorage.removeItem(k); } catch(e){}
+  });
+
+  // 2. Limpieza de cualquier otra clave residual que contenga el UUID
+  try {
+    const keysToRemove = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.includes(uid)) {
+        keysToRemove.push(key);
+      }
+    }
+    keysToRemove.forEach(k => {
+      try { localStorage.removeItem(k); } catch(e){}
+    });
+  } catch(e){}
+
+  // 3. Si era el usuario activo, vaciar estado activo
+  if (currentOrbitUserId === uid) {
+    setOrbitActiveUser(null);
+  }
+}
+
 // Migración segura de claves legacy al usuario autenticado (idempotente y con verificación estricta)
 function migrateLegacyStorageIfVerified(user, priorKnownIdentity) {
   if (!user || !user.id || typeof localStorage === 'undefined') return;

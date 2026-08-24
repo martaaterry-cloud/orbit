@@ -1721,6 +1721,43 @@ function applySettingsChangeEmail(){
   }
 }
 
+function openDeleteAccountModal() {
+  let input = document.getElementById('deleteAccountConfirmInput');
+  let btn = document.getElementById('confirmDeleteAccountBtn');
+  if (input) input.value = '';
+  if (btn) {
+    btn.disabled = true;
+    btn.style.opacity = '0.5';
+    btn.style.cursor = 'not-allowed';
+    btn.textContent = 'Eliminar mi cuenta para siempre';
+  }
+  openModal('deleteAccountModal');
+}
+
+function handleDeleteAccountInput(val) {
+  let btn = document.getElementById('confirmDeleteAccountBtn');
+  if (!btn) return;
+  let isExactMatch = (val || '').trim() === 'ELIMINAR';
+  btn.disabled = !isExactMatch;
+  btn.style.opacity = isExactMatch ? '1' : '0.5';
+  btn.style.cursor = isExactMatch ? 'pointer' : 'not-allowed';
+}
+
+function executeAccountDeletion() {
+  let input = document.getElementById('deleteAccountConfirmInput');
+  let val = input ? input.value.trim() : '';
+  if (val !== 'ELIMINAR') {
+    return toast('Debes escribir ELIMINAR para confirmar');
+  }
+
+  const secondConfirm = confirm('¿Estás 100% segura de que deseas eliminar definitivamente tu cuenta?\n\nEsta acción borrará de forma irreversible tu diario, fotos, estrellas, constelaciones y cuenta.');
+  if (!secondConfirm) return;
+
+  if (typeof supabaseDeleteAccount === 'function') {
+    supabaseDeleteAccount();
+  }
+}
+
 setInterval(render,60000);render();
 
 function initAtlasPageTurn(carouselEl) {
