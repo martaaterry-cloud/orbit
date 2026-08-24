@@ -1,9 +1,9 @@
 -- ==========================================================================
--- ORBIT: Migración de Seguridad Multiusuario y Perfiles (v1.2.40)
+-- ORBIT: Migración de Seguridad Multiusuario y Perfiles (v1.2.43)
 -- ==========================================================================
 -- Esta migración crea la tabla de perfiles privados con usernames únicos,
--- normalización forzada a minúsculas, políticas RLS estrictas, trigger de registro
--- y backfill seguro para cuentas existentes en auth.users.
+-- normalización forzada a minúsculas, políticas RLS estrictas, trigger de registro,
+-- backfill seguro para cuentas existentes y permiso SELECT para service_role.
 -- ==========================================================================
 
 -- 1. Tabla de Perfiles Privados
@@ -122,3 +122,6 @@ WHERE NOT EXISTS (
   SELECT 1 FROM public.profiles p WHERE p.user_id = u.id
 )
 ON CONFLICT (user_id) DO NOTHING;
+
+-- 7. Conceder permisos SELECT a service_role para la Edge Function
+GRANT SELECT ON TABLE public.profiles TO service_role;

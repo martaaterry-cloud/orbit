@@ -2,6 +2,69 @@
 const SUPABASE_URL = 'https://wquknalzykitgdkxoysu.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_ctuEoowcWJs2yaGDOyoK1g_BsQKIVFh';
 
+// Configuración de Cloudflare Turnstile para protección de registro y login por username
+const TURNSTILE_SITE_KEY = 'PENDING_TURNSTILE_SITE_KEY';
+let turnstileLoginWidgetId = null;
+let turnstileSignupWidgetId = null;
+let turnstileLoginToken = '';
+let turnstileSignupToken = '';
+
+function isTurnstileConfigured() {
+  return typeof TURNSTILE_SITE_KEY === 'string' &&
+    TURNSTILE_SITE_KEY.trim() !== '' &&
+    TURNSTILE_SITE_KEY !== 'PENDING_TURNSTILE_SITE_KEY';
+}
+
+function initTurnstileWidgets() {
+  if (!isTurnstileConfigured()) return;
+  if (typeof window === 'undefined' || typeof window.turnstile === 'undefined') {
+    setTimeout(initTurnstileWidgets, 400);
+    return;
+  }
+
+  const loginContainer = document.getElementById('turnstile-login-container');
+  if (loginContainer && turnstileLoginWidgetId === null) {
+    try {
+      turnstileLoginWidgetId = window.turnstile.render('#turnstile-login-container', {
+        sitekey: TURNSTILE_SITE_KEY,
+        theme: 'light',
+        size: 'flexible',
+        callback: (token) => { turnstileLoginToken = token; },
+        'expired-callback': () => { turnstileLoginToken = ''; },
+        'error-callback': () => { turnstileLoginToken = ''; }
+      });
+    } catch (e) {}
+  }
+
+  const signupContainer = document.getElementById('turnstile-signup-container');
+  if (signupContainer && turnstileSignupWidgetId === null) {
+    try {
+      turnstileSignupWidgetId = window.turnstile.render('#turnstile-signup-container', {
+        sitekey: TURNSTILE_SITE_KEY,
+        theme: 'light',
+        size: 'flexible',
+        callback: (token) => { turnstileSignupToken = token; },
+        'expired-callback': () => { turnstileSignupToken = ''; },
+        'error-callback': () => { turnstileSignupToken = ''; }
+      });
+    } catch (e) {}
+  }
+}
+
+function resetTurnstile(mode) {
+  if (typeof window === 'undefined' || typeof window.turnstile === 'undefined') return;
+  try {
+    if ((mode === 'login' || !mode) && turnstileLoginWidgetId !== null) {
+      window.turnstile.reset(turnstileLoginWidgetId);
+      turnstileLoginToken = '';
+    }
+    if ((mode === 'signup' || !mode) && turnstileSignupWidgetId !== null) {
+      window.turnstile.reset(turnstileSignupWidgetId);
+      turnstileSignupToken = '';
+    }
+  } catch (e) {}
+}
+
 let supabaseClient = null;
 let currentCloudUser = null;
 let syncDebounceTimer = null;
@@ -212,6 +275,12 @@ async function supabaseLogin(identifier, password) {
     return false;
   }
 
+  // Si es login por username y Turnstile está configurado, exigir verificación
+  if (!cleanId.includes('@') && isTurnstileConfigured() && !turnstileLoginToken) {
+    if (typeof toast === 'function') toast('Por favor, completa la verificación de seguridad');
+    return false;
+  }
+
   // Capturar evidencia previa de identidad ANTES de cualquier mutación local
   const priorKnownIdentity = typeof localStorage !== 'undefined' ? localStorage.getItem('orbitKnownUser') : null;
 
@@ -233,22 +302,34 @@ async function supabaseLogin(identifier, password) {
     } else {
       // Login por Username mediante Supabase Edge Function aislada
       try {
+        const payload = {
+          username: cleanId.toLowerCase(),
+          password: cleanPass
+        };
+        if (turnstileLoginToken) {
+          payload.captcha_token = turnstileLoginToken;
+        }
+
         const { data: edgeData, error: edgeErr } = await sb.functions.invoke('login-with-username', {
-          body: { username: cleanId.toLowerCase(), password: cleanPass }
+          body: payload
         });
 
         if (edgeErr || !edgeData?.session) {
           authError = edgeErr || new Error(edgeData?.error || 'Usuario o contraseña incorrectos.');
+          resetTurnstile('login');
         } else {
           const { error: setErr } = await sb.auth.setSession(edgeData.session);
           if (setErr) {
             authError = setErr;
+            resetTurnstile('login');
           } else {
             session = edgeData.session;
+            resetTurnstile('login');
           }
         }
       } catch (invokeErr) {
         authError = new Error('No se pudo contactar con el servicio de autenticación por usuario.');
+        resetTurnstile('login');
       }
     }
 
@@ -274,6 +355,7 @@ async function supabaseLogin(identifier, password) {
     return true;
   } catch (err) {
     if (loginBtn) { loginBtn.disabled = false; loginBtn.textContent = 'Entrar en Orbit'; }
+    resetTurnstile('login');
     if (typeof toast === 'function') toast('Error inesperado al iniciar sesión');
     return false;
   }
@@ -308,22 +390,34 @@ async function supabaseSignUp(email, username, password) {
     return false;
   }
 
+  // Si Turnstile está configurado, exigir token antes de enviar registro
+  if (isTurnstileConfigured() && !turnstileSignupToken) {
+    if (typeof toast === 'function') toast('Por favor, completa la verificación de seguridad');
+    return false;
+  }
+
   const signupBtn = document.getElementById('cloudSignupBtn');
   if (signupBtn) { signupBtn.disabled = true; signupBtn.textContent = 'Creando cuenta…'; }
 
   try {
+    const signUpOptions = {
+      data: {
+        username: cleanUsername,
+        display_name: cleanUsername
+      }
+    };
+    if (turnstileSignupToken) {
+      signUpOptions.captchaToken = turnstileSignupToken;
+    }
+
     const { data, error } = await sb.auth.signUp({
       email: cleanEmail,
       password: cleanPassword,
-      options: {
-        data: {
-          username: cleanUsername,
-          display_name: cleanUsername
-        }
-      }
+      options: signUpOptions
     });
 
     if (signupBtn) { signupBtn.disabled = false; signupBtn.textContent = 'Crear mi cuenta'; }
+    resetTurnstile('signup');
 
     if (error) {
       if (typeof toast === 'function') toast(error.message || 'Error al crear la cuenta');
@@ -350,6 +444,7 @@ async function supabaseSignUp(email, username, password) {
     return true;
   } catch (err) {
     if (signupBtn) { signupBtn.disabled = false; signupBtn.textContent = 'Crear mi cuenta'; }
+    resetTurnstile('signup');
     if (typeof toast === 'function') toast('Error de conexión al registrar cuenta');
     return false;
   }
@@ -458,6 +553,10 @@ async function supabaseLogout() {
   currentCloudUser = null;
   if (typeof setOrbitActiveUser === 'function') {
     setOrbitActiveUser(null);
+  }
+
+  if (typeof resetTurnstile === 'function') {
+    resetTurnstile();
   }
 
   if (sb) {
@@ -865,6 +964,10 @@ async function initSupabaseAuth() {
 
   window.addEventListener('pageshow', handleForegroundTrigger);
   window.addEventListener('focus', handleForegroundTrigger);
+
+  if (typeof initTurnstileWidgets === 'function') {
+    initTurnstileWidgets();
+  }
 }
 
 function setAuthTab(tab) {
@@ -883,6 +986,10 @@ function setAuthTab(tab) {
     if (loginTab) loginTab.classList.add('active');
     if (signupForm) signupForm.style.display = 'none';
     if (loginForm) loginForm.style.display = 'flex';
+  }
+
+  if (typeof initTurnstileWidgets === 'function') {
+    initTurnstileWidgets();
   }
 }
 
