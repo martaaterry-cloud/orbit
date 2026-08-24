@@ -221,7 +221,7 @@ function updateAppAuthState(user, isOffline = false) {
   }
 
   const activeUserId = typeof getOrbitActiveUserId === 'function' ? getOrbitActiveUserId() : null;
-  const offline = isOffline || (typeof navigator !== 'undefined' && !navigator.onLine);
+  const offline = isOffline || (typeof navigator !== 'undefined' && navigator.onLine === false);
 
   if (user) {
     if (authScreen) authScreen.style.display = 'none';
@@ -541,10 +541,11 @@ async function syncUserProfileFromCloud(user) {
         changed = true;
       }
       if (changed && typeof save === 'function') {
-        save(d);
+        save(d, false, userId);
         if (typeof renderProfile === 'function') renderProfile(d);
         if (typeof render === 'function') render();
       }
+
     }
   } catch (e) {}
 }
@@ -852,7 +853,7 @@ function safeApplyCloudState(cloudData, cloudTimer, cloudUpdatedAt, userId) {
 // Sincronización automática al iniciar, recuperar foco o conexión
 async function autoSyncOnInit(session) {
   const sb = getSupabase();
-  if (!sb || (typeof navigator !== 'undefined' && !navigator.onLine)) {
+  if (!sb || (typeof navigator !== 'undefined' && navigator.onLine === false)) {
     updateSyncStatus('offline');
     return;
   }
@@ -979,7 +980,8 @@ async function autoSyncOnInit(session) {
 
 // Programar subida automática con debounce (1500 ms)
 function scheduleCloudSync() {
-  if (!currentCloudUser || (typeof navigator !== 'undefined' && !navigator.onLine)) return;
+  const activeUid = currentCloudUser?.id || (typeof getOrbitActiveUserId === 'function' ? getOrbitActiveUserId() : null);
+  if (!activeUid || (typeof navigator !== 'undefined' && navigator.onLine === false)) return;
   if (typeof window !== 'undefined' && window.isApplyingCloudState) return;
   if (hasConflict) return;
 
@@ -993,11 +995,12 @@ function scheduleCloudSync() {
 // Subida automática a Supabase con guardias anti-pisado
 async function performAutoUpload() {
   const sb = getSupabase();
-  if (!sb || (typeof navigator !== 'undefined' && !navigator.onLine)) {
+  if (!sb || (typeof navigator !== 'undefined' && navigator.onLine === false)) {
     updateSyncStatus('offline');
     return;
   }
   if (typeof window !== 'undefined' && window.isApplyingCloudState) return;
+
 
   const validSession = await ensureValidSession();
   if (!validSession || !validSession.user) {
@@ -1127,6 +1130,7 @@ async function performAutoUpload() {
     isSyncing = false;
 
     if (upsertErr) {
+      console.error('[AUTO_UPLOAD] Error al sincronizar con Supabase:', upsertErr);
       updateSyncStatus('error');
     } else {
       const confirmedTime = upsertData?.updated_at || nowIso;
@@ -1136,9 +1140,11 @@ async function performAutoUpload() {
       updateSyncStatus('synced');
     }
   } catch (err) {
+    console.error('[AUTO_UPLOAD] Excepción en subida:', err);
     isSyncing = false;
     updateSyncStatus('error');
   }
+
 
   if (pendingSync) {
     pendingSync = false;
