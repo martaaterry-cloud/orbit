@@ -180,6 +180,23 @@ function updateAppAuthState(user, isOffline = false) {
   }
 }
 
+function validatePasswordRequirements(password) {
+  const p = String(password || '');
+  if (p.length < 10) {
+    return 'La contraseña debe tener al menos 10 caracteres.';
+  }
+  if (!/[a-z]/.test(p)) {
+    return 'La contraseña debe incluir al menos una letra minúscula.';
+  }
+  if (!/[A-Z]/.test(p)) {
+    return 'La contraseña debe incluir al menos una letra mayúscula.';
+  }
+  if (!/[0-9]/.test(p)) {
+    return 'La contraseña debe incluir al menos un número.';
+  }
+  return null;
+}
+
 // Iniciar sesión con Email o Username
 async function supabaseLogin(identifier, password) {
   const sb = getSupabase();
@@ -194,6 +211,9 @@ async function supabaseLogin(identifier, password) {
     if (typeof toast === 'function') toast('Introduce usuario/email y contraseña');
     return false;
   }
+
+  // Capturar evidencia previa de identidad ANTES de cualquier mutación local
+  const priorKnownIdentity = typeof localStorage !== 'undefined' ? localStorage.getItem('orbitKnownUser') : null;
 
   const loginBtn = document.getElementById('cloudLoginBtn');
   if (loginBtn) { loginBtn.disabled = true; loginBtn.textContent = 'Entrando…'; }
@@ -240,8 +260,14 @@ async function supabaseLogin(identifier, password) {
     }
 
     if (typeof toast === 'function') toast('Bienvenida a Orbit');
-    if (typeof setOrbitActiveUser === 'function') setOrbitActiveUser(session.user);
-    if (typeof migrateLegacyStorageIfVerified === 'function') migrateLegacyStorageIfVerified(session.user);
+    
+    // Migrar datos legacy comprobando evidencia previa ANTES de registrar la nueva identidad activa
+    if (typeof migrateLegacyStorageIfVerified === 'function') {
+      migrateLegacyStorageIfVerified(session.user, priorKnownIdentity);
+    }
+    if (typeof setOrbitActiveUser === 'function') {
+      setOrbitActiveUser(session.user);
+    }
 
     updateAppAuthState(session.user);
     autoSyncOnInit(session);
@@ -276,8 +302,9 @@ async function supabaseSignUp(email, username, password) {
     return false;
   }
 
-  if (cleanPassword.length < 10) {
-    if (typeof toast === 'function') toast('La contraseña debe tener al menos 10 caracteres');
+  const passError = validatePasswordRequirements(cleanPassword);
+  if (passError) {
+    if (typeof toast === 'function') toast(passError);
     return false;
   }
 
@@ -305,7 +332,13 @@ async function supabaseSignUp(email, username, password) {
 
     if (data.session) {
       if (typeof toast === 'function') toast('¡Cuenta creada con éxito!');
-      if (typeof setOrbitActiveUser === 'function') setOrbitActiveUser(data.session.user);
+      const priorKnown = typeof localStorage !== 'undefined' ? localStorage.getItem('orbitKnownUser') : null;
+      if (typeof migrateLegacyStorageIfVerified === 'function') {
+        migrateLegacyStorageIfVerified(data.session.user, priorKnown);
+      }
+      if (typeof setOrbitActiveUser === 'function') {
+        setOrbitActiveUser(data.session.user);
+      }
       updateAppAuthState(data.session.user);
       autoSyncOnInit(data.session);
     } else {
@@ -350,8 +383,9 @@ async function supabaseResetPassword(email) {
 async function supabaseUpdatePassword(newPassword) {
   const sb = getSupabase();
   if (!sb || !currentCloudUser) return toast('Inicia sesión en la nube primero');
-  if (!newPassword || newPassword.length < 10) {
-    return toast('La nueva contraseña debe tener al menos 10 caracteres');
+  const passError = validatePasswordRequirements(newPassword);
+  if (passError) {
+    return toast(passError);
   }
   try {
     const { error } = await sb.auth.updateUser({ password: newPassword });

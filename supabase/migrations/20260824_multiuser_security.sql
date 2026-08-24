@@ -1,8 +1,9 @@
 -- ==========================================================================
--- ORBIT: Migración de Seguridad Multiusuario y Perfiles (v1.2.39)
+-- ORBIT: Migración de Seguridad Multiusuario y Perfiles (v1.2.40)
 -- ==========================================================================
 -- Esta migración crea la tabla de perfiles privados con usernames únicos,
--- normalización forzada a minúsculas, políticas RLS estrictas y trigger de registro.
+-- normalización forzada a minúsculas, políticas RLS estrictas, trigger de registro
+-- y backfill seguro para cuentas existentes en auth.users.
 -- ==========================================================================
 
 -- 1. Tabla de Perfiles Privados
@@ -43,12 +44,10 @@ CREATE POLICY "Users can delete own profile"
   ON public.profiles FOR DELETE
   USING (auth.uid() = user_id);
 
--- 4. Función y Trigger para normalizar username en minúsculas y actualizar updated_at
+-- 4. Función normal (sin SECURITY DEFINER) para normalizar username a minúsculas en updates
 CREATE OR REPLACE FUNCTION public.handle_profile_before_write()
 RETURNS TRIGGER
 LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
 AS $$
 BEGIN
   NEW.username := LOWER(TRIM(NEW.username));
@@ -68,7 +67,7 @@ CREATE OR REPLACE FUNCTION public.handle_new_user_signup()
 RETURNS TRIGGER
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public, auth
+SET search_path = pg_catalog, public, auth
 AS $$
 DECLARE
   v_raw_username TEXT;
@@ -87,7 +86,6 @@ BEGIN
     v_clean_username := 'user_' || SUBSTRING(NEW.id::TEXT FROM 1 FOR 8);
   END IF;
 
-  -- Insertar perfil de forma segura
   INSERT INTO public.profiles (user_id, username, display_name)
   VALUES (NEW.id, v_clean_username, COALESCE(v_display_name, v_clean_username))
   ON CONFLICT (user_id) DO NOTHING;
@@ -102,6 +100,25 @@ CREATE TRIGGER on_auth_user_created_profile
   FOR EACH ROW
   EXECUTE FUNCTION public.handle_new_user_signup();
 
--- Revocar permisos innecesarios
-REVOKE EXECUTE ON FUNCTION public.handle_profile_before_write() FROM PUBLIC, anon;
-REVOKE EXECUTE ON FUNCTION public.handle_new_user_signup() FROM PUBLIC, anon;
+-- Revocar permisos de ejecución pública a funciones del sistema
+REVOKE ALL ON FUNCTION public.handle_new_user_signup() FROM PUBLIC, anon, authenticated;
+
+-- 6. Backfill seguro para usuarios ya existentes en auth.users
+-- Crea el registro de perfil para cuentas existentes previas a la migración
+INSERT INTO public.profiles (user_id, username, display_name)
+SELECT 
+  u.id,
+  COALESCE(
+    NULLIF(LOWER(REGEXP_REPLACE(u.raw_user_meta_data->>'username', '[^a-zA-Z0-9_]', '', 'g')), ''),
+    'user_' || SUBSTRING(u.id::TEXT FROM 1 FOR 8)
+  ) AS username,
+  COALESCE(
+    NULLIF(TRIM(u.raw_user_meta_data->>'display_name'), ''),
+    NULLIF(TRIM(u.raw_user_meta_data->>'username'), ''),
+    'Viajero Orbit'
+  ) AS display_name
+FROM auth.users u
+WHERE NOT EXISTS (
+  SELECT 1 FROM public.profiles p WHERE p.user_id = u.id
+)
+ON CONFLICT (user_id) DO NOTHING;

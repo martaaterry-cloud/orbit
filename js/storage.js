@@ -50,7 +50,7 @@ function getUserStorageKey(baseKey, userId) {
 }
 
 // Migración segura de claves legacy al usuario autenticado (idempotente y con verificación estricta)
-function migrateLegacyStorageIfVerified(user) {
+function migrateLegacyStorageIfVerified(user, priorKnownIdentity) {
   if (!user || !user.id || typeof localStorage === 'undefined') return;
   
   let migrationKey = 'orbitMigrationDone:' + user.id;
@@ -70,7 +70,8 @@ function migrateLegacyStorageIfVerified(user) {
     return;
   }
 
-  let rawKnown = localStorage.getItem('orbitKnownUser');
+  // Leer evidencia previa de identidad antes de cualquier sobreescritura
+  let rawKnown = priorKnownIdentity !== undefined ? priorKnownIdentity : localStorage.getItem('orbitKnownUser');
   let isVerified = false;
   
   if (rawKnown) {
@@ -84,6 +85,18 @@ function migrateLegacyStorageIfVerified(user) {
         }
       } catch(e){}
     }
+  }
+
+  // Comprobación adicional dentro de los datos legacy de perfil si no se verificó por token
+  if (!isVerified) {
+    try {
+      let legacyData = JSON.parse(legacyV9);
+      if (legacyData?.profile?.username && user.user_metadata?.username) {
+        if (legacyData.profile.username.toLowerCase() === user.user_metadata.username.toLowerCase()) {
+          isVerified = true;
+        }
+      }
+    } catch(e){}
   }
 
   if (isVerified) {
@@ -114,7 +127,7 @@ function migrateLegacyStorageIfVerified(user) {
       console.warn('Error durante la migración legacy:', err);
     }
   } else {
-    // Si no puede verificarse, se preserva en backup no reclamado
+    // Si no puede verificarse, se preserva en backup no reclamado sin asignarlo a esta cuenta
     try {
       localStorage.setItem('orbitV9_unclaimed_backup', legacyV9);
       localStorage.removeItem('orbitV9');
