@@ -267,39 +267,6 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
   display: none;
 }
 
-.ambient-constellation {
-  position: absolute;
-  width: 140px;
-  height: 140px;
-  pointer-events: none;
-  opacity: 0.08;
-  filter: blur(0.2px);
-}
-
-.ambient-constellation.ac1 {
-  top: 15%;
-  right: 12%;
-}
-
-.ambient-constellation.ac2 {
-  bottom: 25%;
-  left: 10%;
-}
-
-.ambient-constellation svg {
-  width: 100%;
-  height: 100%;
-}
-
-.ambient-constellation line {
-  stroke: rgba(255, 255, 255, 0.5);
-  stroke-width: 0.6;
-  fill: none;
-}
-
-.ambient-constellation circle {
-  fill: #fff;
-}
 
 .universe-immersive-page .constellation-stage {
   position: absolute;
