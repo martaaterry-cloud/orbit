@@ -1703,12 +1703,14 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
 }
 
 .ceremony-stage {
-  width: 200px;
-  height: 200px;
+  width: 220px;
+  height: 220px;
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
+  transform: scale(1);
+  transition: transform 0.85s cubic-bezier(0.16, 1, 0.3, 1), filter 0.8s ease;
 }
 
 .ceremony-stage svg {
@@ -1719,27 +1721,58 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
   transition: filter 0.8s ease;
 }
 
-.ceremony-stage.illuminated svg {
-  filter: drop-shadow(0 0 16px rgba(255, 240, 190, 0.95)) drop-shadow(0 0 28px rgba(252, 194, 205, 0.6));
+.ceremony-stage.complete {
+  transform: scale(1.15);
+  filter: drop-shadow(0 0 20px rgba(255, 245, 200, 0.95)) drop-shadow(0 0 34px rgba(252, 194, 205, 0.65));
 }
 
-.ceremony-stage.illuminated .star,
-.ceremony-stage.illuminated .refined-star {
-  fill: #fffef2 !important;
-  filter: drop-shadow(0 0 8px rgba(255, 245, 210, 1)) drop-shadow(0 0 14px rgba(245, 210, 140, 0.8)) !important;
-  animation: starCelebrationPulse 1.2s ease-in-out infinite alternate;
+.ceremony-stage.complete svg {
+  filter: drop-shadow(0 0 18px rgba(255, 240, 190, 1)) drop-shadow(0 0 30px rgba(252, 194, 205, 0.7));
 }
 
-.ceremony-stage.illuminated .line,
-.ceremony-stage.illuminated .refined-line {
-  stroke: rgba(255, 240, 215, 0.95) !important;
-  stroke-width: 1.4 !important;
-  filter: drop-shadow(0 0 5px rgba(255, 225, 170, 0.8)) !important;
+.ceremony-edge {
+  stroke: rgba(255, 242, 220, 0.96);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  opacity: 0;
+  filter: drop-shadow(0 0 6px rgba(255, 235, 180, 0.85));
+  transition: stroke-dashoffset 0.45s cubic-bezier(0.2, 0.9, 0.3, 1), opacity 0.2s ease;
 }
 
-@keyframes starCelebrationPulse {
-  0% { transform: scale(1); filter: drop-shadow(0 0 6px rgba(255, 245, 210, 0.9)); }
-  100% { transform: scale(1.15); filter: drop-shadow(0 0 12px rgba(255, 245, 210, 1)); }
+.ceremony-edge.drawn {
+  opacity: 1;
+  stroke-dashoffset: 0 !important;
+}
+
+.ceremony-star-node {
+  opacity: 0;
+  transform: scale(0);
+  transition: opacity 0.2s ease;
+}
+
+.ceremony-star-node.ignited {
+  opacity: 1;
+  animation: ceremonyStarIgnite 0.55s cubic-bezier(0.175, 0.885, 0.32, 1.28) forwards;
+}
+
+.ceremony-star-node.ignited .ceremony-star-core {
+  fill: #ffffff;
+  filter: drop-shadow(0 0 8px rgba(255, 255, 255, 1)) drop-shadow(0 0 15px rgba(255, 235, 160, 0.95));
+}
+
+.ceremony-star-node.ignited .ceremony-star-glow {
+  animation: ceremonyStarGlowPulse 1.4s ease-in-out infinite alternate;
+}
+
+@keyframes ceremonyStarIgnite {
+  0% { transform: scale(0); opacity: 0; }
+  50% { transform: scale(1.55); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes ceremonyStarGlowPulse {
+  0% { transform: scale(1); opacity: 0.3; }
+  100% { transform: scale(1.35); opacity: 0.65; }
 }
 
 .ceremony-particles-layer {

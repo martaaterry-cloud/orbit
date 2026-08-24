@@ -810,54 +810,146 @@ function playConstellationAcquisitionCeremony(cDef, onComplete){
     return;
   }
 
-  // Set constellation drawing initially in discovered state
+  // Normalizar constelación para obtener puntos y aristas
+  let norm = (typeof ConstellationUtils !== 'undefined' && ConstellationUtils.normalizeConstellation)
+    ? ConstellationUtils.normalizeConstellation(cDef)
+    : cDef;
+
+  let pts = norm.pts || (norm.stars ? norm.stars.map(s => [s.x, s.y]) : []);
+  let edges = norm.edges || [];
+  let N = pts.length;
+
+  if(titleEl) titleEl.textContent = norm.name;
+
+  // Fondo de micro-estrellas ambientales
+  let ambientStars = [
+    [12, 18, 0.8, 0.25], [88, 15, 1.0, 0.3], [10, 75, 0.7, 0.2],
+    [90, 80, 0.9, 0.28], [50, 92, 0.8, 0.22], [82, 45, 0.6, 0.18],
+    [18, 48, 0.7, 0.2], [65, 10, 0.9, 0.26]
+  ].map(([cx, cy, r, op]) => `<circle class="ambient-sky-star" cx="${cx}%" cy="${cy}%" r="${r}" opacity="${op}"/>`).join('');
+
+  // Aristas guía tenues
+  let ghostLinesHtml = edges.map(([a, b]) => {
+    let p1 = pts[a] || [0, 0];
+    let p2 = pts[b] || [0, 0];
+    return `<line class="ghost-line" x1="${p1[0]}%" y1="${p1[1]}%" x2="${p2[0]}%" y2="${p2[1]}%" opacity="0.14"/>`;
+  }).join('');
+
+  // Aristas activas con stroke-dashoffset animable
+  let linesHtml = edges.map(([a, b], idx) => {
+    let p1 = pts[a] || [0, 0];
+    let p2 = pts[b] || [0, 0];
+    let len = Math.hypot(p2[0] - p1[0], p2[1] - p1[1]);
+    return `<line id="ceremonyEdge${idx}" class="ceremony-edge" x1="${p1[0]}%" y1="${p1[1]}%" x2="${p2[0]}%" y2="${p2[1]}%" style="stroke-dasharray:${len.toFixed(2)}; stroke-dashoffset:${len.toFixed(2)};" />`;
+  }).join('');
+
+  // Estrellas guía tenues
+  let ghostStarsHtml = pts.map(p => `<circle class="ghost-star" cx="${p[0]}%" cy="${p[1]}%" r="2.0" opacity="0.22"/>`).join('');
+
+  // Nodos de estrellas ceremoniales con núcleo y resplandor
+  let starsHtml = pts.map((p, i) => {
+    let isMain = (norm.id === 'lyra' && i === 0);
+    let r = isMain ? 3.5 : 2.8;
+    return `
+      <g id="ceremonyStar${i}" class="ceremony-star-node" style="transform-origin:${p[0]}% ${p[1]}%;">
+        <circle class="ceremony-star-glow" cx="${p[0]}%" cy="${p[1]}%" r="${r * 2.4}" opacity="0.3" fill="#ffe599" />
+        <circle class="ceremony-star-core" cx="${p[0]}%" cy="${p[1]}%" r="${r}" fill="#ffffff" />
+      </g>
+    `;
+  }).join('');
+
   stage.className = 'ceremony-stage';
-  stage.innerHTML = constellationSvg(cDef, false, 1.0);
-  if(titleEl) titleEl.textContent = cDef.name;
-  
-  // Clear old particles
+  stage.innerHTML = `<svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">${ambientStars}${ghostLinesHtml}${ghostStarsHtml}${linesHtml}${starsHtml}</svg>`;
+
   if(particlesLayer) particlesLayer.innerHTML = '';
 
-  // Show modal
+  // 1. Mostrar modal (Fase 1: Entrada y centrado)
   modal.style.display = 'flex';
   void modal.offsetWidth;
   modal.classList.add('active');
 
-  // Spawn stardust particles after 200ms
-  setTimeout(() => {
+  let timeouts = [];
+  function schedule(fn, delay){
+    let t = setTimeout(fn, delay);
+    timeouts.push(t);
+  }
+
+  // 2. Encendido secuencial estrella por estrella (Fase 2) y trazado de aristas (Fase 3)
+  let starInterval = Math.max(180, Math.min(270, Math.floor(1200 / Math.max(1, N))));
+  let starIgnitionTimes = [];
+
+  for(let i = 0; i < N; i++){
+    let ignTime = 350 + i * starInterval;
+    starIgnitionTimes.push(ignTime);
+
+    schedule(() => {
+      let starEl = document.getElementById(`ceremonyStar${i}`);
+      if(starEl) starEl.classList.add('ignited');
+
+      // Micro destello de partículas en la posición de cada estrella
+      if(particlesLayer && pts[i]){
+        let px = pts[i][0];
+        let py = pts[i][1];
+        let pEl = document.createElement('span');
+        pEl.className = 'stardust-particle';
+        pEl.style.left = px + '%';
+        pEl.style.top = py + '%';
+        pEl.style.width = '6px';
+        pEl.style.height = '6px';
+        pEl.style.background = i % 2 === 0 ? '#fff9db' : '#fcc2cd';
+        pEl.style.boxShadow = '0 0 10px #ffffff';
+        pEl.style.setProperty('--dx', (Math.random() * 26 - 13) + 'px');
+        pEl.style.setProperty('--dy', (Math.random() * 26 - 13) + 'px');
+        particlesLayer.appendChild(pEl);
+      }
+    }, ignTime);
+  }
+
+  // Trazar aristas progresivamente en cuanto sus estrellas de origen y destino estén encendidas
+  edges.forEach(([a, b], idx) => {
+    let drawTime = Math.max(starIgnitionTimes[a] || 350, starIgnitionTimes[b] || 350) + 70;
+    schedule(() => {
+      let edgeEl = document.getElementById(`ceremonyEdge${idx}`);
+      if(edgeEl) edgeEl.classList.add('drawn');
+    }, drawTime);
+  });
+
+  // 3. Climax final (Fase 4): pulso de brillo, estallido de polvo de estrellas y ampliación suave (scale 1.15)
+  let finishTime = 350 + N * starInterval + 260;
+
+  schedule(() => {
+    stage.classList.add('illuminated', 'complete');
+    
+    // Partículas estelares de celebración
     if(particlesLayer){
-      let count = 16;
+      let count = 18;
       let html = '';
       for(let i = 0; i < count; i++){
         let angle = (i / count) * 2 * Math.PI + (Math.random() * 0.4 - 0.2);
-        let dist = 60 + Math.random() * 80;
+        let dist = 65 + Math.random() * 80;
         let dx = Math.cos(angle) * dist + 'px';
         let dy = Math.sin(angle) * dist + 'px';
-        let size = Math.random() * 3 + 2;
-        let delay = Math.random() * 0.25;
+        let size = Math.random() * 3.5 + 2;
+        let delay = Math.random() * 0.22;
         let color = i % 2 === 0 ? '#fff5cc' : '#fcc2cd';
-        html += `<span class="stardust-particle" style="left:50%; top:45%; width:${size}px; height:${size}px; background:${color}; box-shadow:0 0 8px ${color}; --dx:${dx}; --dy:${dy}; animation-delay:${delay}s;"></span>`;
+        html += `<span class="stardust-particle" style="left:50%; top:48%; width:${size}px; height:${size}px; background:${color}; box-shadow:0 0 10px ${color}; --dx:${dx}; --dy:${dy}; animation-delay:${delay}s;"></span>`;
       }
-      particlesLayer.innerHTML = html;
+      particlesLayer.innerHTML += html;
     }
-  }, 220);
+  }, finishTime);
 
-  // Illuminate constellation progressively at 450ms
-  setTimeout(() => {
-    stage.innerHTML = constellationSvg(cDef, true, 1.0);
-    stage.classList.add('illuminated');
-  }, 450);
+  // 4. Mantener la constelación completa antes de salir suavemente (Fase 5)
+  let totalHoldTime = finishTime + 1200;
 
-  // Close ceremony after 1.8s
-  setTimeout(() => {
+  schedule(() => {
     modal.classList.remove('active');
     setTimeout(() => {
       modal.style.display = 'none';
       if(particlesLayer) particlesLayer.innerHTML = '';
       stage.className = 'ceremony-stage';
       if(typeof onComplete === 'function') onComplete();
-    }, 350);
-  }, 1800);
+    }, 380);
+  }, totalHoldTime);
 }
 
 function guardarConstelacion(id, cost = 1){
