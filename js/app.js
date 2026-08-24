@@ -508,8 +508,8 @@ function renderUniverse(d){
               <svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" style="width:32px; height:32px;"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
             </div>
             <div class="sky-locked-title">Cielo sellado</div>
-            <p class="sky-locked-desc">Esta región del firmamento aún no ha sido cartografiada.<br>Desbloquéala en la <strong>Nave Espacial</strong>.</p>
-            <button class="btn btn-soft btn-sm" style="font-size:10px; padding:6px 16px; border-radius:99px; margin-top:4px;" onclick="openShipModal(); setShipTab('regiones');">Ir a Exploración</button>
+            <p class="sky-locked-desc">Esta región del firmamento aún no ha sido cartografiada.<br>Desbloquéala en el <strong>Observatorio Terrestre</strong>.</p>
+            <button class="btn btn-soft btn-sm" style="font-size:10px; padding:6px 16px; border-radius:99px; margin-top:4px;" onclick="openObservatoryModal(); setObservatoryTab('regiones');">Ir a Exploración</button>
           </div>
         </div>
       `;
@@ -598,10 +598,10 @@ function renderUniverse(d){
             <div class="atlas-folio-body">
               <div class="atlas-chapter-title-tag">CAPÍTULO ${ch.roman}</div>
               <div class="atlas-chapter-name">${esc(ch.name.toUpperCase().split('').join(' '))}</div>
-              <p class="atlas-folio-desc">Región aún no cartografiada.<br>Desbloquea la región <strong>${regName}</strong> desde la nave espacial para abrir este capítulo.</p>
+              <p class="atlas-folio-desc">Región aún no cartografiada.<br>Desbloquea la región <strong>${regName}</strong> desde el Observatorio para abrir este capítulo.</p>
             </div>
             <div class="atlas-folio-footer">
-              <button class="btn btn-soft" style="font-size:10px; padding:6px 16px;" onclick="closeModal('constellationBookModal'); openShipModal(); setShipTab('regiones');">Ir a Exploración</button>
+              <button class="btn btn-soft" style="font-size:10px; padding:6px 16px;" onclick="closeModal('constellationBookModal'); openObservatoryModal(); setObservatoryTab('regiones');">Ir al Observatorio</button>
             </div>
           </div>
           <div class="atlas-fold-shade"></div>
@@ -724,87 +724,159 @@ function renderUniverse(d){
     initAtlasPageTurn(carousel);
   }
  
- // Render Ship Level & Status
- const shipLevels = [
-   { level: 0, name: 'Navegación orbital', cost: 0 },
-   { level: 1, name: 'Sistema de aproximación', cost: 5 },
-   { level: 2, name: 'Cartografía estelar', cost: 10 },
-   { level: 3, name: 'Navegación profunda', cost: 15 },
-   { level: 4, name: 'Salto interestelar', cost: 20 }
- ];
- 
- const destinations = [
-   { name: 'Luna', reqLevel: 0, desc: 'Satélite natural terrestre.' },
-   { name: 'Venus', reqLevel: 1, desc: 'Atmósfera densa e infierno de calor.' },
-   { name: 'Marte', reqLevel: 1, desc: 'El planeta rojo y desértico.' },
-   { name: 'Júpiter', reqLevel: 2, desc: 'Gigante gaseoso con su gran mancha roja.' },
-   { name: 'Saturno', reqLevel: 2, desc: 'Señor de los anillos.' },
-   { name: 'Europa', reqLevel: 3, desc: 'Luna helada con océano subterráneo.' },
-   { name: 'Titán', reqLevel: 4, desc: 'Luna con lagos de metano líquido.' }
- ];
- 
- const regions = [
-   { id: 'cielo-1', name: 'Primer cielo', cost: 0, desc: 'El cielo visible a simple vista.' },
-   { id: 'zodiaco', name: 'Zodiaco', cost: 5, desc: 'Las 12 constelaciones del cinturón solar.' },
-   { id: 'orion', name: 'Cielo de invierno', cost: 10, desc: 'Estrellas brillantes de las noches frías.' },
-   { id: 'profundo', name: 'Espacio profundo', cost: 15, desc: 'Galaxias externas y horizontes lejanos.' }
- ];
- 
- let currentLvl = d.shipLevel || 0;
- let nextLvl = shipLevels.find(l => l.level === currentLvl + 1);
- let shipHtml = `
-   <div class="card" style="padding:15px; background:var(--soft); border:1px solid var(--rose2);">
-     <small style="text-transform:uppercase; font-size:9px; color:var(--muted); font-weight:700; letter-spacing:0.05em;">Rango de la nave</small>
-     <h3 style="margin:5px 0; font-family:Georgia,serif; font-size:18px; color:var(--wine);">${shipLevels[currentLvl].name}</h3>
-     ${nextLvl ? `
-       <p style="font-size:11px; color:var(--muted); margin: 5px 0 10px;">Siguiente nivel: <strong>${nextLvl.name}</strong></p>
-       <button class="btn btn-main btn-wide" onclick="upgradeShip(${nextLvl.level}, ${nextLvl.cost})">Mejorar nave · ${nextLvl.cost} estrellas</button>
-     ` : `
-       <p style="font-size:11px; color:green; margin:5px 0 0 0; font-weight:700;">Nivel máximo alcanzado</p>
-     `}
-   </div>
- `;
- let shipLevelStatusEl = document.getElementById('shipLevelStatus');
- if (shipLevelStatusEl) shipLevelStatusEl.innerHTML = shipHtml;
- 
- let destHtml = '<h4 style="margin: 15px 3px 10px; font-size: 11px; text-transform: uppercase; color:var(--wine); letter-spacing:0.05em;">Destinos orbitales</h4>';
- destinations.forEach(dest => {
-   let unlocked = currentLvl >= dest.reqLevel;
-   destHtml += `
-     <div class="card" style="padding:12px; margin-bottom:8px; opacity: ${unlocked ? 1 : 0.6}; border: 1px solid ${unlocked ? 'var(--line)' : 'dashed var(--muted)'}; display: flex; flex-direction: column; gap: 4px;">
-       <div style="display:flex; justify-content:space-between; align-items:center;">
-         <strong style="font-size:13px; color:${unlocked ? 'var(--ink)' : 'var(--muted)'};">${dest.name}</strong>
-         <span style="font-size:9px; font-weight:700; color:${unlocked ? 'green' : 'var(--wine)'};">
-           ${unlocked ? 'Disponible' : 'Requiere ' + shipLevels[dest.reqLevel].name}
-         </span>
-       </div>
-       <p style="font-size:10px; color:var(--muted); margin: 0;">${dest.desc}</p>
-     </div>
-   `;
- });
- let shipDestinationsEl = document.getElementById('shipDestinations');
- if (shipDestinationsEl) shipDestinationsEl.innerHTML = destHtml;
- 
- // Render Regions
- let regHtml = '';
- regions.forEach(reg => {
-   let unlocked = d.unlockedRegions && d.unlockedRegions.includes(reg.id);
-   regHtml += `
-     <div class="card" style="padding:12px; margin-bottom:8px; border: 1px solid ${unlocked ? 'var(--line)' : 'dashed var(--rose2)'}; display: flex; flex-direction: column; gap: 4px;">
-       <div style="display:flex; justify-content:space-between; align-items:center;">
-         <strong style="font-size:13px; color:var(--ink);">${reg.name}</strong>
-         ${unlocked ? `
-           <span style="font-size:10px; font-weight:700; color:green;">Desbloqueada</span>
-         ` : `
-           <button class="btn btn-main" style="padding: 4px 8px; font-size: 9px; border-radius: 8px;" onclick="unlockRegion('${reg.id}', ${reg.cost})">Desbloquear · ${reg.cost} estrellas</button>
-         `}
-       </div>
-       <p style="font-size:10px; color:var(--muted); margin: 0;">${reg.desc}</p>
-     </div>
-   `;
- });
- let skyRegionsEl = document.getElementById('skyRegions');
- if (skyRegionsEl) skyRegionsEl.innerHTML = regHtml;
+  // Render Observatory Level, Modular Components & Observable Regions
+  const observatoryLevels = [
+    { level: 0, name: 'Puesto de Observación', cost: 0, desc: 'Instrumental óptico de campo y cartas celestes básicas.' },
+    { level: 1, name: 'Refractor Óptico de Precisión', cost: 5, desc: 'Lentes apocromáticas de alta definición y montura de precisión.' },
+    { level: 2, name: 'Estación Astrofotográfica', cost: 10, desc: 'Sensor digital de alta resolución y seguimiento sideral motorizado.' },
+    { level: 3, name: 'Observatorio de Alta Montaña', cost: 15, desc: 'Cúpula giratoria automatizada y atmósfera límpida.' },
+    { level: 4, name: 'Complejo de Espacio Profundo', cost: 20, desc: 'Óptica reflectora segmentada y cartografía espectral total.' }
+  ];
+
+  const observatoryComponents = [
+    {
+      id: 'telescope',
+      icon: '🔭',
+      name: 'Telescopio Principal',
+      desc: 'Capta la luz tenue de estrellas y constelaciones lejanas.',
+      levels: [
+        'Refractor básico (70mm)',
+        'Refractor apocromático ED (120mm)',
+        'Reflector Newtoniano f/4 (200mm)',
+        'Ritchey-Chrétien de cuarzo (350mm)',
+        'Espejo parabólico segmentado (600mm)'
+      ]
+    },
+    {
+      id: 'mount',
+      icon: '⚙️',
+      name: 'Montura y Seguimiento',
+      desc: 'Compensa la rotación de la Tierra para mantener fijas las figuras celestes.',
+      levels: [
+        'Trípode altacimutal manual',
+        'Montura ecuatorial con mandos finos',
+        'Sistema GoTo de alineación estelar',
+        'Seguimiento sideral automatizado',
+        'Tracción directa óptica de precisión absoluta'
+      ]
+    },
+    {
+      id: 'sensors',
+      icon: '📷',
+      name: 'Sensores y Cámara',
+      desc: 'Captura y procesa los fotones estelares revelando figuras cósmicas.',
+      levels: [
+        'Oculares de observación directa',
+        'Ocular gran angular iluminado',
+        'Sensor CMOS astronómico digital',
+        'Cámara espectral refrigerada (-20°C)',
+        'Matriz fotométrica cuántica de banda ultra-estrecha'
+      ]
+    },
+    {
+      id: 'dome',
+      icon: '🏛️',
+      name: 'Cúpula y Estación',
+      desc: 'Protección ambiental y aislamiento contra turbulencias térmicas terrestres.',
+      levels: [
+        'Plataforma de campo abierta',
+        'Caseta protectora con techo deslizante',
+        'Cúpula giratoria con compuerta',
+        'Domo automatizado con sellado térmico',
+        'Complejo geodésico con climatización pasiva'
+      ]
+    },
+    {
+      id: 'cartography',
+      icon: '📜',
+      name: 'Cartografía Celeste',
+      desc: 'Registro astrométrico de posiciones, estrellas guía y aristas del firmamento.',
+      levels: [
+        'Planisferio astronómico básico',
+        'Atlas estelar de constelaciones boreales',
+        'Catálogo astrométrico digitalizado',
+        'Base de datos fotométrica de cielo profundo',
+        'Red de coordenadas cósmicas estandarizada'
+      ]
+    }
+  ];
+
+  const regions = [
+    { id: 'cielo-1', name: 'Primer cielo', cost: 0, desc: 'El cielo boreal visible a simple vista.' },
+    { id: 'zodiaco', name: 'Zodiaco', cost: 5, desc: 'Las 12 constelaciones del cinturón solar.' },
+    { id: 'orion', name: 'Cielo de invierno', cost: 10, desc: 'Estrellas brillantes de las noches frías.' },
+    { id: 'profundo', name: 'Espacio profundo', cost: 15, desc: 'Galaxias externas y horizontes lejanos.' }
+  ];
+
+  let currentLvl = d.observatoryLevel !== undefined ? d.observatoryLevel : (d.shipLevel || 0);
+  let nextLvl = observatoryLevels.find(l => l.level === currentLvl + 1);
+
+  let observatoryHeaderHtml = `
+    <div class="card" style="padding:16px; background:linear-gradient(135deg, rgba(40, 26, 68, 0.75), rgba(18, 12, 32, 0.9)); border:1px solid var(--rose2);">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <small style="text-transform:uppercase; font-size:9px; color:var(--rose2); font-weight:700; letter-spacing:0.08em;">✦ Estación Terrestre · Rango ${currentLvl}</small>
+        <span style="font-size:10px; color:rgba(255,255,255,0.7); font-weight:600;">Nivel ${currentLvl}/4</span>
+      </div>
+      <h3 style="margin:6px 0 4px; font-family:Georgia,serif; font-size:19px; color:#ffffff; text-shadow:0 0 10px rgba(252,194,205,0.5);">${observatoryLevels[currentLvl].name}</h3>
+      <p style="font-size:11px; color:rgba(247,244,235,0.75); margin:0 0 12px; line-height:1.45;">${observatoryLevels[currentLvl].desc}</p>
+      ${nextLvl ? `
+        <div style="border-top:1px solid rgba(255,255,255,0.08); padding-top:10px; margin-top:6px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <span style="font-size:11px; color:rgba(255,255,255,0.85);">Siguiente mejora: <strong>${nextLvl.name}</strong></span>
+          </div>
+          <button class="btn btn-main btn-wide" onclick="upgradeObservatory(${nextLvl.level}, ${nextLvl.cost})">Mejorar Observatorio · ${nextLvl.cost} estrellas ★</button>
+        </div>
+      ` : `
+        <div style="border-top:1px solid rgba(255,255,255,0.08); padding-top:8px; margin-top:6px;">
+          <span style="font-size:11px; color:#95dfb0; font-weight:600;">✦ Observatorio en su máximo nivel de resolución</span>
+        </div>
+      `}
+    </div>
+  `;
+  let obsLevelEl = document.getElementById('observatoryLevelStatus') || document.getElementById('shipLevelStatus');
+  if (obsLevelEl) obsLevelEl.innerHTML = observatoryHeaderHtml;
+
+  let compHtml = '<h4 style="margin: 18px 2px 10px; font-size: 11px; text-transform: uppercase; color:var(--rose2); letter-spacing:0.08em;">Componentes del Observatorio</h4>';
+  observatoryComponents.forEach(comp => {
+    let currentCap = comp.levels[Math.min(currentLvl, comp.levels.length - 1)];
+    compHtml += `
+      <div class="card" style="padding:12px 14px; margin-bottom:8px; display:flex; flex-direction:column; gap:4px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-radius:12px;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span style="font-size:16px;">${comp.icon}</span>
+            <strong style="font-size:13px; color:#ffffff;">${comp.name}</strong>
+          </div>
+          <span style="font-size:9px; font-weight:700; color:var(--rose2); background:rgba(252,194,205,0.12); padding:2px 7px; border-radius:6px; border:1px solid rgba(252,194,205,0.25);">
+            ${currentCap}
+          </span>
+        </div>
+        <p style="font-size:10.5px; color:rgba(247,244,235,0.65); margin:2px 0 0 24px; line-height:1.4;">${comp.desc}</p>
+      </div>
+    `;
+  });
+  let obsCompEl = document.getElementById('observatoryComponents') || document.getElementById('shipDestinations');
+  if (obsCompEl) obsCompEl.innerHTML = compHtml;
+
+  // Render Regions
+  let regHtml = '';
+  regions.forEach(reg => {
+    let unlocked = d.unlockedRegions && d.unlockedRegions.includes(reg.id);
+    regHtml += `
+      <div class="card" style="padding:14px; margin-bottom:10px; border: 1px solid ${unlocked ? 'rgba(255,255,255,0.12)' : 'dashed var(--rose2)'}; background: ${unlocked ? 'rgba(255,255,255,0.03)' : 'rgba(252,194,205,0.04)'}; display: flex; flex-direction: column; gap: 4px; border-radius:12px;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <strong style="font-size:13px; color:#ffffff;">${reg.name}</strong>
+          ${unlocked ? `
+            <span style="font-size:10px; font-weight:700; color:#95dfb0; display:flex; align-items:center; gap:4px;">✦ Cielo explorado</span>
+          ` : `
+            <button class="btn btn-main" style="padding: 5px 12px; font-size: 10px; border-radius: 8px;" onclick="unlockRegion('${reg.id}', ${reg.cost})">Desbloquear · ${reg.cost} ★</button>
+          `}
+        </div>
+        <p style="font-size:11px; color:rgba(247,244,235,0.65); margin: 3px 0 0;">${reg.desc}</p>
+      </div>
+    `;
+  });
+  let skyRegionsEl = document.getElementById('skyRegions');
+  if (skyRegionsEl) skyRegionsEl.innerHTML = regHtml;
 }
 
 function playConstellationAcquisitionCeremony(cDef, onComplete){
@@ -1016,29 +1088,46 @@ function verFichaConstelacion(id){
   document.getElementById('constellationDetailModal').classList.add('show');
 }
 
-function setShipTab(tab){
-  let secNave = document.getElementById('shipSecNave');
-  let secRegiones = document.getElementById('shipSecRegiones');
-  let btnTabNave = document.getElementById('btnTabNave');
-  let btnTabRegiones = document.getElementById('btnTabRegiones');
-  if(secNave) secNave.style.display = tab === 'nave' ? 'block' : 'none';
-  if(secRegiones) secRegiones.style.display = tab === 'regiones' ? 'block' : 'none';
-  if(btnTabNave) btnTabNave.classList.toggle('active', tab === 'nave');
-  if(btnTabRegiones) btnTabRegiones.classList.toggle('active', tab === 'regiones');
+function setObservatoryTab(tab){
+  let secObs = document.getElementById('observatorySecMain') || document.getElementById('shipSecNave');
+  let secReg = document.getElementById('observatorySecRegiones') || document.getElementById('shipSecRegiones');
+  let btnTabObs = document.getElementById('btnTabObservatorio') || document.getElementById('btnTabNave');
+  let btnTabReg = document.getElementById('btnTabRegiones');
+  if(secObs) secObs.style.display = (tab === 'observatorio' || tab === 'nave') ? 'block' : 'none';
+  if(secReg) secReg.style.display = tab === 'regiones' ? 'block' : 'none';
+  if(btnTabObs) btnTabObs.classList.toggle('active', tab === 'observatorio' || tab === 'nave');
+  if(btnTabReg) btnTabReg.classList.toggle('active', tab === 'regiones');
 }
 
-function upgradeShip(level, cost){
+function upgradeObservatory(level, cost){
   let d = load();
   if (Number(d.wallet || 0) < cost) {
     return toast('No tienes suficientes estrellas en tu cesta.');
   }
   d.wallet = Number(d.wallet || 0) - cost;
   d.bank = d.wallet;
+  d.observatoryLevel = level;
   d.shipLevel = level;
   save(d);
-  const shipNames = ['Navegación orbital', 'Sistema de aproximación', 'Cartografía estelar', 'Navegación profunda', 'Salto interestelar'];
-  toast(`Nave mejorada a ${shipNames[level] || level}`);
+  const obsNames = [
+    'Puesto de Observación',
+    'Refractor Óptico de Precisión',
+    'Estación Astrofotográfica',
+    'Observatorio de Alta Montaña',
+    'Complejo de Espacio Profundo'
+  ];
+  toast(`✦ Observatorio mejorado a: ${obsNames[level] || level}`);
   render();
+}
+
+// Aliases para compatibilidad
+function setShipTab(tab){ setObservatoryTab(tab === 'nave' ? 'observatorio' : tab); }
+function upgradeShip(level, cost){ upgradeObservatory(level, cost); }
+function openShipModal(){ openObservatoryModal(); }
+
+function openObservatoryModal(){
+  let modal = document.getElementById('observatoryModal') || document.getElementById('shipModal');
+  if(modal) modal.classList.add('show');
 }
 
 function unlockRegion(id, cost){
@@ -1837,7 +1926,8 @@ function cargarEstadoPrueba(){
   d.bank = 9999;
   d.lifetimeStars = Math.max(Number(d.lifetimeStars || 0), 9999);
   d.unlockedRegions = ['cielo-1', 'zodiaco', 'orion', 'profundo'];
-  d.shipLevel = Math.max(Number(d.shipLevel || 0), 4);
+  d.observatoryLevel = 4;
+  d.shipLevel = 4;
   // Mantener d.claimed intacto sin pre-comprar todas las constelaciones para probar compras y ceremonias
   if (!d.claimed) d.claimed = {};
   
@@ -1864,6 +1954,7 @@ function restablecerEstadoPrueba(){
   cleanD.bank = 0;
   cleanD.lifetimeStars = 0;
   cleanD.claimed = {};
+  cleanD.observatoryLevel = 0;
   cleanD.shipLevel = 0;
   
   save(cleanD);

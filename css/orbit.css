@@ -704,6 +704,7 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
 }
 
 /* Modales Oscuros del Universo (Cristal Ahumado) */
+#observatoryModal .sheet,
 #shipModal .sheet,
 #constellationBookModal .sheet,
 #universeDetailsModal .sheet,
@@ -718,11 +719,13 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
   color: #f7f4eb !important;
 }
 
+#observatoryModal .sheet h3,
 #shipModal .sheet h3,
 #constellationBookModal .sheet h3,
 #universeDetailsModal .sheet h3,
 #constellationDetailModal .sheet h3,
 #shopModal .sheet h3,
+#observatoryModal .sheet h4,
 #shipModal .sheet h4,
 #constellationBookModal .sheet h4,
 #universeDetailsModal .sheet h4,
@@ -731,11 +734,13 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
   color: #fff !important;
 }
 
+#observatoryModal .sheet p,
 #shipModal .sheet p,
 #constellationBookModal .sheet p,
 #universeDetailsModal .sheet p,
 #constellationDetailModal .sheet p,
 #shopModal .sheet p,
+#observatoryModal .sheet small,
 #shipModal .sheet small,
 #constellationBookModal .sheet small,
 #universeDetailsModal .sheet small,
@@ -744,6 +749,7 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
   color: rgba(247, 244, 235, 0.65) !important;
 }
 
+#observatoryModal .sheet .card,
 #shipModal .sheet .card,
 #constellationBookModal .sheet .card,
 #universeDetailsModal .sheet .card,
@@ -755,6 +761,7 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
   border-radius: 14px !important;
 }
 
+#observatoryModal .sheet .card strong,
 #shipModal .sheet .card strong,
 #constellationBookModal .sheet .card strong,
 #universeDetailsModal .sheet .card strong,
@@ -763,6 +770,7 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
   color: #fff !important;
 }
 
+#observatoryModal .sheet .card small,
 #shipModal .sheet .card small,
 #constellationBookModal .sheet .card small,
 #universeDetailsModal .sheet .card small,
@@ -771,6 +779,7 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
   color: rgba(247, 244, 235, 0.55) !important;
 }
 
+#observatoryModal .sheet .btn,
 #shipModal .sheet .btn,
 #constellationBookModal .sheet .btn,
 #universeDetailsModal .sheet .btn,
@@ -779,6 +788,7 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
   border-radius: 8px !important;
 }
 
+#observatoryModal .sheet .btn-main,
 #shipModal .sheet .btn-main,
 #constellationBookModal .sheet .btn-main,
 #universeDetailsModal .sheet .btn-main,
@@ -789,6 +799,7 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
   border: 1px solid var(--rose2) !important;
 }
 
+#observatoryModal .sheet .btn-main:hover,
 #shipModal .sheet .btn-main:hover,
 #constellationBookModal .sheet .btn-main:hover,
 #universeDetailsModal .sheet .btn-main:hover,
@@ -797,6 +808,7 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
   background: #aa5966 !important;
 }
 
+#observatoryModal .sheet .btn-soft,
 #shipModal .sheet .btn-soft,
 #constellationBookModal .sheet .btn-soft,
 #universeDetailsModal .sheet .btn-soft,
@@ -807,6 +819,7 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
   border: 1px solid rgba(255, 255, 255, 0.08) !important;
 }
 
+#observatoryModal .sheet .btn-line,
 #shipModal .sheet .btn-line,
 #constellationBookModal .sheet .btn-line,
 #universeDetailsModal .sheet .btn-line,
@@ -817,6 +830,7 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
   border: 1px solid rgba(255, 255, 255, 0.15) !important;
 }
 
+#observatoryModal .sheet .btn-line:hover,
 #shipModal .sheet .btn-line:hover,
 #constellationBookModal .sheet .btn-line:hover,
 #universeDetailsModal .sheet .btn-line:hover,
@@ -826,6 +840,7 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
 }
 
 /* Modal Tabs */
+#observatoryModal .sheet .tabs button,
 #shipModal .sheet .tabs button,
 #constellationBookModal .sheet .tabs button,
 #universeDetailsModal .sheet .tabs button,
@@ -841,6 +856,7 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
   transition: all 0.2s ease !important;
 }
 
+#observatoryModal .sheet .tabs button.active,
 #shipModal .sheet .tabs button.active,
 #constellationBookModal .sheet .tabs button.active,
 #universeDetailsModal .sheet .tabs button.active,
