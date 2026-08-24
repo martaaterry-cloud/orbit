@@ -1023,9 +1023,9 @@ function renderRewardsList(d){
     if(canAfford){
       return `
         <div class="card reward" style="display:flex; flex-direction:column; gap:12px; padding:14px; margin-bottom:10px;">
-          <div style="display:flex; justify-content:space-between; align-items:baseline; padding:0 2px;">
-            <strong style="font-size:14px; font-weight:600; color:var(--ink);">${esc(r.name)}</strong>
-            <span style="font-size:12px; font-weight:700; color:var(--wine);">${r.cost} ★</span>
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px; flex-wrap:wrap; padding:0 2px;">
+            <strong style="font-size:14px; font-weight:600; color:var(--ink); flex:1 1 160px; min-width:0; word-break:break-word;">${esc(r.name)}</strong>
+            <span style="font-size:12px; font-weight:700; color:var(--wine); white-space:nowrap; flex-shrink:0;">${r.cost} ★</span>
           </div>
           <div class="swipe-to-redeem-track" data-reward-id="${r.id}">
             <div class="swipe-thumb">
@@ -1037,12 +1037,12 @@ function renderRewardsList(d){
       `;
     } else {
       return `
-        <div class="card reward" style="display:flex; justify-content:space-between; align-items:center; opacity:0.6; padding:14px; margin-bottom:10px;">
-          <div>
-            <strong style="font-size:13.5px; color:var(--ink);">${esc(r.name)}</strong>
-            <small style="display:block; color:var(--muted); font-size:11px; margin-top:3px;">${r.cost} ★ · Te faltan ${(r.cost - Number(d.wallet||0)).toFixed(1).replace('.',',')} ★</small>
+        <div class="card reward" style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; opacity:0.75; padding:14px; margin-bottom:10px;">
+          <div style="flex:1 1 160px; min-width:0;">
+            <strong style="font-size:13.5px; color:var(--ink); display:block; word-break:break-word;">${esc(r.name)}</strong>
+            <small style="display:block; color:var(--muted); font-size:11px; margin-top:3px; word-break:break-word;">${r.cost} ★ · Te faltan ${(r.cost - Number(d.wallet||0)).toFixed(1).replace('.',',')} ★</small>
           </div>
-          <span style="font-size:10px; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:0.06em;">Bloqueado</span>
+          <span style="font-size:9.5px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:0.06em; background:rgba(0,0,0,0.05); padding:4px 8px; border-radius:99px; white-space:nowrap; flex-shrink:0;">Bloqueado</span>
         </div>
       `;
     }
@@ -1247,12 +1247,12 @@ function renderNotCheckingList(d){
           <div style="width:32px; height:32px; border-radius:50%; background:var(--soft); display:grid; place-items:center; color:var(--wine); flex-shrink:0; margin-top:1px;">
             ${iconSvg}
           </div>
-          <div style="flex:1; min-width:0;">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-              <strong style="font-size:13.5px; font-weight:600; color:var(--ink); line-height:1.35;">${esc(g.name)}</strong>
-              <span style="display:inline-flex; align-items:center; color:var(--wine); opacity:0.8; margin-left:6px;"><svg class="icon" viewBox="0 0 24 24" style="width:13px; height:13px; stroke:currentColor;"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></span>
+          <div style="flex:1 1 auto; min-width:0;">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px;">
+              <strong style="font-size:13.5px; font-weight:600; color:var(--ink); line-height:1.35; word-break:break-word; min-width:0;">${esc(g.name)}</strong>
+              <span style="display:inline-flex; align-items:center; color:var(--wine); opacity:0.8; flex-shrink:0; margin-top:2px;"><svg class="icon" viewBox="0 0 24 24" style="width:13px; height:13px; stroke:currentColor;"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></span>
             </div>
-            ${g.sub ? `<small style="display:block; font-size:11px; color:var(--muted); line-height:1.4; margin-top:2px;">${esc(g.sub)}</small>` : ''}
+            ${g.sub ? `<small style="display:block; font-size:11px; color:var(--muted); line-height:1.4; margin-top:3px; word-break:break-word;">${esc(g.sub)}</small>` : ''}
           </div>
         </div>
       `;
@@ -1264,16 +1264,16 @@ function renderNotCheckingList(d){
       let iconSvg = icons[g.icon] || icons.search || `<svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m4.9 4.9 14.2 14.2"/></svg>`;
       return `
         <div class="card goal" style="padding:14px; margin-bottom:10px;">
-          <div class="goal-top" style="display:grid; grid-template-columns:36px 1fr; gap:10px; align-items:center;">
-            <div class="goal-icon">${iconSvg}</div>
-            <div>
-              <div class="goal-title">${esc(g.name)}</div>
-              ${g.sub ? `<div class="goal-sub">${esc(g.sub)}</div>` : ''}
+          <div class="goal-top" style="display:grid; grid-template-columns:36px 1fr; gap:10px; align-items:flex-start;">
+            <div class="goal-icon" style="margin-top:1px;">${iconSvg}</div>
+            <div style="min-width:0;">
+              <div class="goal-title" style="word-break:break-word; line-height:1.35;">${esc(g.name)}</div>
+              ${g.sub ? `<div class="goal-sub" style="word-break:break-word; margin-top:3px;">${esc(g.sub)}</div>` : ''}
             </div>
           </div>
-          <div class="goal-actions" style="display:flex; gap:8px; margin-top:12px; padding-left:46px;">
-            <button class="btn btn-soft" onclick="openUrge('${g.id}')">Tengo ganas de mirar</button>
-            <button class="btn btn-line" onclick="slip('${g.id}')">Lo he comprobado</button>
+          <div class="goal-actions" style="display:flex; gap:8px; flex-wrap:wrap; margin-top:12px;">
+            <button class="btn btn-soft" onclick="openUrge('${g.id}')" style="flex:1 1 140px; min-width:120px; text-align:center;">Tengo ganas de mirar</button>
+            <button class="btn btn-line" onclick="slip('${g.id}')" style="flex:1 1 120px; min-width:110px; text-align:center;">Lo he comprobado</button>
           </div>
         </div>
       `;
@@ -1298,7 +1298,7 @@ function render(){
  drawOrbit(d);
  populatePillarSelect(d);
  orbitItems.innerHTML=(d.orbit||[]).length?d.orbit.map(o=>{
-   let contentHtml=`<div style="flex:1;"><strong>${esc(o.name)}</strong><small>${esc(o.meaning||'')}</small></div>`;
+   let contentHtml=`<div style="flex:1 1 auto; min-width:0;"><strong style="display:block; word-break:break-word;">${esc(o.name)}</strong><small style="display:block; word-break:break-word; margin-top:2px;">${esc(o.meaning||'')}</small></div>`;
    return wrapSwipe(contentHtml, `removeOrbit('${o.id}')`, 'good-card', `openEditOrbitItem('${o.id}')`);
  }).join(''):'<div class="empty" style="padding:14px; text-align:center; font-size:12px; color:var(--muted);">No tienes pilares guardados todavía.</div>';
  
@@ -1306,7 +1306,7 @@ function render(){
   todayGoodThings.innerHTML=todays.length?'<div class="section-head"><h2>Hoy también pasó esto</h2></div>'+todays.map(g=>{
     let p=g.pillarId?(d.orbit||[]).find(o=>o&&o.id===g.pillarId):null;
     let photoHtml=g.photoPath?`<div class="good-photo-thumb-wrap" data-photo-path="${esc(g.photoPath)}" onclick="event.stopPropagation(); previewGoodPhoto('${esc(g.photoPath)}')"><div class="good-photo-loading"></div><img class="good-photo-thumb" style="display:none;" alt="Foto del recuerdo"></div>`:'';
-    let contentHtml=`<div class="good-card-row"><div class="good-card-text"><strong>${esc(g.text)}</strong>${p?`<small style="color:var(--wine); font-weight:600; margin-bottom:2px;">✦ ${esc(p.name)}</small>`:''}<small>${esc(g.meaning||'')}</small></div>${photoHtml}</div>`;
+    let contentHtml=`<div class="good-card-row" style="display:flex; justify-content:space-between; align-items:center; gap:10px; width:100%; min-width:0;"><div class="good-card-text" style="flex:1 1 auto; min-width:0;"><strong style="display:block; word-break:break-word;">${esc(g.text)}</strong>${p?`<small style="color:var(--wine); font-weight:600; margin-bottom:2px; display:block; word-break:break-word;">✦ ${esc(p.name)}</small>`:''}<small style="display:block; word-break:break-word;">${esc(g.meaning||'')}</small></div>${photoHtml}</div>`;
     return wrapSwipe(contentHtml, `deleteGood('${g.id}')`, 'good-card');
   }).join(''):'';
   loadPhotoThumbnails();
@@ -1333,20 +1333,16 @@ function buyStellarWindow(){
   if(isWindowActive){
     return toast('Ya tienes una Ventana Estelar activa.');
   }
-  if(Number(d.wallet||0)<2){
-    return toast('Necesitas 2 estrellas disponibles en tu cesta.');
+  let wallet=Number(d.wallet||0);
+  if(wallet<2){
+    return toast('Necesitas al menos 2 estrellas para activar la Ventana Estelar.');
   }
-  if(!confirm('¿Activar Ventana Estelar por 2 estrellas?\n\nMultiplicador x1.5 en acciones de esfuerzo (impulsos y rachas) durante 2 horas. Máximo +2.0 ★ extra.')){
-    return;
-  }
-  d.wallet=Math.round((Number(d.wallet||0)-2)*100)/100;
+  d.wallet=wallet-2;
   d.bank=d.wallet;
-  if(!Array.isArray(d.boosters.active))d.boosters.active=[];
   d.boosters.active.push({
     id:'stellar-window',
-    name:'Ventana Estelar',
     multiplier:1.5,
-    startedAt:Date.now(),
+    activatedAt:Date.now(),
     expiresAt:Date.now()+2*HOUR,
     maxExtraStars:2.0,
     extraStarsGenerated:0.0,
@@ -1377,46 +1373,46 @@ function renderShopBoosters(d){
   if(activeWindow){
     let remMin=Math.max(1,Math.ceil(((activeWindow.expiresAt||now)-now)/60000));
     let remStr=remMin>=60?`${Math.floor(remMin/60)}h ${remMin%60}m`:`${remMin} min`;
-    windowStatus=`<button class="btn btn-line btn-sm" disabled style="font-size:10px; opacity:0.85; color:var(--wine);">Activa · ${remStr}</button>`;
+    windowStatus=`<button class="btn btn-line btn-sm" disabled style="font-size:10.5px; opacity:0.9; color:var(--wine); white-space:nowrap; padding:6px 10px;">Activa · ${remStr}</button>`;
   }else{
-    windowStatus=`<button class="btn ${wallet>=2?'btn-main':'btn-soft'} btn-sm" ${wallet>=2?'':'disabled'} onclick="buyStellarWindow()" style="font-size:10px;">${wallet>=2?'Activar · 2 ★':'2 ★'}</button>`;
+    windowStatus=`<button class="btn ${wallet>=2?'btn-main':'btn-soft'} btn-sm" ${wallet>=2?'':'disabled'} onclick="buyStellarWindow()" style="font-size:10.5px; white-space:nowrap; padding:6px 12px;">${wallet>=2?'Activar · 2 ★':'2 ★'}</button>`;
   }
   
   html+=`
-    <div class="card booster-card" style="padding:12px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; border: 1px solid ${activeWindow?'var(--rose2)':'var(--line)'}; background: ${activeWindow?'var(--soft)':'#fffdfb'};">
-      <div style="text-align:left; flex:1; padding-right:10px;">
-        <div style="display:flex; align-items:center; gap:6px;">
-          <strong style="font-size:12.5px; color:var(--ink);">Ventana Estelar</strong>
-          <span class="badge" style="font-size:9px; background:rgba(180,120,160,0.15); color:var(--wine); padding:2px 6px; border-radius:6px; font-weight:700;">x1.5 · 2 h</span>
+    <div class="card booster-card" style="padding:12px 14px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; border: 1px solid ${activeWindow?'var(--rose2)':'var(--line)'}; background: ${activeWindow?'var(--soft)':'#fffdfb'};">
+      <div style="text-align:left; flex:1 1 180px; min-width:0;">
+        <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+          <strong style="font-size:13px; color:var(--ink); word-break:break-word;">Ventana Estelar</strong>
+          <span class="badge" style="font-size:9.5px; background:rgba(180,120,160,0.15); color:var(--wine); padding:2px 7px; border-radius:6px; font-weight:700; white-space:nowrap;">x1.5 · 2 h</span>
         </div>
-        <p style="font-size:10.5px; color:var(--muted); margin:3px 0 0 0;">x1.5 en impulsos y racha. Máx +2 ★ extra.</p>
+        <p style="font-size:10.5px; color:var(--muted); margin:3px 0 0 0; word-break:break-word;">x1.5 en impulsos y racha. Máx +2 ★ extra.</p>
       </div>
-      <div>${windowStatus}</div>
+      <div style="flex-shrink:0; margin-left:auto;">${windowStatus}</div>
     </div>
   `;
   
   // 2. Impulso Valiente
   if(braveUrge){
     html+=`
-      <div class="card booster-card" style="padding:12px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; border: 1px solid var(--rose2); background: var(--soft);">
-        <div style="text-align:left; flex:1;">
-          <div style="display:flex; align-items:center; gap:6px;">
-            <strong style="font-size:12.5px; color:var(--wine);">✦ Impulso Valiente</strong>
-            <span class="badge" style="font-size:9px; background:var(--wine); color:#fff; padding:2px 6px; border-radius:6px; font-weight:700;">x2 en próx. impulso</span>
+      <div class="card booster-card" style="padding:12px 14px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; border: 1px solid var(--rose2); background: var(--soft);">
+        <div style="text-align:left; flex:1 1 180px; min-width:0;">
+          <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+            <strong style="font-size:13px; color:var(--wine); word-break:break-word;">✦ Impulso Valiente</strong>
+            <span class="badge" style="font-size:9.5px; background:var(--wine); color:#fff; padding:2px 7px; border-radius:6px; font-weight:700; white-space:nowrap;">x2 en próx. impulso</span>
           </div>
-          <p style="font-size:10.5px; color:var(--muted); margin:3px 0 0 0;">Disponible en inventario. Se aplicará al próximo temporizador superado.</p>
+          <p style="font-size:10.5px; color:var(--muted); margin:3px 0 0 0; word-break:break-word;">Disponible en inventario. Se aplicará al próximo temporizador superado.</p>
         </div>
       </div>
     `;
   }else{
     html+=`
-      <div class="card booster-card" style="padding:10px 12px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; border: 1px dashed var(--line); opacity:0.85;">
-        <div style="text-align:left; flex:1;">
-          <div style="display:flex; align-items:center; gap:6px;">
-            <strong style="font-size:11.5px; color:var(--ink);">Impulso Valiente (x2)</strong>
-            <span style="font-size:9.5px; color:var(--muted); font-weight:600;">${nextBraveProgress} / 3 superados</span>
+      <div class="card booster-card" style="padding:11px 14px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; border: 1px dashed var(--line); opacity:0.85;">
+        <div style="text-align:left; flex:1 1 180px; min-width:0;">
+          <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+            <strong style="font-size:12px; color:var(--ink); word-break:break-word;">Impulso Valiente (x2)</strong>
+            <span style="font-size:9.5px; color:var(--muted); font-weight:600; white-space:nowrap;">${nextBraveProgress} / 3 superados</span>
           </div>
-          <p style="font-size:10px; color:var(--muted); margin:2px 0 0 0;">Se gana cada 3 impulsos con temporizador superados.</p>
+          <p style="font-size:10.5px; color:var(--muted); margin:2px 0 0 0; word-break:break-word;">Se gana cada 3 impulsos con temporizador superados.</p>
         </div>
       </div>
     `;
@@ -1427,13 +1423,13 @@ function renderShopBoosters(d){
     let remMin=Math.max(1,Math.ceil(((activeNight.expiresAt||now)-now)/60000));
     let remStr=remMin>=60?`${Math.floor(remMin/60)}h ${remMin%60}m`:`${remMin} min`;
     html+=`
-      <div class="card booster-card" style="padding:12px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; border: 1px solid var(--rose2); background: var(--soft);">
-        <div style="text-align:left; flex:1;">
-          <div style="display:flex; align-items:center; gap:6px;">
-            <strong style="font-size:12.5px; color:var(--wine);">✦ Noche de Constancia</strong>
-            <span class="badge" style="font-size:9px; background:var(--wine); color:#fff; padding:2px 6px; border-radius:6px; font-weight:700;">x1.5 · ${remStr}</span>
+      <div class="card booster-card" style="padding:12px 14px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; border: 1px solid var(--rose2); background: var(--soft);">
+        <div style="text-align:left; flex:1 1 180px; min-width:0;">
+          <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+            <strong style="font-size:13px; color:var(--wine); word-break:break-word;">✦ Noche de Constancia</strong>
+            <span class="badge" style="font-size:9.5px; background:var(--wine); color:#fff; padding:2px 7px; border-radius:6px; font-weight:700; white-space:nowrap;">x1.5 · ${remStr}</span>
           </div>
-          <p style="font-size:10.5px; color:var(--muted); margin:3px 0 0 0;">Activo por alcanzar 7 días de racha. Máx +3 ★ extra.</p>
+          <p style="font-size:10.5px; color:var(--muted); margin:3px 0 0 0; word-break:break-word;">Activo por alcanzar 7 días de racha. Máx +3 ★ extra.</p>
         </div>
       </div>
     `;
@@ -1604,27 +1600,27 @@ function renderProfile(d){
       let ageText = '';
       if(birthInfo){
         if(birthInfo.isToday){
-          ageText = `<div style="font-size:11px; color:var(--wine); font-weight:700; margin-top:4px; display:flex; align-items:center; gap:4px;"><svg class="icon" viewBox="0 0 24 24" style="width:12px; height:12px; stroke:currentColor;"><path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8"/><path d="M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2.5 2 4 2 2-1 2-1"/><path d="M2 21h20"/><path d="M7 8v3"/><path d="M12 8v3"/><path d="M17 8v3"/><path d="M7 4h.01"/><path d="M12 4h.01"/><path d="M17 4h.01"/></svg>${birthInfo.age} años · ¡Hoy es tu cumpleaños! (+25 ★ regalo)</div>`;
+          ageText = `<div style="font-size:11px; color:var(--wine); font-weight:700; margin-top:4px; display:flex; align-items:center; gap:4px; flex-wrap:wrap; word-break:break-word;"><svg class="icon" viewBox="0 0 24 24" style="width:12px; height:12px; stroke:currentColor; flex-shrink:0;"><path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8"/><path d="M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2.5 2 4 2 2-1 2-1"/><path d="M2 21h20"/><path d="M7 8v3"/><path d="M12 8v3"/><path d="M17 8v3"/><path d="M7 4h.01"/><path d="M12 4h.01"/><path d="M17 4h.01"/></svg><span>${birthInfo.age} años · ¡Hoy es tu cumpleaños! (+25 ★)</span></div>`;
         } else {
           let bdayLabel = birthInfo.daysUntil === 1 ? 'mañana' : `en ${birthInfo.daysUntil} días`;
-          ageText = `<div style="font-size:11px; color:var(--muted); margin-top:4px; display:flex; align-items:center; gap:4px;"><svg class="icon" viewBox="0 0 24 24" style="width:12px; height:12px; stroke:currentColor;"><path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8"/><path d="M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2.5 2 4 2 2-1 2-1"/><path d="M2 21h20"/><path d="M7 8v3"/><path d="M12 8v3"/><path d="M17 8v3"/><path d="M7 4h.01"/><path d="M12 4h.01"/><path d="M17 4h.01"/></svg>${birthInfo.age} años · Próximo cumple ${bdayLabel}</div>`;
+          ageText = `<div style="font-size:11px; color:var(--muted); margin-top:4px; display:flex; align-items:center; gap:4px; flex-wrap:wrap; word-break:break-word;"><svg class="icon" viewBox="0 0 24 24" style="width:12px; height:12px; stroke:currentColor; flex-shrink:0;"><path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8"/><path d="M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2.5 2 4 2 2-1 2-1"/><path d="M2 21h20"/><path d="M7 8v3"/><path d="M12 8v3"/><path d="M17 8v3"/><path d="M7 4h.01"/><path d="M12 4h.01"/><path d="M17 4h.01"/></svg><span>${birthInfo.age} años · Cumple ${bdayLabel}</span></div>`;
         }
       }
       viewCard.innerHTML = `
         <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
-          <div style="display:flex; align-items:center; gap:14px; min-width:0;">
+          <div style="display:flex; align-items:center; gap:14px; flex:1 1 auto; min-width:0;">
             <div style="width:46px; height:46px; border-radius:50%; background:linear-gradient(135deg,#f0cfd4,#aa5966); color:white; display:grid; place-items:center; font-family:Georgia,serif; font-size:20px; font-weight:600; flex-shrink:0; box-shadow:0 4px 12px rgba(141,76,87,0.2);">
               ${esc(initial)}
             </div>
-            <div style="min-width:0;">
+            <div style="flex:1 1 auto; min-width:0;">
               <div style="font-family:Georgia,serif; font-size:17px; font-weight:600; color:var(--ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
                 ${esc(name || 'Mi Perfil Orbit')}
               </div>
-              ${uname ? `<div style="font-size:12px; color:var(--wine); font-weight:600;">@${esc(uname.replace(/^@/,''))}</div>` : ''}
+              ${uname ? `<div style="font-size:12px; color:var(--wine); font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">@${esc(uname.replace(/^@/,''))}</div>` : ''}
               ${ageText}
             </div>
           </div>
-          <button class="profile-edit-btn" onclick="toggleProfileEdit(true)" title="Editar datos del perfil">
+          <button class="profile-edit-btn" onclick="toggleProfileEdit(true)" title="Editar datos del perfil" style="flex-shrink:0;">
             <svg class="icon" viewBox="0 0 24 24" style="width:15px; height:15px; stroke:currentColor;"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
           </button>
         </div>
