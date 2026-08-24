@@ -762,6 +762,67 @@ function renderUniverse(d){
  if (skyRegionsEl) skyRegionsEl.innerHTML = regHtml;
 }
 
+function playConstellationAcquisitionCeremony(cDef, onComplete){
+  let modal = document.getElementById('constellationCeremonyModal');
+  let stage = document.getElementById('ceremonyStage');
+  let titleEl = document.getElementById('ceremonyTitle');
+  let particlesLayer = document.getElementById('ceremonyParticles');
+  
+  if(!modal || !cDef){
+    if(typeof onComplete === 'function') onComplete();
+    return;
+  }
+
+  // Set constellation drawing initially in discovered state
+  stage.className = 'ceremony-stage';
+  stage.innerHTML = constellationSvg(cDef, false, 1.0);
+  if(titleEl) titleEl.textContent = cDef.name;
+  
+  // Clear old particles
+  if(particlesLayer) particlesLayer.innerHTML = '';
+
+  // Show modal
+  modal.style.display = 'flex';
+  void modal.offsetWidth;
+  modal.classList.add('active');
+
+  // Spawn stardust particles after 200ms
+  setTimeout(() => {
+    if(particlesLayer){
+      let count = 16;
+      let html = '';
+      for(let i = 0; i < count; i++){
+        let angle = (i / count) * 2 * Math.PI + (Math.random() * 0.4 - 0.2);
+        let dist = 60 + Math.random() * 80;
+        let dx = Math.cos(angle) * dist + 'px';
+        let dy = Math.sin(angle) * dist + 'px';
+        let size = Math.random() * 3 + 2;
+        let delay = Math.random() * 0.25;
+        let color = i % 2 === 0 ? '#fff5cc' : '#fcc2cd';
+        html += `<span class="stardust-particle" style="left:50%; top:45%; width:${size}px; height:${size}px; background:${color}; box-shadow:0 0 8px ${color}; --dx:${dx}; --dy:${dy}; animation-delay:${delay}s;"></span>`;
+      }
+      particlesLayer.innerHTML = html;
+    }
+  }, 220);
+
+  // Illuminate constellation progressively at 450ms
+  setTimeout(() => {
+    stage.innerHTML = constellationSvg(cDef, true, 1.0);
+    stage.classList.add('illuminated');
+  }, 450);
+
+  // Close ceremony after 1.8s
+  setTimeout(() => {
+    modal.classList.remove('active');
+    setTimeout(() => {
+      modal.style.display = 'none';
+      if(particlesLayer) particlesLayer.innerHTML = '';
+      stage.className = 'ceremony-stage';
+      if(typeof onComplete === 'function') onComplete();
+    }, 350);
+  }, 1800);
+}
+
 function guardarConstelacion(id, cost = 1){
   let d = load();
   let cDef = constellationDefs.find(x => x.id === id);
@@ -774,8 +835,11 @@ function guardarConstelacion(id, cost = 1){
   if(!d.claimed) d.claimed = {};
   d.claimed[id] = Date.now();
   save(d);
-  toast(`${cDef ? cDef.name : 'Constelación'} guardada en tu universo.`);
-  render();
+
+  playConstellationAcquisitionCeremony(cDef, () => {
+    toast(`✦ ${cDef ? cDef.name : 'Constelación'} iluminada en tu universo.`);
+    render();
+  });
 }
 
 function verFichaConstelacion(id){

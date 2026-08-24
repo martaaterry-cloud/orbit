@@ -13,7 +13,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <title>Orbit</title>
 
-  <link rel="stylesheet" href="css/orbit.css?v=1.2.30">
+  <link rel="stylesheet" href="css/orbit.css?v=1.2.31">
 </head>
 <body>
 <!-- Pantalla de Acceso Inicial -->
@@ -394,7 +394,7 @@
     <button class="btn btn-line" onclick="handleCloudLogout()" style="font-size:12px; padding:8px 16px; color:var(--wine);" id="cloudLogoutBtn">
       Cerrar sesión
     </button>
-    <div style="font-size:11px; color:var(--muted); opacity:0.6; margin-top:14px;">Orbit v1.2.30</div>
+    <div style="font-size:11px; color:var(--muted); opacity:0.6; margin-top:14px;">Orbit v1.2.31</div>
   </div>
 </section>
 
@@ -698,6 +698,20 @@
   <button class="btn btn-line btn-wide" style="margin-top:8px;" onclick="closeModal('addPastMemoryModal')">Cancelar</button>
 </div></div>
 
+<!-- Modal Ceremonial de Adquisición de Constelación -->
+<div class="ceremony-modal" id="constellationCeremonyModal" style="display:none;">
+  <div class="ceremony-backdrop"></div>
+  <div class="ceremony-content" id="ceremonyContent">
+    <div class="ceremony-flare" id="ceremonyFlare"></div>
+    <div class="ceremony-particles-layer" id="ceremonyParticles"></div>
+    <div class="ceremony-stage" id="ceremonyStage"></div>
+    <div class="ceremony-info">
+      <div class="ceremony-tag">✦ Constelación Iluminada ✦</div>
+      <div class="ceremony-title" id="ceremonyTitle"></div>
+    </div>
+  </div>
+</div>
+
 <div class="update-banner" id="updateBanner">
   <span>Hay una nueva versión de Orbit</span>
   <button onclick="applyAppUpdate()">Actualizar</button>
@@ -706,14 +720,14 @@
 <div class="toast" id="toast"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="data/templates.js?v=1.2.30"></script>
-  <script src="data/constellations.js?v=1.2.30"></script>
-  <script src="js/storage.js?v=1.2.30"></script>
-  <script src="js/supabase.js?v=1.2.30"></script>
-  <script src="js/stars.js?v=1.2.30"></script>
-  <script src="js/streak.js?v=1.2.30"></script>
-  <script src="js/journal.js?v=1.2.30"></script>
-  <script src="js/archive.js?v=1.2.30"></script>
-  <script src="js/app.js?v=1.2.30"></script>
+  <script src="data/templates.js?v=1.2.31"></script>
+  <script src="data/constellations.js?v=1.2.31"></script>
+  <script src="js/storage.js?v=1.2.31"></script>
+  <script src="js/supabase.js?v=1.2.31"></script>
+  <script src="js/stars.js?v=1.2.31"></script>
+  <script src="js/streak.js?v=1.2.31"></script>
+  <script src="js/journal.js?v=1.2.31"></script>
+  <script src="js/archive.js?v=1.2.31"></script>
+  <script src="js/app.js?v=1.2.31"></script>
 </body>
 </html>
