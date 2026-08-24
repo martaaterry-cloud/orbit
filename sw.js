@@ -1,5 +1,5 @@
 // Service Worker de Orbit - Estrategia Network-First para HTML y Cache con invalidación de versión
-const CACHE_VERSION = 'orbit-v1.2.32';
+const CACHE_VERSION = 'orbit-v1.2.33';
 const STATIC_ASSETS = [
   './',
   './index.html',
@@ -7,16 +7,16 @@ const STATIC_ASSETS = [
   './apple-touch-icon.png',
   './icon-192.png',
   './icon-512.png',
-  './css/orbit.css?v=1.2.32',
-  './data/templates.js?v=1.2.32',
-  './data/constellations.js?v=1.2.32',
-  './js/storage.js?v=1.2.32',
-  './js/supabase.js?v=1.2.32',
-  './js/stars.js?v=1.2.32',
-  './js/streak.js?v=1.2.32',
-  './js/journal.js?v=1.2.32',
-  './js/archive.js?v=1.2.32',
-  './js/app.js?v=1.2.32'
+  './css/orbit.css?v=1.2.33',
+  './data/templates.js?v=1.2.33',
+  './data/constellations.js?v=1.2.33',
+  './js/storage.js?v=1.2.33',
+  './js/supabase.js?v=1.2.33',
+  './js/stars.js?v=1.2.33',
+  './js/streak.js?v=1.2.33',
+  './js/journal.js?v=1.2.33',
+  './js/archive.js?v=1.2.33',
+  './js/app.js?v=1.2.33'
 ];
 
 self.addEventListener('install', (event) => {

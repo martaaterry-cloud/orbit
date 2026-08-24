@@ -1895,9 +1895,11 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
 /* Deslizar para Canjear (Swipe to Redeem) */
 .swipe-to-redeem-track {
   position: relative;
-  height: 38px;
+  width: 100%;
+  box-sizing: border-box;
+  height: 42px;
   background: var(--soft);
-  border: 1px solid rgba(141, 76, 87, 0.18);
+  border: 1px solid rgba(141, 76, 87, 0.16);
   border-radius: 99px;
   display: flex;
   align-items: center;
@@ -1906,16 +1908,22 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
   user-select: none;
   cursor: grab;
   touch-action: pan-y;
-  transition: border-color 0.2s ease, background 0.2s ease;
+  transition: border-color 0.2s ease, background 0.25s ease, box-shadow 0.2s ease;
+}
+.swipe-to-redeem-track:hover {
+  border-color: rgba(141, 76, 87, 0.3);
 }
 .swipe-to-redeem-track:active {
   cursor: grabbing;
 }
 .swipe-to-redeem-track.swiping {
-  border-color: var(--rose2);
+  border-color: var(--wine);
+  background: #fdf6f7;
 }
 .swipe-to-redeem-track.completed {
   background: linear-gradient(135deg, #aa5966, #854650);
+  border-color: transparent;
+  box-shadow: 0 4px 14px rgba(133, 70, 80, 0.3);
 }
 .swipe-to-redeem-track.completed .swipe-label {
   color: #ffffff;
@@ -1925,28 +1933,28 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
   position: absolute;
   left: 3px;
   top: 3px;
-  width: 32px;
-  height: 32px;
+  width: 34px;
+  height: 34px;
   border-radius: 50%;
   background: linear-gradient(135deg, #aa5966, #854650);
-  box-shadow: 0 2px 8px rgba(133, 70, 80, 0.35);
-  color: #fff;
+  box-shadow: 0 2px 6px rgba(133, 70, 80, 0.3);
+  color: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 13px;
-  font-weight: 700;
   transition: transform 0.05s ease;
   pointer-events: none;
 }
 .swipe-label {
-  font-size: 11px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 11.5px;
   font-weight: 600;
   letter-spacing: 0.03em;
   color: var(--wine);
-  opacity: 0.85;
+  opacity: 0.88;
   pointer-events: none;
   transition: opacity 0.2s ease;
+  text-align: center;
 }
 
 /* Tarjeta de Pregunta para reflexionar */

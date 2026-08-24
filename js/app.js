@@ -1014,28 +1014,27 @@ function renderRewardsList(d){
     let canAfford = Number(d.wallet || 0) >= r.cost;
     if(canAfford){
       return `
-        <div class="card reward" style="display:flex; flex-direction:column; gap:10px; padding:12px 14px; margin-bottom:8px;">
-          <div style="display:flex; justify-content:space-between; align-items:center;">
-            <div>
-              <strong style="font-size:13.5px; color:var(--ink);">${esc(r.name)}</strong>
-              <small style="display:block; color:var(--wine); font-weight:600; font-size:11px;">${r.cost} estrellas</small>
-            </div>
-            <button class="planet-spark" onclick="deleteReward('${r.id}')" title="Eliminar premio" style="color:var(--muted); font-size:13px; opacity:0.6;">✕</button>
+        <div class="card reward" style="display:flex; flex-direction:column; gap:12px; padding:14px; margin-bottom:10px;">
+          <div style="display:flex; justify-content:space-between; align-items:baseline; padding:0 2px;">
+            <strong style="font-size:14px; font-weight:600; color:var(--ink);">${esc(r.name)}</strong>
+            <span style="font-size:12px; font-weight:700; color:var(--wine);">${r.cost} ★</span>
           </div>
-          <div class="swipe-to-redeem-track" data-reward-id="${r.id}" data-reward-name="${esc(r.name)}">
-            <div class="swipe-thumb"><span class="swipe-arrow">→</span></div>
+          <div class="swipe-to-redeem-track" data-reward-id="${r.id}">
+            <div class="swipe-thumb">
+              <svg viewBox="0 0 24 24" style="width:14px; height:14px; stroke:currentColor; stroke-width:2.5; fill:none; stroke-linecap:round; stroke-linejoin:round;"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </div>
             <span class="swipe-label">Desliza para canjear</span>
           </div>
         </div>
       `;
     } else {
       return `
-        <div class="card reward" style="display:flex; justify-content:space-between; align-items:center; opacity:0.65; padding:12px 14px; margin-bottom:8px;">
+        <div class="card reward" style="display:flex; justify-content:space-between; align-items:center; opacity:0.6; padding:14px; margin-bottom:10px;">
           <div>
-            <strong style="font-size:13px; color:var(--ink);">${esc(r.name)}</strong>
-            <small style="display:block; color:var(--muted); font-size:10.5px;">${r.cost} estrellas (faltan ${(r.cost - Number(d.wallet||0)).toFixed(1).replace('.',',')})</small>
+            <strong style="font-size:13.5px; color:var(--ink);">${esc(r.name)}</strong>
+            <small style="display:block; color:var(--muted); font-size:11px; margin-top:3px;">${r.cost} ★ · Te faltan ${(r.cost - Number(d.wallet||0)).toFixed(1).replace('.',',')} ★</small>
           </div>
-          <button class="planet-spark" onclick="deleteReward('${r.id}')" title="Eliminar premio" style="color:var(--muted); font-size:13px; opacity:0.6;">✕</button>
+          <span style="font-size:10px; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:0.06em;">Bloqueado</span>
         </div>
       `;
     }
@@ -1060,7 +1059,7 @@ function initSwipeToRedeem(){
     function onStart(e){
       isDragging = true;
       startX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
-      maxDist = track.clientWidth - (thumb ? thumb.clientWidth : 32) - 6;
+      maxDist = track.clientWidth - (thumb ? thumb.clientWidth : 34) - 6;
       track.classList.add('swiping');
     }
 
@@ -1093,7 +1092,7 @@ function initSwipeToRedeem(){
         }, 220);
       } else {
         if(thumb) thumb.style.transform = 'translateX(0px)';
-        if(label) label.style.opacity = '0.85';
+        if(label) label.style.opacity = '0.88';
       }
       currentX = 0;
     }
