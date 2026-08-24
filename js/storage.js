@@ -46,8 +46,9 @@ function getOrbitActiveUserId() {
 
 function getUserStorageKey(baseKey, userId) {
   let uid = userId || getOrbitActiveUserId();
-  return uid ? `${baseKey}:${uid}` : baseKey;
+  return uid ? `${baseKey}:${uid}` : null;
 }
+
 
 // Purga total y segura de los datos locales asociados a un usuario eliminado
 function purgeLocalUserData(userId) {
@@ -89,96 +90,20 @@ function purgeLocalUserData(userId) {
   }
 }
 
-// Migración segura de claves legacy al usuario autenticado (idempotente y con verificación estricta)
+// En v1.3.15+ todo el almacenamiento es estrictamente scoped por user.id.
+// Se purgan claves legacy no scoped para prevenir cualquier cruce de datos.
 function migrateLegacyStorageIfVerified(user, priorKnownIdentity) {
-  if (!user || !user.id || typeof localStorage === 'undefined') return;
-  
-  let migrationKey = 'orbitMigrationDone:' + user.id;
-  if (localStorage.getItem(migrationKey)) return;
-
-  let scopedKey = 'orbitV9:' + user.id;
-  let hasScopedData = !!localStorage.getItem(scopedKey);
-  
-  if (hasScopedData) {
-    localStorage.setItem(migrationKey, 'true');
-    return;
-  }
-
-  let legacyV9 = localStorage.getItem('orbitV9');
-  if (!legacyV9) {
-    localStorage.setItem(migrationKey, 'true');
-    return;
-  }
-
-  // Leer evidencia previa de identidad antes de cualquier sobreescritura
-  let rawKnown = priorKnownIdentity !== undefined ? priorKnownIdentity : localStorage.getItem('orbitKnownUser');
-  let isVerified = false;
-  
-  if (rawKnown) {
-    if (rawKnown === user.email) {
-      isVerified = true;
-    } else {
-      try {
-        let parsed = JSON.parse(rawKnown);
-        if (parsed && (parsed.email === user.email || parsed.id === user.id)) {
-          isVerified = true;
-        }
-      } catch(e){}
-    }
-  }
-
-  // Comprobación adicional dentro de los datos legacy de perfil si no se verificó por token
-  if (!isVerified) {
+  if (typeof localStorage !== 'undefined') {
     try {
-      let legacyData = JSON.parse(legacyV9);
-      if (legacyData?.profile?.username && user.user_metadata?.username) {
-        if (legacyData.profile.username.toLowerCase() === user.user_metadata.username.toLowerCase()) {
-          isVerified = true;
-        }
-      }
-    } catch(e){}
-  }
-
-  if (isVerified) {
-    try {
-      localStorage.setItem('orbitV9:' + user.id, legacyV9);
-      
-      let legTimer = localStorage.getItem('orbitTimer');
-      if (legTimer) localStorage.setItem('orbitTimer:' + user.id, legTimer);
-      
-      let legLocalUp = localStorage.getItem('orbitLocalUpdatedAt');
-      if (legLocalUp) localStorage.setItem('orbitLocalUpdatedAt:' + user.id, legLocalUp);
-      
-      let legCloudUp = localStorage.getItem('orbitLastCloudUpdatedAt');
-      if (legCloudUp) localStorage.setItem('orbitLastCloudUpdatedAt:' + user.id, legCloudUp);
-      
-      let legUnsync = localStorage.getItem('orbitHasUnsyncedChanges');
-      if (legUnsync) localStorage.setItem('orbitHasUnsyncedChanges:' + user.id, legUnsync);
-
-      localStorage.setItem('orbitV9_migrated_' + user.id + '_backup', legacyV9);
       localStorage.removeItem('orbitV9');
       localStorage.removeItem('orbitTimer');
       localStorage.removeItem('orbitLocalUpdatedAt');
       localStorage.removeItem('orbitLastCloudUpdatedAt');
       localStorage.removeItem('orbitHasUnsyncedChanges');
-      
-      localStorage.setItem(migrationKey, 'true');
-    } catch(err) {
-      console.warn('Error durante la migración legacy:', err);
-    }
-  } else {
-    // Si no puede verificarse, se preserva en backup no reclamado sin asignarlo a esta cuenta
-    try {
-      localStorage.setItem('orbitV9_unclaimed_backup', legacyV9);
-      localStorage.removeItem('orbitV9');
-      localStorage.removeItem('orbitTimer');
-      localStorage.removeItem('orbitLocalUpdatedAt');
-      localStorage.removeItem('orbitLastCloudUpdatedAt');
-      localStorage.removeItem('orbitHasUnsyncedChanges');
-      localStorage.setItem(migrationKey, 'true');
     } catch(e){}
   }
 }
+
 
 function defaults(){
  const n=Date.now();
@@ -267,7 +192,9 @@ function load(userId){
  let d;
  let isVirgin = false;
  let key = getUserStorageKey('orbitV9', userId);
- try{d=JSON.parse(localStorage.getItem(key))}catch{}
+ if(key){
+  try{d=JSON.parse(localStorage.getItem(key))}catch{}
+ }
  if(!d){
   d=defaults();
   isVirgin = true;
@@ -317,23 +244,26 @@ function load(userId){
  if(Array.isArray(d.goodThings)){d.goodThings.forEach(g=>{if(g&&!g.id)g.id=uid()})}
  if(Array.isArray(d.urges)){d.urges.forEach(u=>{if(u&&!u.id)u.id=uid()})}
 
- save(d, false, userId);
- let localUpKey = getUserStorageKey('orbitLocalUpdatedAt', userId);
- if(!localStorage.getItem(localUpKey) && !isVirgin){
-   localStorage.setItem(localUpKey, new Date().toISOString());
+ if(key){
+  save(d, false, userId);
+  let localUpKey = getUserStorageKey('orbitLocalUpdatedAt', userId);
+  if(localUpKey && !localStorage.getItem(localUpKey) && !isVirgin){
+    localStorage.setItem(localUpKey, new Date().toISOString());
+  }
  }
  return d;
 }
 
 function save(d, markChange = true, userId){
  let key = getUserStorageKey('orbitV9', userId);
+ if(!key) return; // Sin usuario autenticado activo: no persistir a claves globales
  localStorage.setItem(key, JSON.stringify(d));
  if(markChange && typeof window !== 'undefined'){
   if(window.isApplyingCloudState) return;
   let localUpKey = getUserStorageKey('orbitLocalUpdatedAt', userId);
   let unsyncKey = getUserStorageKey('orbitHasUnsyncedChanges', userId);
-  localStorage.setItem(localUpKey, new Date().toISOString());
-  localStorage.setItem(unsyncKey, 'true');
+  if(localUpKey) localStorage.setItem(localUpKey, new Date().toISOString());
+  if(unsyncKey) localStorage.setItem(unsyncKey, 'true');
   if(typeof scheduleCloudSync === 'function'){
    scheduleCloudSync();
   }
@@ -341,17 +271,23 @@ function save(d, markChange = true, userId){
 }
 
 function exportBackup(){
+ let activeUid = typeof getOrbitActiveUserId === 'function' ? getOrbitActiveUserId() : null;
+ if(!activeUid){
+  if(typeof toast === 'function') toast('Inicia sesión para exportar tu copia de seguridad');
+  return;
+ }
+ let key = getUserStorageKey('orbitV9', activeUid);
+ let timerKey = getUserStorageKey('orbitTimer', activeUid);
  let mainData=null;
- let key = getUserStorageKey('orbitV9');
- let timerKey = getUserStorageKey('orbitTimer');
- try{mainData=JSON.parse(localStorage.getItem(key))}catch(e){mainData=load()}
- if(!mainData)mainData=load();
+ try{mainData=JSON.parse(localStorage.getItem(key))}catch(e){}
+ if(!mainData) mainData=load(activeUid);
  let timerData=null;
  try{timerData=JSON.parse(localStorage.getItem(timerKey))}catch(e){}
  let backupPayload={
   app:'orbit',
   version:1,
   schemaVersion:mainData.v||9,
+  userId:activeUid,
   exportedAt:Date.now(),
   dateString:new Date().toISOString(),
   orbitData:mainData,
@@ -380,6 +316,11 @@ function triggerImportBackup(){
 function handleBackupFile(e){
  let file=e.target.files&&e.target.files[0];
  if(!file)return;
+ let activeUid = typeof getOrbitActiveUserId === 'function' ? getOrbitActiveUserId() : null;
+ if(!activeUid){
+  if(typeof toast === 'function') toast('Inicia sesión para restaurar una copia');
+  return;
+ }
  let reader=new FileReader();
  reader.onload=function(evt){
   try{
@@ -391,13 +332,13 @@ function handleBackupFile(e){
     return;
    }
    let dateInfo=parsed.exportedAt?new Date(parsed.exportedAt).toLocaleDateString('es-ES',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}):'reciente';
-   let ok=confirm(`¿Restaurar copia de seguridad de ${dateInfo}?\n\nSe reemplazarán los datos actuales de Orbit.`);
+   let ok=confirm(`¿Restaurar copia de seguridad de ${dateInfo}?\n\nSe reemplazarán los datos de tu cuenta en Orbit.`);
    if(!ok)return;
-   localStorage.setItem('orbitV9',JSON.stringify(orbitData));
-   if(parsed.orbitTimer){
-    localStorage.setItem('orbitTimer',JSON.stringify(parsed.orbitTimer));
-   }else{
-    localStorage.removeItem('orbitTimer');
+   save(orbitData, true, activeUid);
+   if(parsed.orbitTimer && typeof saveTimerState === 'function'){
+    saveTimerState(parsed.orbitTimer, true, activeUid);
+   }else if(typeof clearTimerState === 'function'){
+    clearTimerState(true, activeUid);
    }
    toast('Copia restaurada correctamente');
    setTimeout(()=>{location.reload()},400);
@@ -407,3 +348,15 @@ function handleBackupFile(e){
  };
  reader.readAsText(file);
 }
+
+// Purga inmediata de claves legacy globales no scoped al cargar el módulo
+if (typeof localStorage !== 'undefined') {
+  try {
+    localStorage.removeItem('orbitV9');
+    localStorage.removeItem('orbitTimer');
+    localStorage.removeItem('orbitLocalUpdatedAt');
+    localStorage.removeItem('orbitLastCloudUpdatedAt');
+    localStorage.removeItem('orbitHasUnsyncedChanges');
+  } catch(e){}
+}
+

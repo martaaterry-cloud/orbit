@@ -2371,8 +2371,27 @@ function executeAccountDeletion() {
     supabaseDeleteAccount();
   }
 }
+function clearActiveFormInputs() {
+  const ids = [
+    'slipNote', 'needToday', 'forMeToday', 'gratitude1', 'gratitude2', 'gratitude3',
+    'quickText', 'goodThing', 'goodMeaning', 'goodPhotoInput',
+    'journalText', 'journalTitle', 'notCheckingName', 'notCheckingSub',
+    'rewardName', 'rewardCost', 'orbitName', 'orbitMeaning'
+  ];
+  ids.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      if (el.type === 'file') el.value = '';
+      else el.value = '';
+    }
+  });
+}
 
-setInterval(render,60000);render();
+setInterval(() => {
+  if (typeof getOrbitActiveUserId === 'function' && getOrbitActiveUserId()) {
+    render();
+  }
+}, 60000);
 
 function initAtlasPageTurn(carouselEl) {
   if (!carouselEl) return;

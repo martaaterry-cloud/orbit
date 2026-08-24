@@ -231,6 +231,10 @@ function updateAppAuthState(user, isOffline = false) {
     if (typeof syncUserProfileFromCloud === 'function') {
       syncUserProfileFromCloud(user);
     }
+    if (typeof render === 'function') {
+      render();
+    }
+
   } else if (activeUserId && offline) {
     let knownObj = null;
     try { knownObj = JSON.parse(localStorage.getItem('orbitKnownUser') || '{}'); } catch(e){}
@@ -677,6 +681,13 @@ async function supabaseLogout() {
   hasConflict = false;
   signedUrlCache.clear();
 
+  if (typeof clearUrgeTimerMemory === 'function') {
+    clearUrgeTimerMemory();
+  }
+  if (typeof clearActiveFormInputs === 'function') {
+    clearActiveFormInputs();
+  }
+
   currentCloudUser = null;
   if (typeof setOrbitActiveUser === 'function') {
     setOrbitActiveUser(null);
@@ -692,6 +703,7 @@ async function supabaseLogout() {
   if (typeof toast === 'function') toast('Sesión cerrada');
   updateAppAuthState(null);
 }
+
 
 // Comprobación de errores de sesión expirada o token no autorizado
 function isSessionExpiredError(err) {

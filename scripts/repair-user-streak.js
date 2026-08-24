@@ -170,10 +170,8 @@
       return;
     }
 
-    console.log('[REPAIR] Iniciando restauración controlada de racha para usuario:', userId);
-
     const v9Key = typeof getUserStorageKey === 'function' ? getUserStorageKey('orbitV9', userId) : `orbitV9:${userId}`;
-    let rawCurrent = localStorage.getItem(v9Key) || localStorage.getItem('orbitV9');
+    let rawCurrent = v9Key ? localStorage.getItem(v9Key) : null;
 
     let currentData = null;
     try {
@@ -257,20 +255,12 @@
     return { success: true, report, backupKey };
   }
 
-  // Exposición controlada en window
+  // Exposición controlada en window (autoejecución retirada del ciclo de producción)
   if (typeof window !== 'undefined') {
     window.repairOrbitStreak = performControlledRepair;
     window.repairOrbitData = repairOrbitData;
-
-    // Ejecutar automáticamente al cargar si el usuario activo coincide
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', () => {
-        setTimeout(() => performControlledRepair(TARGET_USER_ID), 300);
-      });
-    } else {
-      setTimeout(() => performControlledRepair(TARGET_USER_ID), 300);
-    }
   }
+
 
   // Exportación para pruebas en Node
   if (typeof module !== 'undefined' && module.exports) {

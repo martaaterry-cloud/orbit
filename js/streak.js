@@ -93,20 +93,22 @@ function openUrge(id){
 let timerInterval=null,activeUrge=null;
 
 function getTimerState(userId){
- let key = typeof getUserStorageKey === 'function' ? getUserStorageKey('orbitTimer', userId) : 'orbitTimer';
+ let key = typeof getUserStorageKey === 'function' ? getUserStorageKey('orbitTimer', userId) : null;
+ if(!key) return null;
  try{return JSON.parse(localStorage.getItem(key))}catch(e){return null}
 }
 
 function saveTimerState(state, markChange = true, userId){
- let key = typeof getUserStorageKey === 'function' ? getUserStorageKey('orbitTimer', userId) : 'orbitTimer';
+ let key = typeof getUserStorageKey === 'function' ? getUserStorageKey('orbitTimer', userId) : null;
+ if(!key) return;
  if(!state){localStorage.removeItem(key)}
  else{localStorage.setItem(key,JSON.stringify(state))}
  if(markChange && typeof window !== 'undefined'){
   if(window.isApplyingCloudState) return;
-  let localUpKey = typeof getUserStorageKey === 'function' ? getUserStorageKey('orbitLocalUpdatedAt', userId) : 'orbitLocalUpdatedAt';
-  let unsyncKey = typeof getUserStorageKey === 'function' ? getUserStorageKey('orbitHasUnsyncedChanges', userId) : 'orbitHasUnsyncedChanges';
-  localStorage.setItem(localUpKey, new Date().toISOString());
-  localStorage.setItem(unsyncKey, 'true');
+  let localUpKey = typeof getUserStorageKey === 'function' ? getUserStorageKey('orbitLocalUpdatedAt', userId) : null;
+  let unsyncKey = typeof getUserStorageKey === 'function' ? getUserStorageKey('orbitHasUnsyncedChanges', userId) : null;
+  if(localUpKey) localStorage.setItem(localUpKey, new Date().toISOString());
+  if(unsyncKey) localStorage.setItem(unsyncKey, 'true');
   if(typeof scheduleCloudSync === 'function'){
    scheduleCloudSync();
   }
@@ -114,19 +116,35 @@ function saveTimerState(state, markChange = true, userId){
 }
 
 function clearTimerState(markChange = true, userId){
- let key = typeof getUserStorageKey === 'function' ? getUserStorageKey('orbitTimer', userId) : 'orbitTimer';
- localStorage.removeItem(key);
+ let key = typeof getUserStorageKey === 'function' ? getUserStorageKey('orbitTimer', userId) : null;
+ if(key) localStorage.removeItem(key);
  if(markChange && typeof window !== 'undefined'){
   if(window.isApplyingCloudState) return;
-  let localUpKey = typeof getUserStorageKey === 'function' ? getUserStorageKey('orbitLocalUpdatedAt', userId) : 'orbitLocalUpdatedAt';
-  let unsyncKey = typeof getUserStorageKey === 'function' ? getUserStorageKey('orbitHasUnsyncedChanges', userId) : 'orbitHasUnsyncedChanges';
-  localStorage.setItem(localUpKey, new Date().toISOString());
-  localStorage.setItem(unsyncKey, 'true');
+  let localUpKey = typeof getUserStorageKey === 'function' ? getUserStorageKey('orbitLocalUpdatedAt', userId) : null;
+  let unsyncKey = typeof getUserStorageKey === 'function' ? getUserStorageKey('orbitHasUnsyncedChanges', userId) : null;
+  if(localUpKey) localStorage.setItem(localUpKey, new Date().toISOString());
+  if(unsyncKey) localStorage.setItem(unsyncKey, 'true');
   if(typeof scheduleCloudSync === 'function'){
    scheduleCloudSync();
   }
  }
 }
+
+function clearUrgeTimerMemory(){
+ clearInterval(timerInterval);
+ timerInterval = null;
+ activeUrge = null;
+ updateTimerDisplay(0);
+ let timerCard = document.getElementById('urgeActiveTimer');
+ let pauseBtn = document.getElementById('pauseTimerBtn');
+ let resumeBtn = document.getElementById('resumeTimerBtn');
+ let cancelBtn = document.getElementById('cancelTimerBtn');
+ if(timerCard) timerCard.style.display = 'none';
+ if(pauseBtn) pauseBtn.style.display = 'none';
+ if(resumeBtn) resumeBtn.style.display = 'none';
+ if(cancelBtn) cancelBtn.style.display = 'none';
+}
+
 
 function updateTimerDisplay(totalSeconds){
  let s=Math.max(0,Math.ceil(totalSeconds));

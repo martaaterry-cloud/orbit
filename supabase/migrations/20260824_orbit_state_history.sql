@@ -115,9 +115,21 @@ BEGIN
       'wallet', h.orbit_data->>'wallet',
       'lifetimeStars', h.orbit_data->>'lifetimeStars',
       'since', h.orbit_data->'returnToMe'->>'since',
-      'milestonesCount', jsonb_array_length(COALESCE(h.orbit_data->'returnToMe'->'awardedMilestones', '[]'::jsonb)),
-      'journalCount', jsonb_array_length(COALESCE(h.orbit_data->'journal', '[]'::jsonb)),
-      'goodThingsCount', jsonb_array_length(COALESCE(h.orbit_data->'goodThings', '[]'::jsonb))
+      'milestonesCount', CASE 
+        WHEN jsonb_typeof(h.orbit_data->'returnToMe'->'awardedMilestones') = 'array' 
+        THEN jsonb_array_length(h.orbit_data->'returnToMe'->'awardedMilestones') 
+        ELSE 0 
+      END,
+      'journalCount', CASE 
+        WHEN jsonb_typeof(h.orbit_data->'journal') = 'array' 
+        THEN jsonb_array_length(h.orbit_data->'journal') 
+        ELSE 0 
+      END,
+      'goodThingsCount', CASE 
+        WHEN jsonb_typeof(h.orbit_data->'goodThings') = 'array' 
+        THEN jsonb_array_length(h.orbit_data->'goodThings') 
+        ELSE 0 
+      END
     ) AS data_preview
   FROM public.orbit_state_history h
   WHERE h.user_id = auth.uid()
@@ -137,6 +149,7 @@ SET search_path = pg_catalog, public
 AS $$
 DECLARE
   v_history public.orbit_state_history%ROWTYPE;
+  v_rows_affected INT;
 BEGIN
   SELECT * INTO v_history
   FROM public.orbit_state_history
@@ -153,14 +166,25 @@ BEGIN
     updated_at = NOW()
   WHERE user_id = auth.uid();
 
+  GET DIAGNOSTICS v_rows_affected = ROW_COUNT;
+  IF v_rows_affected = 0 THEN
+    RAISE EXCEPTION 'No se encontró fila de orbit_state para el usuario autenticado';
+  END IF;
+
   RETURN TRUE;
 END;
 $$;
 
--- 7. Concesión de Permisos
+-- 7. Concesión y Revocación Explícita de Permisos
 -- Inmutabilidad desde el cliente: authenticated SOLO puede hacer SELECT
 REVOKE ALL ON TABLE public.orbit_state_history FROM PUBLIC, anon, authenticated;
 GRANT SELECT ON TABLE public.orbit_state_history TO authenticated;
-GRANT SELECT, INSERT, DELETE ON TABLE public.orbit_state_history TO service_role;
-GRANT EXECUTE ON FUNCTION public.get_my_orbit_state_history(INT) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.restore_orbit_state_from_history(UUID) TO authenticated;
+GRANT ALL ON TABLE public.orbit_state_history TO service_role;
+
+-- Revocación explícita de permisos de ejecución a PUBLIC y anon
+REVOKE ALL ON FUNCTION public.get_my_orbit_state_history(INT) FROM PUBLIC, anon;
+REVOKE ALL ON FUNCTION public.restore_orbit_state_from_history(UUID) FROM PUBLIC, anon;
+
+-- Concesión de EXECUTE únicamente a authenticated y service_role
+GRANT EXECUTE ON FUNCTION public.get_my_orbit_state_history(INT) TO authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.restore_orbit_state_from_history(UUID) TO authenticated, service_role;
