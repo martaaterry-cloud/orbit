@@ -867,6 +867,234 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
   border: 1px solid var(--rose2) !important;
 }
 
+/* ==========================================================================
+   ESCENA 3D HERO · OBSERVATORIO TERRESTRE
+   ========================================================================== */
+.observatory-hero-container {
+  width: 100%;
+  height: 225px;
+  position: relative;
+  border-radius: 20px;
+  background: radial-gradient(circle at 50% 30%, #201438 0%, #0c0818 75%, #05030a 100%);
+  border: 1.5px solid rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+  box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.7), 0 12px 30px rgba(0, 0, 0, 0.4);
+  perspective: 1000px;
+  user-select: none;
+  cursor: grab;
+  touch-action: none;
+  margin-top: 4px;
+}
+
+.observatory-hero-container:active {
+  cursor: grabbing;
+}
+
+.observatory-sky-backdrop {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: 
+    radial-gradient(1.5px 1.5px at 20px 30px, #ffffff, rgba(0,0,0,0)),
+    radial-gradient(1px 1px at 80px 70px, rgba(255,255,255,0.8), rgba(0,0,0,0)),
+    radial-gradient(1.5px 1.5px at 160px 40px, #ffd599, rgba(0,0,0,0)),
+    radial-gradient(1px 1px at 240px 90px, #ffffff, rgba(0,0,0,0)),
+    radial-gradient(2px 2px at 300px 35px, #ffccd5, rgba(0,0,0,0)),
+    radial-gradient(1px 1px at 340px 80px, #ffffff, rgba(0,0,0,0));
+  background-repeat: repeat;
+  background-size: 360px 200px;
+  opacity: 0.75;
+}
+
+.observatory-nebula-glow {
+  position: absolute;
+  top: 10%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 260px;
+  height: 140px;
+  background: radial-gradient(ellipse at center, rgba(170, 89, 102, 0.28) 0%, rgba(100, 60, 140, 0.15) 50%, transparent 80%);
+  filter: blur(24px);
+  pointer-events: none;
+}
+
+.observatory-mountains {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 55px;
+  background: linear-gradient(180deg, transparent 0%, rgba(7, 4, 14, 0.85) 50%, #05030a 100%);
+  clip-path: polygon(0% 100%, 0% 65%, 15% 45%, 35% 60%, 55% 35%, 75% 55%, 90% 40%, 100% 55%, 100% 100%);
+  pointer-events: none;
+}
+
+.observatory-3d-stage {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform-style: preserve-3d;
+  transition: transform 0.12s cubic-bezier(0.1, 0.9, 0.2, 1);
+}
+
+.observatory-3d-model {
+  width: 180px;
+  height: 180px;
+  position: relative;
+  transform-style: preserve-3d;
+  transform: translateY(6px);
+}
+
+.observatory-3d-model svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  filter: drop-shadow(0 8px 24px rgba(0, 0, 0, 0.65));
+}
+
+.observatory-beam {
+  position: absolute;
+  top: 15px;
+  right: 25px;
+  width: 160px;
+  height: 40px;
+  background: linear-gradient(90deg, rgba(255, 235, 170, 0.55) 0%, rgba(252, 194, 205, 0.25) 40%, transparent 100%);
+  clip-path: polygon(0% 45%, 100% 0%, 100% 100%, 0% 55%);
+  transform: rotate(-38deg);
+  transform-origin: left center;
+  pointer-events: none;
+  filter: blur(2.5px);
+  animation: beamAuraPulse 3.5s ease-in-out infinite alternate;
+}
+
+@keyframes beamAuraPulse {
+  0% { opacity: 0.6; filter: blur(2px); }
+  100% { opacity: 0.95; filter: blur(3.5px); }
+}
+
+/* Hotspots interactivos en 3D */
+.observatory-hotspot {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease;
+}
+
+.observatory-hotspot-core {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 0 8px rgba(255, 235, 160, 0.95), 0 0 16px rgba(252, 194, 205, 0.7);
+  transition: all 0.25s ease;
+}
+
+.observatory-hotspot-pulse {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255, 235, 160, 0.75);
+  animation: hotspotRipples 2.2s infinite ease-out;
+}
+
+@keyframes hotspotRipples {
+  0% { transform: scale(0.6); opacity: 1; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+
+.observatory-hotspot:hover .observatory-hotspot-core,
+.observatory-hotspot.active .observatory-hotspot-core {
+  transform: scale(1.4);
+  background: #fff8e0;
+  box-shadow: 0 0 14px rgba(255, 235, 160, 1), 0 0 24px rgba(252, 194, 205, 0.9);
+}
+
+.observatory-hotspot.active {
+  transform: translate(-50%, -50%) scale(1.15);
+}
+
+.observatory-rotate-hint {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 9.5px;
+  font-family: Georgia, serif;
+  font-style: italic;
+  letter-spacing: 0.05em;
+  color: rgba(247, 244, 235, 0.5);
+  background: rgba(10, 7, 20, 0.6);
+  backdrop-filter: blur(8px);
+  padding: 3px 10px;
+  border-radius: 99px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  pointer-events: none;
+}
+
+/* Selector de componentes modulares y tarjeta activa */
+.observatory-modules-strip {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 10px 2px 6px;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.observatory-modules-strip::-webkit-scrollbar {
+  display: none;
+}
+
+.observatory-module-chip {
+  flex: 0 0 auto;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 99px;
+  padding: 5px 12px;
+  font-size: 11px;
+  color: rgba(247, 244, 235, 0.7);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.observatory-module-chip:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+.observatory-module-chip.active {
+  background: var(--wine);
+  border-color: var(--rose2);
+  color: #ffffff;
+  box-shadow: 0 0 12px rgba(170, 89, 102, 0.4);
+}
+
+.observatory-detail-card {
+  margin-top: 8px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: linear-gradient(145deg, rgba(32, 22, 54, 0.7), rgba(16, 11, 28, 0.85));
+  border: 1.5px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
+  animation: cardFadeIn 0.3s ease;
+}
+
+@keyframes cardFadeIn {
+  0% { opacity: 0; transform: translateY(6px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
 /* Tarjetas de balance estelar en Mi Progreso Estelar */
 .universe-stat-chip {
   background: linear-gradient(145deg, rgba(38, 25, 64, 0.65), rgba(16, 12, 28, 0.85)) !important;
