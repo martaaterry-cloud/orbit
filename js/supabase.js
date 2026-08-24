@@ -916,8 +916,12 @@ async function autoSyncOnInit(session) {
       : false;
     const hasRealCloudData = hasCloudRow && !isCloudVirgin;
 
-    // CASO 1: Dispositivo nuevo / local virgen Y la nube tiene datos reales -> DESCARGAR SIEMPRE
-    if (isLocalVirgin && hasRealCloudData) {
+    const lastKnownCloud = localStorage.getItem(cloudUpKey);
+    const lastKnownCloudTime = lastKnownCloud ? new Date(lastKnownCloud).getTime() : 0;
+    const hasUnsynced = localStorage.getItem(unsyncKey) === 'true';
+
+    // CASO 1: Dispositivo nuevo / local virgen / sin sync previa Y la nube tiene datos reales -> DESCARGAR SIEMPRE
+    if ((isLocalVirgin || lastKnownCloudTime === 0) && hasRealCloudData && !hasUnsynced) {
       safeApplyCloudState(cloudRow.orbit_data, cloudRow.orbit_timer, cloudRow.updated_at, uid);
       updateSyncStatus('synced');
       return;
@@ -940,13 +944,11 @@ async function autoSyncOnInit(session) {
     // CASO 4: Ambos tienen datos reales -> Comparar marcas de tiempo
     const cloudUpdatedAt = cloudRow.updated_at;
     const cloudTime = new Date(cloudUpdatedAt).getTime();
-    const lastKnownCloud = localStorage.getItem(cloudUpKey);
-    const lastKnownCloudTime = lastKnownCloud ? new Date(lastKnownCloud).getTime() : 0;
-    const hasUnsynced = localStorage.getItem(unsyncKey) === 'true';
 
     const isCloudNewer = lastKnownCloudTime > 0
       ? cloudTime > (lastKnownCloudTime + 1000)
       : false;
+
 
     // Conflicto REAL: La nube cambió remotamente Y este cliente tiene cambios locales no sincronizados
     if (isCloudNewer && hasUnsynced && !isLocalVirgin) {

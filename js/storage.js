@@ -164,11 +164,9 @@ function isOrbitStateVirginOrEmpty(d) {
   // 9. Recompensas reclamadas
   if (d.claimed && typeof d.claimed === 'object' && Object.keys(d.claimed).length > 0) return false;
 
-  // 10. Perfil personalizado
-  if (d.profile && typeof d.profile === 'object') {
-    if (d.profile.displayName && String(d.profile.displayName).trim() !== '') return false;
-    if (d.profile.birthDate) return false;
-  }
+  // 10. Fecha de cumpleaños personalizada (la existencia de displayName/username de auth no cuenta como progreso)
+  if (d.profile && typeof d.profile === 'object' && d.profile.birthDate) return false;
+
 
   // 11. Pilares personalizados
   if (Array.isArray(d.orbit)) {
