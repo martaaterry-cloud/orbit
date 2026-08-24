@@ -303,20 +303,100 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
 
 .universe-immersive-page .constellation-stage {
   position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
   margin-top: 0;
   background: transparent;
   border: none;
   min-height: unset;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: block;
   z-index: 2;
   pointer-events: none;
 }
 
-.universe-immersive-page .constellation-stage svg {
+.sky-constellation-item {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+  cursor: pointer;
+  transition: transform 0.25s ease, filter 0.25s ease;
+}
+
+.sky-constellation-item svg {
   height: 100%;
   width: 100%;
+  display: block;
+  overflow: visible;
+}
+
+.sky-constellation-item.claimed .star,
+.sky-constellation-item.claimed .refined-star {
+  fill: #fffef2;
+  filter: drop-shadow(0 0 6px rgba(255, 235, 180, 0.95)) drop-shadow(0 0 12px rgba(245, 210, 140, 0.6));
+}
+
+.sky-constellation-item.claimed .line,
+.sky-constellation-item.claimed .refined-line {
+  stroke: rgba(255, 235, 200, 0.75);
+  stroke-width: 1.3;
+  filter: drop-shadow(0 0 4px rgba(245, 200, 120, 0.4));
+}
+
+.sky-constellation-item.claimed:hover {
+  transform: translate(-50%, -50%) scale(1.04);
+}
+
+.sky-constellation-item.in-progress .star {
+  fill: #ffffff;
+  filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.85));
+}
+
+.sky-constellation-item.in-progress .line {
+  stroke: rgba(255, 255, 255, 0.65);
+  stroke-width: 1.2;
+}
+
+.sky-constellation-item.locked {
+  opacity: 0.28;
+}
+
+.sky-constellation-item.locked .ghost-star {
+  fill: rgba(255, 255, 255, 0.22);
+}
+
+.sky-constellation-item.locked .ghost-line {
+  stroke: rgba(255, 255, 255, 0.08);
+  stroke-width: 0.8;
+}
+
+.sky-constellation-name {
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 9px;
+  font-family: Georgia, serif;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+  pointer-events: none;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.9);
+}
+
+.sky-constellation-item.claimed .sky-constellation-name {
+  color: var(--rose2);
+  font-weight: 600;
+}
+
+.sky-constellation-item.in-progress .sky-constellation-name {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.sky-constellation-item.locked .sky-constellation-name {
+  color: rgba(255, 255, 255, 0.25);
+  font-size: 8px;
 }
 
 .sky-toolbar {

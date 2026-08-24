@@ -299,66 +299,109 @@ function constellationSvg(def, unlocked, progress) {
   return `<svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">${ambientStars}${lines}${stars}</svg>`;
 }
 function renderUniverse(d){
- let total=Number(d.lifetimeStars||0),wallet=Number(d.wallet||0);
- universeWallet.textContent=wallet.toFixed(1).replace('.',',');
- universeLifetime.textContent=total.toFixed(1).replace('.',',');
- 
- // Filter constellationDefs by unlocked regions
- let allowedCols = [];
- if (d.unlockedRegions && d.unlockedRegions.includes('cielo-1')) allowedCols.push('norte');
- if (d.unlockedRegions && d.unlockedRegions.includes('zodiaco')) allowedCols.push('zodiaco');
- if (d.unlockedRegions && d.unlockedRegions.includes('orion')) allowedCols.push('invierno');
- if (d.unlockedRegions && d.unlockedRegions.includes('profundo')) allowedCols.push('profundo');
- 
- let available = constellationDefs.filter(c => allowedCols.includes(c.collection));
- available.sort((a, b) => a.need - b.need);
- 
- let next = available.find(c => total < c.need);
- if (next) {
-   let current = next;
-   constellationStage.style.display = 'block';
-   
-   // Posicionamiento y escala celeste armónica (Mobile-first, preparado para convivir con más constelaciones)
-   let vw = window.innerWidth || document.documentElement.clientWidth || 360;
-   let vh = window.innerHeight || document.documentElement.clientHeight || 640;
-   
-   // Escala contenida (~120px-160px en móvil) que deja libre el resto del mapa estelar
-   let baseSize = current.size || 125;
-   let size = Math.round(Math.max(110, Math.min(vw * 0.38, (vh - 140) * 0.28, baseSize, 160)));
-   
-   constellationStage.style.width = size + 'px';
-   constellationStage.style.height = size + 'px';
-   constellationStage.style.left = (current.x || 50) + '%';
-   constellationStage.style.top = (current.y || 34) + '%';
-   constellationStage.style.transform = `translate(-50%, -50%) rotate(${current.rot || 0}deg)`;
-   
-   let idx = available.indexOf(current);
-   let prevNeed = idx > 0 ? available[idx - 1].need : 0;
-   let progress = Math.max(0, Math.min(1, (total - prevNeed) / (current.need - prevNeed)));
-   
-   constellationProgressText.textContent = `${total.toFixed(1).replace('.', ',')} / ${current.need} estrellas`;
-   constellationStage.innerHTML = constellationSvg(current, false, progress);
-   
-   let detailsStage = document.getElementById('universeDetailsStage');
-   if (detailsStage) {
-     detailsStage.innerHTML = constellationSvg(current, false, progress);
-   }
-   let captionDetails = document.getElementById('constellationDetailsCaption');
-   if (captionDetails) {
-     captionDetails.innerHTML = `<div class="constellation-caption" style="position:static;color:#fff;padding:0;"><strong style="font-size:15px;color:var(--rose2);">${'Dibujando ' + current.name}</strong><br><small style="color:rgba(255,255,255,0.6);font-size:12px;">Faltan ${(current.need - total).toFixed(1).replace('.', ',')} estrellas: ${current.desc}</small></div>`;
-   }
- } else {
-   constellationStage.style.display = 'none';
-   constellationProgressText.textContent = 'Has cartografiado todo lo accesible. Desbloquea una nueva región para seguir explorando.';
-   let detailsStage = document.getElementById('universeDetailsStage');
-   if (detailsStage) {
-     detailsStage.innerHTML = '<div class="empty" style="padding:40px;color:rgba(255,255,255,0.4);text-align:center;font-size:12px;">Todo cartografiado</div>';
-   }
-   let captionDetails = document.getElementById('constellationDetailsCaption');
-   if (captionDetails) {
-     captionDetails.innerHTML = `<div class="constellation-caption" style="position:static;color:#fff;padding:0;"><strong style="font-size:14px;color:var(--rose2);">Exploración completa</strong><br><small style="color:rgba(255,255,255,0.5);font-size:11px;">Desbloquea una nueva región en Exploración para seguir descubriendo el universo.</small></div>`;
-   }
- }
+  let total=Number(d.lifetimeStars||0),wallet=Number(d.wallet||0);
+  if(typeof universeWallet!=='undefined'&&universeWallet) universeWallet.textContent=wallet.toFixed(1).replace('.',',');
+  if(typeof universeLifetime!=='undefined'&&universeLifetime) universeLifetime.textContent=total.toFixed(1).replace('.',',');
+  
+  // Filter constellationDefs by unlocked regions
+  let allowedCols = [];
+  if (d.unlockedRegions && d.unlockedRegions.includes('cielo-1')) allowedCols.push('norte');
+  if (d.unlockedRegions && d.unlockedRegions.includes('zodiaco')) allowedCols.push('zodiaco');
+  if (d.unlockedRegions && d.unlockedRegions.includes('orion')) allowedCols.push('invierno');
+  if (d.unlockedRegions && d.unlockedRegions.includes('profundo')) allowedCols.push('profundo');
+  
+  let available = constellationDefs.filter(c => allowedCols.includes(c.collection));
+  available.sort((a, b) => a.need - b.need);
+  
+  let next = available.find(c => total < c.need);
+  let vw = window.innerWidth || document.documentElement.clientWidth || 360;
+  let vh = window.innerHeight || document.documentElement.clientHeight || 640;
+
+  if (typeof constellationStage !== 'undefined' && constellationStage) {
+    constellationStage.style.display = 'block';
+    constellationStage.style.width = '100%';
+    constellationStage.style.height = '100%';
+    constellationStage.style.left = '0';
+    constellationStage.style.top = '0';
+    constellationStage.style.transform = 'none';
+
+    let skyHtml = '';
+    available.forEach((c) => {
+      let isClaimed = !!(d.claimed && d.claimed[c.id]);
+      let isNext = (next && next.id === c.id);
+      let isDiscovered = (!isClaimed && total >= c.need);
+      
+      let baseSize = c.size || 125;
+      let size = Math.round(Math.max(100, Math.min(vw * 0.38, (vh - 140) * 0.28, baseSize, 160)));
+      
+      let progress = 0;
+      let unlocked = false;
+      let stateClass = '';
+
+      if (isClaimed) {
+        unlocked = true;
+        progress = 1.0;
+        stateClass = 'claimed illuminated';
+      } else if (isDiscovered) {
+        unlocked = false;
+        progress = 1.0;
+        stateClass = 'discovered';
+      } else if (isNext) {
+        let idx = available.indexOf(c);
+        let prevNeed = idx > 0 ? available[idx - 1].need : 0;
+        progress = Math.max(0, Math.min(1, (total - prevNeed) / (c.need - prevNeed)));
+        unlocked = false;
+        stateClass = 'in-progress';
+      } else {
+        unlocked = false;
+        progress = 0.0;
+        stateClass = 'locked';
+      }
+
+      let svgMarkup = constellationSvg(c, unlocked, progress);
+      let statusHint = isClaimed ? ' (Iluminada)' : (isNext ? ' (En curso)' : (isDiscovered ? ' (Descubierta)' : ' (Por descubrir)'));
+      
+      skyHtml += `
+        <div class="sky-constellation-item ${stateClass}" style="width:${size}px; height:${size}px; left:${c.x || 50}%; top:${c.y || 35}%; transform:translate(-50%, -50%) rotate(${c.rot || 0}deg);" onclick="verFichaConstelacion('${c.id}')" title="${esc(c.name)}${statusHint}">
+          ${svgMarkup}
+          <div class="sky-constellation-name">${esc(c.name)}${isClaimed ? ' ✦' : ''}</div>
+        </div>
+      `;
+    });
+
+    constellationStage.innerHTML = skyHtml;
+  }
+
+  // Modal de progreso y detalles del universo
+  let detailsStage = document.getElementById('universeDetailsStage');
+  let captionDetails = document.getElementById('constellationDetailsCaption');
+  
+  if (next) {
+    let idx = available.indexOf(next);
+    let prevNeed = idx > 0 ? available[idx - 1].need : 0;
+    let nextProgress = Math.max(0, Math.min(1, (total - prevNeed) / (next.need - prevNeed)));
+    
+    if (typeof constellationProgressText !== 'undefined' && constellationProgressText) {
+      constellationProgressText.textContent = `${total.toFixed(1).replace('.', ',')} / ${next.need} estrellas`;
+    }
+    if (detailsStage) {
+      detailsStage.innerHTML = constellationSvg(next, false, nextProgress);
+    }
+    if (captionDetails) {
+      captionDetails.innerHTML = `<div class="constellation-caption" style="position:static;color:#fff;padding:0;"><strong style="font-size:15px;color:var(--rose2);">${'Dibujando ' + next.name}</strong><br><small style="color:rgba(255,255,255,0.6);font-size:12px;">Faltan ${(next.need - total).toFixed(1).replace('.', ',')} estrellas: ${next.desc}</small></div>`;
+    }
+  } else {
+    if (typeof constellationProgressText !== 'undefined' && constellationProgressText) {
+      constellationProgressText.textContent = 'Has cartografiado todo lo accesible en tus regiones desbloqueadas.';
+    }
+    if (detailsStage) {
+      let lastConst = available.length ? available[available.length - 1] : null;
+      detailsStage.innerHTML = lastConst ? constellationSvg(lastConst, true, 1.0) : '<div class="empty" style="padding:40px;color:rgba(255,255,255,0.4);text-align:center;font-size:12px;">Todo cartografiado</div>';
+    }
+    if (captionDetails) {
+      captionDetails.innerHTML = `<div class="constellation-caption" style="position:static;color:#fff;padding:0;"><strong style="font-size:14px;color:var(--rose2);">Cielo completado</strong><br><small style="color:rgba(255,255,255,0.5);font-size:11px;">Todas las constelaciones de tus regiones brillan en tu firmamento.</small></div>`;
+    }
+  }
 
   // 5 Capítulos celestes del Atlas (un único libro continuo)
   const bookChapters = [
