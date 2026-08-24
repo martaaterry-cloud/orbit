@@ -2,7 +2,15 @@ const icons={
 chat:`<svg class="icon" viewBox="0 0 24 24"><path d="M5 18l-1 3 4-2h8a4 4 0 0 0 4-4V8a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v7a4 4 0 0 0 1 3z"/></svg>`,
 insta:`<svg class="icon" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="5"/><circle cx="12" cy="12" r="3.5"/><circle cx="17.4" cy="6.8" r=".8" fill="currentColor" stroke="none"/></svg>`,
 activity:`<svg class="icon" viewBox="0 0 24 24"><path d="M4 13h3l2-6 4 11 2-6h5"/></svg>`,
-search:`<svg class="icon" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6"/><path d="m15 15 5 5"/><path d="m7 7 7 7"/></svg>`
+search:`<svg class="icon" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6"/><path d="m15 15 5 5"/><path d="m7 7 7 7"/></svg>`,
+lock:`<svg class="icon" viewBox="0 0 24 24"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`,
+pencil:`<svg class="icon" viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>`,
+close:`<svg class="icon" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>`,
+check:`<svg class="icon" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>`,
+back:`<svg class="icon" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>`,
+plus:`<svg class="icon" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>`,
+trash:`<svg class="icon" viewBox="0 0 24 24"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`,
+refresh:`<svg class="icon" viewBox="0 0 24 24"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>`
 };
 
 
@@ -408,7 +416,7 @@ function renderUniverse(d){
   // Update top active sky title
   let titleEl = document.getElementById('skyHeaderTitle');
   if(titleEl) {
-    titleEl.textContent = `${currentRegion.name} · ${currentRegion.roman}${isSkyUnlocked ? '' : ' 🔒'}`;
+    titleEl.innerHTML = isSkyUnlocked ? `${esc(currentRegion.name)} · ${esc(currentRegion.roman)}` : `<span style="display:inline-flex; align-items:center; gap:5px;">${esc(currentRegion.name)} · ${esc(currentRegion.roman)} <svg class="icon" viewBox="0 0 24 24" style="width:13px; height:13px; stroke:currentColor;"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>`;
   }
 
   // Determine overall in-progress constellation across unlocked regions
@@ -562,7 +570,7 @@ function renderUniverse(d){
     }
     let ownedInCh = isUnlocked ? chConsts.filter(c => d.claimed && d.claimed[c.id]).length : 0;
 
-    indexChipsHtml += `<button class="atlas-chip" onclick="jumpToAtlasChapter('chapter-${ch.id}')">${ch.roman} · ${ch.name}${isUnlocked ? '' : ' 🔒'}</button>`;
+    indexChipsHtml += `<button class="atlas-chip" onclick="jumpToAtlasChapter('chapter-${ch.id}')" style="display:inline-flex; align-items:center; gap:4px;">${ch.roman} · ${ch.name}${isUnlocked ? '' : '<svg class="icon" viewBox="0 0 24 24" style="width:11px; height:11px; stroke:currentColor;"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>'}</button>`;
 
     if (!isUnlocked) {
       // Tipo C: Portadilla de Capítulo Sellado (No genera páginas de constelaciones internas)
@@ -572,7 +580,7 @@ function renderUniverse(d){
           <div class="atlas-folio-inner atlas-chapter-locked-inner">
             <div class="atlas-folio-header">
               <span class="atlas-folio-chapter">CAPÍTULO ${ch.roman}</span>
-              <span class="atlas-folio-num">SELLADO 🔒</span>
+              <span class="atlas-folio-num" style="display:inline-flex; align-items:center; gap:4px;">SELLADO <svg class="icon" viewBox="0 0 24 24" style="width:11px; height:11px; stroke:currentColor;"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
             </div>
             <div class="atlas-chapter-symbol">
               <div class="compass-ring">
@@ -1002,7 +1010,7 @@ function renderReflectionPrompt(){
     if(saved && saved.answer){
       badgeEl.innerHTML = `<span class="reflection-badge-answered">✦ Respondida hoy</span>`;
     } else {
-      badgeEl.innerHTML = `<span class="reflection-badge-pending">✍️ Toca para reflexionar...</span>`;
+      badgeEl.innerHTML = `<span class="reflection-badge-pending" style="display:inline-flex; align-items:center; gap:5px;"><svg class="icon" viewBox="0 0 24 24" style="width:12px; height:12px; stroke:currentColor; stroke-width:2;"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg> Toca para reflexionar...</span>`;
     }
   }
 }
@@ -1242,7 +1250,7 @@ function renderNotCheckingList(d){
           <div style="flex:1; min-width:0;">
             <div style="display:flex; justify-content:space-between; align-items:center;">
               <strong style="font-size:13.5px; font-weight:600; color:var(--ink); line-height:1.35;">${esc(g.name)}</strong>
-              <span style="font-size:11px; color:var(--wine); opacity:0.8; margin-left:6px;">✏️</span>
+              <span style="display:inline-flex; align-items:center; color:var(--wine); opacity:0.8; margin-left:6px;"><svg class="icon" viewBox="0 0 24 24" style="width:13px; height:13px; stroke:currentColor;"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></span>
             </div>
             ${g.sub ? `<small style="display:block; font-size:11px; color:var(--muted); line-height:1.4; margin-top:2px;">${esc(g.sub)}</small>` : ''}
           </div>
@@ -1579,9 +1587,9 @@ function renderProfile(d){
     let currentYear = new Date().getFullYear();
     if(d.profile.birthdayStarsClaimedYear !== currentYear){
       d.profile.birthdayStarsClaimedYear = currentYear;
-      addPoints(d, 25, 'cumpleanos', 'Regalo de Cumpleaños 🌟', 'birthday-' + currentYear);
+      addPoints(d, 25, 'cumpleanos', 'Regalo de Cumpleaños ★', 'birthday-' + currentYear);
       save(d);
-      toast('🎂 ¡Feliz Cumpleaños! Orbit te regala 25 estrellas 🌟');
+      toast('¡Feliz Cumpleaños! Orbit te regala 25 estrellas ★');
       let bankEl=document.getElementById('bank'), shopWalletEl=document.getElementById('shopWallet');
       if(bankEl) bankEl.textContent=Number(d.wallet||0).toFixed(1).replace('.',',');
       if(shopWalletEl) shopWalletEl.textContent=Number(d.wallet||0).toFixed(1).replace('.',',');
@@ -1596,10 +1604,10 @@ function renderProfile(d){
       let ageText = '';
       if(birthInfo){
         if(birthInfo.isToday){
-          ageText = `<div style="font-size:11px; color:var(--wine); font-weight:700; margin-top:4px;">🎂 ${birthInfo.age} años · ¡Hoy es tu cumpleaños! (+25 ★ regalo)</div>`;
+          ageText = `<div style="font-size:11px; color:var(--wine); font-weight:700; margin-top:4px; display:flex; align-items:center; gap:4px;"><svg class="icon" viewBox="0 0 24 24" style="width:12px; height:12px; stroke:currentColor;"><path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8"/><path d="M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2.5 2 4 2 2-1 2-1"/><path d="M2 21h20"/><path d="M7 8v3"/><path d="M12 8v3"/><path d="M17 8v3"/><path d="M7 4h.01"/><path d="M12 4h.01"/><path d="M17 4h.01"/></svg>${birthInfo.age} años · ¡Hoy es tu cumpleaños! (+25 ★ regalo)</div>`;
         } else {
           let bdayLabel = birthInfo.daysUntil === 1 ? 'mañana' : `en ${birthInfo.daysUntil} días`;
-          ageText = `<div style="font-size:11px; color:var(--muted); margin-top:4px;">🎂 ${birthInfo.age} años · Próximo cumple ${bdayLabel}</div>`;
+          ageText = `<div style="font-size:11px; color:var(--muted); margin-top:4px; display:flex; align-items:center; gap:4px;"><svg class="icon" viewBox="0 0 24 24" style="width:12px; height:12px; stroke:currentColor;"><path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8"/><path d="M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2.5 2 4 2 2-1 2-1"/><path d="M2 21h20"/><path d="M7 8v3"/><path d="M12 8v3"/><path d="M17 8v3"/><path d="M7 4h.01"/><path d="M12 4h.01"/><path d="M17 4h.01"/></svg>${birthInfo.age} años · Próximo cumple ${bdayLabel}</div>`;
         }
       }
       viewCard.innerHTML = `
@@ -1639,7 +1647,7 @@ function renderProfile(d){
     if(name){
       kickerEl.textContent = 'HOY · ' + name.toUpperCase();
       if(birthInfo && birthInfo.isToday){
-        titleEl.textContent = '¡Feliz cumpleaños, ' + name + '! ✨';
+        titleEl.textContent = '¡Feliz cumpleaños, ' + name + '!';
       } else {
         titleEl.textContent = 'Hola, ' + name;
       }
@@ -1655,7 +1663,9 @@ function renderProfile(d){
       bdayBanner.style.display='block';
       let name=d.profile?.displayName || 'viajero';
       bdayBanner.innerHTML=`
-        <div style="font-size:18px; margin-bottom:4px;">🎂 ✨ 🌟</div>
+        <div style="display:flex; justify-content:center; gap:8px; margin-bottom:6px; color:var(--wine);">
+          <svg class="icon" viewBox="0 0 24 24" style="width:22px; height:22px;"><path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8"/><path d="M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2.5 2 4 2 2-1 2-1"/><path d="M2 21h20"/><path d="M7 8v3"/><path d="M12 8v3"/><path d="M17 8v3"/><path d="M7 4h.01"/><path d="M12 4h.01"/><path d="M17 4h.01"/></svg>
+        </div>
         <strong style="font-size:14px; color:var(--wine);">¡Feliz Cumpleaños, ${esc(name)}!</strong>
         <p style="font-size:12px; color:var(--ink); margin:6px 0 0; line-height:1.45;">Orbit celebra tu día especial. Tienes un regalo de <strong>+25 estrellas</strong> en tu cesta estelar para iluminar tu universo.</p>
       `;
