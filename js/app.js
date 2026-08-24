@@ -399,14 +399,10 @@ function renderUniverse(d){
     currentSkyId = currentRegion.id;
   }
 
-  // Render top discrete tabs
-  let navTabsEl = document.getElementById('skyNavTabs');
-  if(navTabsEl) {
-    navTabsEl.innerHTML = skyRegionsList.map(r => {
-      let isUnlocked = d.unlockedRegions && d.unlockedRegions.includes(r.id);
-      let isActive = (r.id === currentRegion.id);
-      return `<button class="sky-tab-btn ${isActive ? 'active' : ''} ${isUnlocked ? '' : 'locked'}" onclick="setSkyById('${r.id}')">${esc(r.name)}${isUnlocked ? '' : ' 🔒'}</button>`;
-    }).join('');
+  // Update top active sky title
+  let titleEl = document.getElementById('skyHeaderTitle');
+  if(titleEl) {
+    titleEl.textContent = `${currentRegion.name} · ${currentRegion.roman}`;
   }
 
   // Determine overall in-progress constellation across all unlocked regions
@@ -510,19 +506,18 @@ function renderUniverse(d){
     }
   }
 
-  // 5 Capítulos celestes del Atlas (un único libro continuo)
+  // 4 Capítulos celestes del Atlas (unificados con las 4 regiones celestes)
   const bookChapters = [
-    { id: 'cielo-1', name: 'Primer cielo', roman: 'I', region: 'cielo-1', consts: ['lyra', 'cassiopeia', 'ursa-major'], desc: 'El firmamento visible a simple vista.' },
+    { id: 'cielo-1', name: 'Primer cielo', roman: 'I', region: 'cielo-1', col: 'norte', desc: 'El firmamento visible a simple vista.' },
     { id: 'zodiaco', name: 'Zodiaco', roman: 'II', region: 'zodiaco', col: 'zodiaco', desc: 'Las doce constelaciones del cinturón solar.' },
-    { id: 'norte', name: 'Cielo del norte', roman: 'III', region: 'cielo-1', consts: ['cygnus'], desc: 'Guías celestes del hemisferio septentrional.' },
-    { id: 'invierno', name: 'Cielo de invierno', roman: 'IV', region: 'orion', col: 'invierno', desc: 'Estrellas brillantes de las noches frías.' },
-    { id: 'profundo', name: 'Espacio profundo', roman: 'V', region: 'profundo', col: 'profundo', desc: 'Horizontes lejanos más allá de la galaxia.' }
+    { id: 'orion', name: 'Cielo de invierno', roman: 'III', region: 'orion', col: 'invierno', desc: 'Estrellas brillantes de las noches frías.' },
+    { id: 'profundo', name: 'Espacio profundo', roman: 'IV', region: 'profundo', col: 'profundo', desc: 'Horizontes lejanos más allá de la galaxia.' }
   ];
 
   let regNames = {
     'cielo-1': 'Primer cielo',
-    'zodiaco': 'Cinturón Zodiacal',
-    'orion': 'Nebulosa de Orión',
+    'zodiaco': 'Zodiaco',
+    'orion': 'Cielo de invierno',
     'profundo': 'Espacio profundo'
   };
 
@@ -699,9 +694,8 @@ function renderUniverse(d){
  
  const regions = [
    { id: 'cielo-1', name: 'Primer cielo', cost: 0, desc: 'El cielo visible a simple vista.' },
-   { id: 'zodiaco', name: 'Cinturón Zodiacal', cost: 5, desc: 'Camino solar que cruzan las 12 constelaciones.' },
-   { id: 'exterior', name: 'Cielo del norte / Exterior', cost: 7, desc: 'Estrellas lejanas en las afueras de la galaxia.' },
-   { id: 'orion', name: 'Nebulosa de Orión', cost: 10, desc: 'Cuna de estrellas en el brazo de Orión.' },
+   { id: 'zodiaco', name: 'Zodiaco', cost: 5, desc: 'Las 12 constelaciones del cinturón solar.' },
+   { id: 'orion', name: 'Cielo de invierno', cost: 10, desc: 'Estrellas brillantes de las noches frías.' },
    { id: 'profundo', name: 'Espacio profundo', cost: 15, desc: 'Galaxias externas y horizontes lejanos.' }
  ];
  

@@ -13,7 +13,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <title>Orbit</title>
 
-  <link rel="stylesheet" href="css/orbit.css?v=1.2.28">
+  <link rel="stylesheet" href="css/orbit.css?v=1.2.29">
 </head>
 <body>
 <!-- Pantalla de Acceso Inicial -->
@@ -394,7 +394,7 @@
     <button class="btn btn-line" onclick="handleCloudLogout()" style="font-size:12px; padding:8px 16px; color:var(--wine);" id="cloudLogoutBtn">
       Cerrar sesión
     </button>
-    <div style="font-size:11px; color:var(--muted); opacity:0.6; margin-top:14px;">Orbit v1.2.28</div>
+    <div style="font-size:11px; color:var(--muted); opacity:0.6; margin-top:14px;">Orbit v1.2.29</div>
   </div>
 </section>
 
@@ -416,8 +416,10 @@
       </svg>
     </div>
 
-    <!-- Botones discretos de cielos en la parte superior -->
-    <div class="sky-nav-tabs" id="skyNavTabs"></div>
+    <!-- Título del cielo activo en la parte superior -->
+    <div class="sky-title-header" id="skyTitleHeader">
+      <span class="sky-title-text" id="skyHeaderTitle">Primer cielo · I</span>
+    </div>
 
     <div class="constellation-stage" id="constellationStage"></div>
   </div>
@@ -704,14 +706,14 @@
 <div class="toast" id="toast"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="data/templates.js?v=1.2.28"></script>
-  <script src="data/constellations.js?v=1.2.28"></script>
-  <script src="js/storage.js?v=1.2.28"></script>
-  <script src="js/supabase.js?v=1.2.28"></script>
-  <script src="js/stars.js?v=1.2.28"></script>
-  <script src="js/streak.js?v=1.2.28"></script>
-  <script src="js/journal.js?v=1.2.28"></script>
-  <script src="js/archive.js?v=1.2.28"></script>
-  <script src="js/app.js?v=1.2.28"></script>
+  <script src="data/templates.js?v=1.2.29"></script>
+  <script src="data/constellations.js?v=1.2.29"></script>
+  <script src="js/storage.js?v=1.2.29"></script>
+  <script src="js/supabase.js?v=1.2.29"></script>
+  <script src="js/stars.js?v=1.2.29"></script>
+  <script src="js/streak.js?v=1.2.29"></script>
+  <script src="js/journal.js?v=1.2.29"></script>
+  <script src="js/archive.js?v=1.2.29"></script>
+  <script src="js/app.js?v=1.2.29"></script>
 </body>
 </html>
