@@ -1107,6 +1107,30 @@ function initSwipeToRedeem(){
   });
 }
 
+let isNotCheckingEditing = false;
+
+function toggleNotCheckingEdit(forceState){
+  isNotCheckingEditing = (typeof forceState === 'boolean') ? forceState : !isNotCheckingEditing;
+  let btn = document.getElementById('notCheckingEditToggleBtn');
+  let actionsDiv = document.getElementById('notCheckingEditActions');
+  if(btn){
+    if(isNotCheckingEditing){
+      btn.innerHTML = `<svg class="icon" viewBox="0 0 24 24" style="width:15px; height:15px; stroke:var(--wine);"><path d="M20 6L9 17l-5-5"/></svg>`;
+      btn.title = "Terminar edición";
+      btn.classList.add('active');
+    } else {
+      btn.innerHTML = `<svg class="icon" viewBox="0 0 24 24" style="width:15px; height:15px;"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>`;
+      btn.title = "Editar lista";
+      btn.classList.remove('active');
+    }
+  }
+  if(actionsDiv){
+    actionsDiv.style.display = isNotCheckingEditing ? 'block' : 'none';
+  }
+  let d = load();
+  renderNotCheckingList(d);
+}
+
 function openAddNotCheckingModal(){
   let editIdEl = document.getElementById('notCheckingEditId');
   let titleEl = document.getElementById('notCheckingModalTitle');
@@ -1182,27 +1206,71 @@ function removeNotCheckingItem(id){
 
 function renderNotCheckingList(d){
   let container = document.getElementById('goals');
+  let btn = document.getElementById('notCheckingEditToggleBtn');
+  let actionsDiv = document.getElementById('notCheckingEditActions');
   if(!container) return;
+
+  if(btn){
+    if(isNotCheckingEditing){
+      btn.innerHTML = `<svg class="icon" viewBox="0 0 24 24" style="width:15px; height:15px; stroke:var(--wine);"><path d="M20 6L9 17l-5-5"/></svg>`;
+      btn.title = "Terminar edición";
+      btn.classList.add('active');
+    } else {
+      btn.innerHTML = `<svg class="icon" viewBox="0 0 24 24" style="width:15px; height:15px;"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>`;
+      btn.title = "Editar lista";
+      btn.classList.remove('active');
+    }
+  }
+  if(actionsDiv){
+    actionsDiv.style.display = isNotCheckingEditing ? 'block' : 'none';
+  }
+
   if(!Array.isArray(d.goals) || !d.goals.length){
-    container.innerHTML = `<div class="empty" style="padding:14px; text-align:center; font-size:12px; color:var(--muted);">No hay elementos en tu lista todavía. Toca el botón + para añadir lo que eliges no comprobar.</div>`;
+    container.innerHTML = `<div class="empty" style="padding:14px; text-align:center; font-size:12px; color:var(--muted);">No hay impulsos en tu lista todavía.</div>`;
     return;
   }
   
-  container.innerHTML = d.goals.map(g => {
-    let iconSvg = icons[g.icon] || icons.search || `<svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m4.9 4.9 14.2 14.2"/></svg>`;
-    let contentHtml = `
-      <div style="display:flex; align-items:flex-start; gap:12px; padding:12px 14px; min-width:0; width:100%; box-sizing:border-box;">
-        <div style="width:32px; height:32px; border-radius:50%; background:var(--soft); display:grid; place-items:center; color:var(--wine); flex-shrink:0; margin-top:1px;">
-          ${iconSvg}
+  if(isNotCheckingEditing){
+    // Modo Edición: tocar para editar, swipe para eliminar
+    container.innerHTML = d.goals.map(g => {
+      let iconSvg = icons[g.icon] || icons.search || `<svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m4.9 4.9 14.2 14.2"/></svg>`;
+      let contentHtml = `
+        <div style="display:flex; align-items:flex-start; gap:12px; padding:12px 14px; min-width:0; width:100%; box-sizing:border-box;">
+          <div style="width:32px; height:32px; border-radius:50%; background:var(--soft); display:grid; place-items:center; color:var(--wine); flex-shrink:0; margin-top:1px;">
+            ${iconSvg}
+          </div>
+          <div style="flex:1; min-width:0;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <strong style="font-size:13.5px; font-weight:600; color:var(--ink); line-height:1.35;">${esc(g.name)}</strong>
+              <span style="font-size:11px; color:var(--wine); opacity:0.8; margin-left:6px;">✏️</span>
+            </div>
+            ${g.sub ? `<small style="display:block; font-size:11px; color:var(--muted); line-height:1.4; margin-top:2px;">${esc(g.sub)}</small>` : ''}
+          </div>
         </div>
-        <div style="flex:1; min-width:0;">
-          <strong style="font-size:13.5px; font-weight:600; color:var(--ink); line-height:1.35; display:block;">${esc(g.name)}</strong>
-          ${g.sub ? `<small style="display:block; font-size:11px; color:var(--muted); line-height:1.4; margin-top:2px;">${esc(g.sub)}</small>` : ''}
+      `;
+      return wrapSwipe(contentHtml, `removeNotCheckingItem('${g.id}')`, 'good-card', `openEditNotCheckingModal('${g.id}')`);
+    }).join('');
+  } else {
+    // Modo Normal: cada elemento con sus dos acciones ('Tengo ganas de mirar' y 'Lo he comprobado')
+    container.innerHTML = d.goals.map(g => {
+      let iconSvg = icons[g.icon] || icons.search || `<svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m4.9 4.9 14.2 14.2"/></svg>`;
+      return `
+        <div class="card goal" style="padding:14px; margin-bottom:10px;">
+          <div class="goal-top" style="display:grid; grid-template-columns:36px 1fr; gap:10px; align-items:center;">
+            <div class="goal-icon">${iconSvg}</div>
+            <div>
+              <div class="goal-title">${esc(g.name)}</div>
+              ${g.sub ? `<div class="goal-sub">${esc(g.sub)}</div>` : ''}
+            </div>
+          </div>
+          <div class="goal-actions" style="display:flex; gap:8px; margin-top:12px; padding-left:46px;">
+            <button class="btn btn-soft" onclick="openUrge('${g.id}')">Tengo ganas de mirar</button>
+            <button class="btn btn-line" onclick="slip('${g.id}')">Lo he comprobado</button>
+          </div>
         </div>
-      </div>
-    `;
-    return wrapSwipe(contentHtml, `removeNotCheckingItem('${g.id}')`, 'good-card', `openEditNotCheckingModal('${g.id}')`);
-  }).join('');
+      `;
+    }).join('');
+  }
 }
 
 function render(){
