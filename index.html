@@ -13,7 +13,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <title>Orbit</title>
 
-  <link rel="stylesheet" href="css/orbit.css?v=1.2.25">
+  <link rel="stylesheet" href="css/orbit.css?v=1.2.26">
 </head>
 <body>
 <!-- Pantalla de Acceso Inicial -->
@@ -394,7 +394,7 @@
     <button class="btn btn-line" onclick="handleCloudLogout()" style="font-size:12px; padding:8px 16px; color:var(--wine);" id="cloudLogoutBtn">
       Cerrar sesión
     </button>
-    <div style="font-size:11px; color:var(--muted); opacity:0.6; margin-top:14px;">Orbit v1.2.25</div>
+    <div style="font-size:11px; color:var(--muted); opacity:0.6; margin-top:14px;">Orbit v1.2.26</div>
   </div>
 </section>
 
@@ -441,10 +441,21 @@
         <circle cx="40" cy="30" r="1.5" />
         <circle cx="70" cy="50" r="1" />
         <circle cx="40" cy="80" r="1.2" />
-    <!-- Indicador minimalista de región celeste -->
-    <div class="sky-header-badge" id="skyHeaderBadge">
-      <div class="sky-header-title" id="skyHeaderTitle">Primer cielo</div>
-      <div class="sky-dots-indicator" id="skyDotsIndicator"></div>
+      </svg>
+    </div>
+
+    <!-- Barra de navegación celeste visible y discreta -->
+    <div class="sky-nav-bar" id="skyNavBar">
+      <button class="sky-nav-arrow" id="skyNavPrev" onclick="navigateSky(-1)" title="Cielo anterior" aria-label="Anterior">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <div class="sky-nav-center">
+        <span class="sky-nav-title" id="skyHeaderTitle">Primer cielo</span>
+        <div class="sky-dots-indicator" id="skyDotsIndicator"></div>
+      </div>
+      <button class="sky-nav-arrow" id="skyNavNext" onclick="navigateSky(1)" title="Cielo siguiente" aria-label="Siguiente">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+      </button>
     </div>
 
     <div class="constellation-stage" id="constellationStage"></div>
@@ -732,14 +743,14 @@
 <div class="toast" id="toast"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="data/templates.js?v=1.2.25"></script>
-  <script src="data/constellations.js?v=1.2.25"></script>
-  <script src="js/storage.js?v=1.2.25"></script>
-  <script src="js/supabase.js?v=1.2.25"></script>
-  <script src="js/stars.js?v=1.2.25"></script>
-  <script src="js/streak.js?v=1.2.25"></script>
-  <script src="js/journal.js?v=1.2.25"></script>
-  <script src="js/archive.js?v=1.2.25"></script>
-  <script src="js/app.js?v=1.2.25"></script>
+  <script src="data/templates.js?v=1.2.26"></script>
+  <script src="data/constellations.js?v=1.2.26"></script>
+  <script src="js/storage.js?v=1.2.26"></script>
+  <script src="js/supabase.js?v=1.2.26"></script>
+  <script src="js/stars.js?v=1.2.26"></script>
+  <script src="js/streak.js?v=1.2.26"></script>
+  <script src="js/journal.js?v=1.2.26"></script>
+  <script src="js/archive.js?v=1.2.26"></script>
+  <script src="js/app.js?v=1.2.26"></script>
 </body>
 </html>

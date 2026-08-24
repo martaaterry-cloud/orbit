@@ -390,10 +390,21 @@ function renderUniverse(d){
   }
   let currentRegion = unlockedSkies[currentSkyIndex];
 
-  // Update header badge
+  // Update navigation controls
   let titleEl = document.getElementById('skyHeaderTitle');
   if(titleEl) {
     titleEl.textContent = `${currentRegion.name} · ${currentRegion.roman}`;
+  }
+  let prevBtn = document.getElementById('skyNavPrev');
+  let nextBtn = document.getElementById('skyNavNext');
+  if(prevBtn && nextBtn) {
+    if(unlockedSkies.length > 1){
+      prevBtn.style.display = 'grid';
+      nextBtn.style.display = 'grid';
+    } else {
+      prevBtn.style.display = 'none';
+      nextBtn.style.display = 'none';
+    }
   }
   let dotsEl = document.getElementById('skyDotsIndicator');
   if(dotsEl) {
@@ -434,7 +445,7 @@ function renderUniverse(d){
       let isDiscovered = (!isClaimed && total >= c.need);
       
       let baseSize = c.size || 125;
-      let size = Math.round(Math.max(85, Math.min(vw * 0.38, (vh - 140) * 0.28, baseSize, 160)));
+      let size = Math.round(Math.max(100, Math.min(vw * 0.38, (vh - 140) * 0.28, baseSize, 160)));
       
       let progress = 0;
       let unlocked = false;
