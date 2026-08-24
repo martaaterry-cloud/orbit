@@ -250,8 +250,13 @@ function triggerPastMemoryPhotoSelect(){
 async function handlePastMemoryPhotoSelect(event){
   let file = event.target.files && event.target.files[0];
   if(!file) return;
-  if(!file.type.startsWith('image/')){
-    return toast('Por favor, selecciona un archivo de imagen.');
+  if(!file.type || !file.type.startsWith('image/')){
+    clearPastMemoryPhotoSelect();
+    return toast('Por favor, selecciona un archivo de imagen válido.');
+  }
+  if(file.size > 15 * 1024 * 1024){
+    clearPastMemoryPhotoSelect();
+    return toast('La imagen es demasiado grande (máximo 15 MB).');
   }
   if(typeof navigator !== 'undefined' && !navigator.onLine){
     clearPastMemoryPhotoSelect();

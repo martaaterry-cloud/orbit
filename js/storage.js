@@ -9,6 +9,124 @@ function toast(msg){let t=document.getElementById('toast');if(t){t.textContent=m
 
 function dayKey(ts=Date.now()){let d=new Date(ts);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
 
+let currentOrbitUserId = null;
+
+function setOrbitActiveUser(user) {
+  if (user && user.id) {
+    currentOrbitUserId = user.id;
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('orbitActiveUserId', user.id);
+      localStorage.setItem('orbitKnownUser', JSON.stringify({
+        id: user.id,
+        email: user.email || '',
+        username: user.user_metadata?.username || ''
+      }));
+    }
+  } else {
+    currentOrbitUserId = null;
+    if (typeof localStorage !== 'undefined') {
+      localStorage.removeItem('orbitActiveUserId');
+      localStorage.removeItem('orbitKnownUser');
+    }
+  }
+}
+
+function getOrbitActiveUserId() {
+  if (currentOrbitUserId) return currentOrbitUserId;
+  if (typeof localStorage !== 'undefined') {
+    let stored = localStorage.getItem('orbitActiveUserId');
+    if (stored) return stored;
+    try {
+      let known = JSON.parse(localStorage.getItem('orbitKnownUser') || '{}');
+      if (known && known.id) return known.id;
+    } catch(e){}
+  }
+  return null;
+}
+
+function getUserStorageKey(baseKey, userId) {
+  let uid = userId || getOrbitActiveUserId();
+  return uid ? `${baseKey}:${uid}` : baseKey;
+}
+
+// Migración segura de claves legacy al usuario autenticado (idempotente y con verificación estricta)
+function migrateLegacyStorageIfVerified(user) {
+  if (!user || !user.id || typeof localStorage === 'undefined') return;
+  
+  let migrationKey = 'orbitMigrationDone:' + user.id;
+  if (localStorage.getItem(migrationKey)) return;
+
+  let scopedKey = 'orbitV9:' + user.id;
+  let hasScopedData = !!localStorage.getItem(scopedKey);
+  
+  if (hasScopedData) {
+    localStorage.setItem(migrationKey, 'true');
+    return;
+  }
+
+  let legacyV9 = localStorage.getItem('orbitV9');
+  if (!legacyV9) {
+    localStorage.setItem(migrationKey, 'true');
+    return;
+  }
+
+  let rawKnown = localStorage.getItem('orbitKnownUser');
+  let isVerified = false;
+  
+  if (rawKnown) {
+    if (rawKnown === user.email) {
+      isVerified = true;
+    } else {
+      try {
+        let parsed = JSON.parse(rawKnown);
+        if (parsed && (parsed.email === user.email || parsed.id === user.id)) {
+          isVerified = true;
+        }
+      } catch(e){}
+    }
+  }
+
+  if (isVerified) {
+    try {
+      localStorage.setItem('orbitV9:' + user.id, legacyV9);
+      
+      let legTimer = localStorage.getItem('orbitTimer');
+      if (legTimer) localStorage.setItem('orbitTimer:' + user.id, legTimer);
+      
+      let legLocalUp = localStorage.getItem('orbitLocalUpdatedAt');
+      if (legLocalUp) localStorage.setItem('orbitLocalUpdatedAt:' + user.id, legLocalUp);
+      
+      let legCloudUp = localStorage.getItem('orbitLastCloudUpdatedAt');
+      if (legCloudUp) localStorage.setItem('orbitLastCloudUpdatedAt:' + user.id, legCloudUp);
+      
+      let legUnsync = localStorage.getItem('orbitHasUnsyncedChanges');
+      if (legUnsync) localStorage.setItem('orbitHasUnsyncedChanges:' + user.id, legUnsync);
+
+      localStorage.setItem('orbitV9_migrated_' + user.id + '_backup', legacyV9);
+      localStorage.removeItem('orbitV9');
+      localStorage.removeItem('orbitTimer');
+      localStorage.removeItem('orbitLocalUpdatedAt');
+      localStorage.removeItem('orbitLastCloudUpdatedAt');
+      localStorage.removeItem('orbitHasUnsyncedChanges');
+      
+      localStorage.setItem(migrationKey, 'true');
+    } catch(err) {
+      console.warn('Error durante la migración legacy:', err);
+    }
+  } else {
+    // Si no puede verificarse, se preserva en backup no reclamado
+    try {
+      localStorage.setItem('orbitV9_unclaimed_backup', legacyV9);
+      localStorage.removeItem('orbitV9');
+      localStorage.removeItem('orbitTimer');
+      localStorage.removeItem('orbitLocalUpdatedAt');
+      localStorage.removeItem('orbitLastCloudUpdatedAt');
+      localStorage.removeItem('orbitHasUnsyncedChanges');
+      localStorage.setItem(migrationKey, 'true');
+    } catch(e){}
+  }
+}
+
 function defaults(){
  const n=Date.now();
  return {v:9,templateId:'ruptura',focusAreas:[{id:'ruptura',status:'active',startedAt:n,archivedAt:null}],profile:{displayName:'',username:'',birthDate:null},wallet:0,lifetimeStars:0,bank:0,claimed:{},best:0,pointAwards:{},returnToMe:{since:n,awardedMilestones:[],best:0},
@@ -33,22 +151,12 @@ function defaults(){
  {id:'o5',name:'Proyectos',meaning:'algo que también es mío'}]}
 }
 
-function load(){
+function load(userId){
  let d;
- try{d=JSON.parse(localStorage.getItem('orbitV9'))}catch{}
+ let key = getUserStorageKey('orbitV9', userId);
+ try{d=JSON.parse(localStorage.getItem(key))}catch{}
  if(!d){
-  let old;try{old=JSON.parse(localStorage.getItem('orbitV8'))}catch{}
   d=defaults();
-  if(old){
-   ['bank','claimed','best','pointAwards','goals','rewards','urges','slips','journal','checkins','orbit','boosters','templateId','focusAreas','profile'].forEach(k=>{if(old[k]!==undefined)d[k]=old[k]});
-   if(old.goodThings)d.goodThings=old.goodThings
-  }else{
-   try{old=JSON.parse(localStorage.getItem('orbitV3'))}catch{}
-   if(old){
-    d.bank=old.bank||0;d.claimed=old.claimed||{};d.best=old.best||0;d.urges=old.urges||[];d.slips=old.slips||[];d.rewards=old.rewards||d.rewards;
-    if(old.goals)old.goals.forEach(og=>{let g=d.goals.find(x=>x.id===og.id);if(g&&og.since)g.since=og.since})
-   }
-  }
  }
  const insta=d.goals?.find(g=>g.id==='insta');if(insta){insta.name='No comprobar cambios en Instagram';insta.sub='No mirar seguidores, seguidos o cambios para calmar la ansiedad'}
  if(!d.goodThings)d.goodThings=[];
@@ -94,82 +202,23 @@ function load(){
  if(Array.isArray(d.goodThings)){d.goodThings.forEach(g=>{if(g&&!g.id)g.id=uid()})}
  if(Array.isArray(d.urges)){d.urges.forEach(u=>{if(u&&!u.id)u.id=uid()})}
 
-  // Migración quirúrgica única: eventos de racha actual y limpieza del huérfano 2026-08-21
-  if(!d._streakMilestonesAndOrphanFixed_20260821){
-    let dayObj21 = d.pointAwards?.['2026-08-21'];
-    if(dayObj21 && Array.isArray(dayObj21.events)){
-      let idxOrphan = dayObj21.events.findIndex(e =>
-        e && e.kind === 'accion' && e.label === 'Escribir' && !e.refId && Number(e.amount) === 0.1
-      );
-      if(idxOrphan !== -1){
-        dayObj21.events.splice(idxOrphan, 1);
-        if(dayObj21.actions && dayObj21.actions.journal){
-          dayObj21.actions.journal = Math.max(0, Number(dayObj21.actions.journal) - 0.1);
-        }
-        d.wallet = Math.max(0, Number(d.wallet || 0) - 0.1);
-        d.lifetimeStars = Math.max(0, Number(d.lifetimeStars || 0) - 0.1);
-        d.bank = d.wallet;
-      }
-    }
-
-    let since = Number(d.returnToMe?.since || 0);
-    if(since > 0){
-      let day20Key = dayKey(since);
-      let day21Key = dayKey(since + 24 * 3600 * 1000);
-
-      if(!d.pointAwards[day20Key]) d.pointAwards[day20Key] = { limits: {}, actions: {}, events: [] };
-      if(!d.pointAwards[day20Key].events) d.pointAwards[day20Key].events = [];
-
-      let events21 = d.pointAwards[day21Key]?.events || [];
-
-      let idx4 = events21.findIndex(e => e.kind === 'racha' && e.label === 'Volver a mí · 4h');
-      if(idx4 !== -1){
-        let [ev4] = events21.splice(idx4, 1);
-        ev4.ts = since + (4 * 3600 * 1000);
-        d.pointAwards[day20Key].events.push(ev4);
-      }
-
-      let idx8 = events21.findIndex(e => e.kind === 'racha' && e.label === 'Volver a mí · 8h');
-      if(idx8 !== -1){
-        let [ev8] = events21.splice(idx8, 1);
-        ev8.ts = since + (8 * 3600 * 1000);
-        d.pointAwards[day20Key].events.push(ev8);
-      }
-
-      let ev12 = events21.find(e => e.kind === 'racha' && e.label === 'Volver a mí · 12h');
-      if(ev12){
-        ev12.ts = since + (12 * 3600 * 1000);
-      }
-
-      let ev2 = d.pointAwards[day20Key].events.find(e => e.kind === 'racha' && e.label === 'Volver a mí · 2h');
-      if(ev2){
-        ev2.ts = since + (2 * 3600 * 1000);
-      }
-
-      if(Array.isArray(d.pointAwards[day20Key].events)){
-        d.pointAwards[day20Key].events.sort((a,b) => (a.ts||0) - (b.ts||0));
-      }
-      if(Array.isArray(events21)){
-        events21.sort((a,b) => (a.ts||0) - (b.ts||0));
-      }
-    }
-
-    d._streakMilestonesAndOrphanFixed_20260821 = true;
-  }
-
- save(d, false);
- if(!localStorage.getItem('orbitLocalUpdatedAt')){
-   localStorage.setItem('orbitLocalUpdatedAt', new Date().toISOString());
+ save(d, false, userId);
+ let localUpKey = getUserStorageKey('orbitLocalUpdatedAt', userId);
+ if(!localStorage.getItem(localUpKey)){
+   localStorage.setItem(localUpKey, new Date().toISOString());
  }
- return d
+ return d;
 }
 
-function save(d, markChange = true){
- localStorage.setItem('orbitV9', JSON.stringify(d));
+function save(d, markChange = true, userId){
+ let key = getUserStorageKey('orbitV9', userId);
+ localStorage.setItem(key, JSON.stringify(d));
  if(markChange && typeof window !== 'undefined'){
   if(window.isApplyingCloudState) return;
-  localStorage.setItem('orbitLocalUpdatedAt', new Date().toISOString());
-  localStorage.setItem('orbitHasUnsyncedChanges', 'true');
+  let localUpKey = getUserStorageKey('orbitLocalUpdatedAt', userId);
+  let unsyncKey = getUserStorageKey('orbitHasUnsyncedChanges', userId);
+  localStorage.setItem(localUpKey, new Date().toISOString());
+  localStorage.setItem(unsyncKey, 'true');
   if(typeof scheduleCloudSync === 'function'){
    scheduleCloudSync();
   }
@@ -178,10 +227,12 @@ function save(d, markChange = true){
 
 function exportBackup(){
  let mainData=null;
- try{mainData=JSON.parse(localStorage.getItem('orbitV9'))}catch(e){mainData=load()}
+ let key = getUserStorageKey('orbitV9');
+ let timerKey = getUserStorageKey('orbitTimer');
+ try{mainData=JSON.parse(localStorage.getItem(key))}catch(e){mainData=load()}
  if(!mainData)mainData=load();
  let timerData=null;
- try{timerData=JSON.parse(localStorage.getItem('orbitTimer'))}catch(e){}
+ try{timerData=JSON.parse(localStorage.getItem(timerKey))}catch(e){}
  let backupPayload={
   app:'orbit',
   version:1,

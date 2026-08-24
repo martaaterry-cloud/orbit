@@ -1,4 +1,4 @@
-// Integración con Supabase - Autenticación y Sincronización Automática Segura
+// Integración con Supabase - Autenticación Multiusuario, Registro y Sincronización Segura
 const SUPABASE_URL = 'https://wquknalzykitgdkxoysu.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_ctuEoowcWJs2yaGDOyoK1g_BsQKIVFh';
 
@@ -52,7 +52,6 @@ async function getPhotoSignedUrl(photoPath) {
     });
     return data.signedUrl;
   } catch (err) {
-    console.warn('Excepción obteniendo signedUrl:', err);
     return null;
   }
 }
@@ -154,19 +153,24 @@ function updateAppAuthState(user, isOffline = false) {
   const offlineNotice = document.getElementById('authOfflineNotice');
 
   currentCloudUser = user || null;
-  const knownUser = localStorage.getItem('orbitKnownUser');
+  if (typeof setOrbitActiveUser === 'function') {
+    setOrbitActiveUser(user || null);
+  }
+
+  const activeUserId = typeof getOrbitActiveUserId === 'function' ? getOrbitActiveUserId() : null;
   const offline = isOffline || (typeof navigator !== 'undefined' && !navigator.onLine);
 
   if (user) {
-    localStorage.setItem('orbitKnownUser', user.email || 'true');
     if (authScreen) authScreen.style.display = 'none';
     if (mainApp) mainApp.style.display = 'block';
     if (userEmailEl) userEmailEl.textContent = user.email || '';
     updateSyncStatus(offline ? 'offline' : (hasConflict ? 'conflict' : 'synced'));
-  } else if (knownUser && offline) {
+  } else if (activeUserId && offline) {
+    let knownObj = null;
+    try { knownObj = JSON.parse(localStorage.getItem('orbitKnownUser') || '{}'); } catch(e){}
     if (authScreen) authScreen.style.display = 'none';
     if (mainApp) mainApp.style.display = 'block';
-    if (userEmailEl) userEmailEl.textContent = knownUser !== 'true' ? knownUser : '';
+    if (userEmailEl) userEmailEl.textContent = knownObj?.email || '';
     updateSyncStatus('offline');
   } else {
     if (authScreen) authScreen.style.display = 'flex';
@@ -176,37 +180,252 @@ function updateAppAuthState(user, isOffline = false) {
   }
 }
 
-async function supabaseLogin(email, password) {
+// Iniciar sesión con Email o Username
+async function supabaseLogin(identifier, password) {
   const sb = getSupabase();
   if (!sb) {
     if (typeof toast === 'function') toast('Servicio de nube no disponible');
     return false;
   }
+  const cleanId = String(identifier || '').trim();
+  const cleanPass = String(password || '');
+
+  if (!cleanId || !cleanPass) {
+    if (typeof toast === 'function') toast('Introduce usuario/email y contraseña');
+    return false;
+  }
+
   const loginBtn = document.getElementById('cloudLoginBtn');
   if (loginBtn) { loginBtn.disabled = true; loginBtn.textContent = 'Entrando…'; }
 
-  const { data, error } = await sb.auth.signInWithPassword({ email, password });
-  if (loginBtn) { loginBtn.disabled = false; loginBtn.textContent = 'Entrar en Orbit'; }
+  try {
+    let session = null;
+    let authError = null;
 
-  if (error) {
-    if (typeof toast === 'function') toast(error.message || 'Error al iniciar sesión');
+    if (cleanId.includes('@')) {
+      // Login directo por Email
+      const { data, error } = await sb.auth.signInWithPassword({
+        email: cleanId.toLowerCase(),
+        password: cleanPass
+      });
+      session = data?.session || null;
+      authError = error;
+    } else {
+      // Login por Username mediante Supabase Edge Function aislada
+      try {
+        const { data: edgeData, error: edgeErr } = await sb.functions.invoke('login-with-username', {
+          body: { username: cleanId.toLowerCase(), password: cleanPass }
+        });
+
+        if (edgeErr || !edgeData?.session) {
+          authError = edgeErr || new Error(edgeData?.error || 'Usuario o contraseña incorrectos.');
+        } else {
+          const { error: setErr } = await sb.auth.setSession(edgeData.session);
+          if (setErr) {
+            authError = setErr;
+          } else {
+            session = edgeData.session;
+          }
+        }
+      } catch (invokeErr) {
+        authError = new Error('No se pudo contactar con el servicio de autenticación por usuario.');
+      }
+    }
+
+    if (loginBtn) { loginBtn.disabled = false; loginBtn.textContent = 'Entrar en Orbit'; }
+
+    if (authError || !session) {
+      if (typeof toast === 'function') toast(authError?.message || 'Usuario o contraseña incorrectos');
+      return false;
+    }
+
+    if (typeof toast === 'function') toast('Bienvenida a Orbit');
+    if (typeof setOrbitActiveUser === 'function') setOrbitActiveUser(session.user);
+    if (typeof migrateLegacyStorageIfVerified === 'function') migrateLegacyStorageIfVerified(session.user);
+
+    updateAppAuthState(session.user);
+    autoSyncOnInit(session);
+    return true;
+  } catch (err) {
+    if (loginBtn) { loginBtn.disabled = false; loginBtn.textContent = 'Entrar en Orbit'; }
+    if (typeof toast === 'function') toast('Error inesperado al iniciar sesión');
     return false;
   }
-  if (typeof toast === 'function') toast('Bienvenida a Orbit');
-  localStorage.setItem('orbitKnownUser', email);
-  updateAppAuthState(data.session?.user || null);
-  if (data.session) {
-    autoSyncOnInit(data.session);
-  }
-  return true;
 }
 
+// Registro de nueva cuenta con username único
+async function supabaseSignUp(email, username, password) {
+  const sb = getSupabase();
+  if (!sb) {
+    if (typeof toast === 'function') toast('Servicio de nube no disponible');
+    return false;
+  }
+
+  const cleanEmail = String(email || '').trim().toLowerCase();
+  const cleanUsername = String(username || '').trim().toLowerCase();
+  const cleanPassword = String(password || '');
+
+  if (!cleanEmail || !cleanEmail.includes('@')) {
+    if (typeof toast === 'function') toast('Introduce un correo electrónico válido');
+    return false;
+  }
+
+  const usernameRegex = /^[a-z0-9_]{3,20}$/;
+  if (!usernameRegex.test(cleanUsername)) {
+    if (typeof toast === 'function') toast('El nombre de usuario debe tener entre 3 y 20 caracteres (solo letras, números y guion bajo)');
+    return false;
+  }
+
+  if (cleanPassword.length < 10) {
+    if (typeof toast === 'function') toast('La contraseña debe tener al menos 10 caracteres');
+    return false;
+  }
+
+  const signupBtn = document.getElementById('cloudSignupBtn');
+  if (signupBtn) { signupBtn.disabled = true; signupBtn.textContent = 'Creando cuenta…'; }
+
+  try {
+    const { data, error } = await sb.auth.signUp({
+      email: cleanEmail,
+      password: cleanPassword,
+      options: {
+        data: {
+          username: cleanUsername,
+          display_name: cleanUsername
+        }
+      }
+    });
+
+    if (signupBtn) { signupBtn.disabled = false; signupBtn.textContent = 'Crear mi cuenta'; }
+
+    if (error) {
+      if (typeof toast === 'function') toast(error.message || 'Error al crear la cuenta');
+      return false;
+    }
+
+    if (data.session) {
+      if (typeof toast === 'function') toast('¡Cuenta creada con éxito!');
+      if (typeof setOrbitActiveUser === 'function') setOrbitActiveUser(data.session.user);
+      updateAppAuthState(data.session.user);
+      autoSyncOnInit(data.session);
+    } else {
+      if (typeof toast === 'function') {
+        toast('Cuenta registrada. Por favor, comprueba tu email para confirmarla antes de entrar.');
+      }
+      setAuthTab('login');
+    }
+    return true;
+  } catch (err) {
+    if (signupBtn) { signupBtn.disabled = false; signupBtn.textContent = 'Crear mi cuenta'; }
+    if (typeof toast === 'function') toast('Error de conexión al registrar cuenta');
+    return false;
+  }
+}
+
+// Recuperación de contraseña oficial
+async function supabaseResetPassword(email) {
+  const sb = getSupabase();
+  if (!sb) return toast('Servicio en la nube no disponible');
+  const cleanEmail = String(email || '').trim().toLowerCase();
+  if (!cleanEmail || !cleanEmail.includes('@')) {
+    return toast('Introduce un correo válido');
+  }
+
+  try {
+    const redirectUrl = window.location.origin + window.location.pathname;
+    const { error } = await sb.auth.resetPasswordForEmail(cleanEmail, {
+      redirectTo: redirectUrl
+    });
+    if (error) {
+      return toast(error.message || 'No se pudo enviar el correo');
+    }
+    toast('Si el correo está registrado, recibirás un enlace de recuperación');
+    closeModal('forgotPasswordModal');
+  } catch (e) {
+    toast('Error al solicitar recuperación');
+  }
+}
+
+// Actualización de contraseña desde Ajustes
+async function supabaseUpdatePassword(newPassword) {
+  const sb = getSupabase();
+  if (!sb || !currentCloudUser) return toast('Inicia sesión en la nube primero');
+  if (!newPassword || newPassword.length < 10) {
+    return toast('La nueva contraseña debe tener al menos 10 caracteres');
+  }
+  try {
+    const { error } = await sb.auth.updateUser({ password: newPassword });
+    if (error) return toast(error.message || 'Error al actualizar contraseña');
+    toast('Contraseña actualizada correctamente');
+  } catch (e) {
+    toast('Error al actualizar contraseña');
+  }
+}
+
+// Actualización de email desde Ajustes
+async function supabaseUpdateEmail(newEmail) {
+  const sb = getSupabase();
+  if (!sb || !currentCloudUser) return toast('Inicia sesión en la nube primero');
+  const clean = String(newEmail || '').trim().toLowerCase();
+  if (!clean || !clean.includes('@')) return toast('Introduce un email válido');
+  try {
+    const { error } = await sb.auth.updateUser({ email: clean });
+    if (error) return toast(error.message || 'Error al cambiar email');
+    toast('Solicitud enviada. Revisa ambos correos para confirmar el cambio.');
+  } catch (e) {
+    toast('Error al actualizar email');
+  }
+}
+
+// Actualización de username desde Ajustes
+async function supabaseUpdateUsername(newUsername) {
+  const sb = getSupabase();
+  if (!sb || !currentCloudUser) return toast('Inicia sesión en la nube primero');
+  const clean = String(newUsername || '').trim().toLowerCase();
+  const usernameRegex = /^[a-z0-9_]{3,20}$/;
+  if (!usernameRegex.test(clean)) {
+    return toast('El usuario debe tener entre 3 y 20 caracteres (solo letras, números y _)');
+  }
+
+  try {
+    const { error } = await sb
+      .from('profiles')
+      .update({ username: clean, updated_at: new Date().toISOString() })
+      .eq('user_id', currentCloudUser.id);
+
+    if (error) {
+      if (error.code === '23505') {
+        return toast('Ese nombre de usuario ya está en uso');
+      }
+      return toast('Error al actualizar nombre de usuario');
+    }
+
+    let d = (typeof load === 'function') ? load() : null;
+    if (d) {
+      if (!d.profile) d.profile = {};
+      d.profile.username = clean;
+      if (typeof save === 'function') save(d);
+    }
+    toast('Nombre de usuario actualizado');
+    if (typeof renderProfile === 'function') renderProfile(d);
+  } catch (e) {
+    toast('Error al actualizar usuario');
+  }
+}
+
+// Cierre de sesión seguro con limpieza total de memoria y temporizadores
 async function supabaseLogout() {
   const sb = getSupabase();
-  localStorage.removeItem('orbitKnownUser');
   clearTimeout(syncDebounceTimer);
   clearTimeout(foregroundSyncTimer);
   hasConflict = false;
+  signedUrlCache.clear();
+
+  currentCloudUser = null;
+  if (typeof setOrbitActiveUser === 'function') {
+    setOrbitActiveUser(null);
+  }
+
   if (sb) {
     await sb.auth.signOut().catch(() => {});
   }
@@ -214,24 +433,33 @@ async function supabaseLogout() {
   updateAppAuthState(null);
 }
 
-// Aplicar estado de la nube evitando bucles y marcando cambios pendientes en false
-function safeApplyCloudState(cloudData, cloudTimer, cloudUpdatedAt) {
+// Aplicar estado de la nube de forma segura y aislada por usuario
+function safeApplyCloudState(cloudData, cloudTimer, cloudUpdatedAt, userId) {
+  const uid = userId || currentCloudUser?.id || (typeof getOrbitActiveUserId === 'function' ? getOrbitActiveUserId() : null);
+  if (!uid) return;
+
   if (typeof window !== 'undefined') window.isApplyingCloudState = true;
   try {
-    localStorage.setItem('orbitV9', JSON.stringify(cloudData));
+    const v9Key = typeof getUserStorageKey === 'function' ? getUserStorageKey('orbitV9', uid) : 'orbitV9';
+    const timerKey = typeof getUserStorageKey === 'function' ? getUserStorageKey('orbitTimer', uid) : 'orbitTimer';
+    const localUpKey = typeof getUserStorageKey === 'function' ? getUserStorageKey('orbitLocalUpdatedAt', uid) : 'orbitLocalUpdatedAt';
+    const cloudUpKey = typeof getUserStorageKey === 'function' ? getUserStorageKey('orbitLastCloudUpdatedAt', uid) : 'orbitLastCloudUpdatedAt';
+    const unsyncKey = typeof getUserStorageKey === 'function' ? getUserStorageKey('orbitHasUnsyncedChanges', uid) : 'orbitHasUnsyncedChanges';
+
+    localStorage.setItem(v9Key, JSON.stringify(cloudData));
     if (cloudTimer) {
-      localStorage.setItem('orbitTimer', JSON.stringify(cloudTimer));
+      localStorage.setItem(timerKey, JSON.stringify(cloudTimer));
     } else {
-      localStorage.removeItem('orbitTimer');
+      localStorage.removeItem(timerKey);
     }
     if (cloudUpdatedAt) {
-      localStorage.setItem('orbitLocalUpdatedAt', cloudUpdatedAt);
-      localStorage.setItem('orbitLastCloudUpdatedAt', cloudUpdatedAt);
+      localStorage.setItem(localUpKey, cloudUpdatedAt);
+      localStorage.setItem(cloudUpKey, cloudUpdatedAt);
     }
-    localStorage.setItem('orbitHasUnsyncedChanges', 'false');
+    localStorage.setItem(unsyncKey, 'false');
     hasConflict = false;
 
-    if (typeof load === 'function') load();
+    if (typeof load === 'function') load(uid);
     if (typeof render === 'function') render();
     if (typeof syncUrgeTimer === 'function') syncUrgeTimer();
     if (typeof renderArchive === 'function') renderArchive();
@@ -246,27 +474,35 @@ async function autoSyncOnInit(session) {
   const sb = getSupabase();
   if (!sb || (typeof navigator !== 'undefined' && !navigator.onLine)) return;
 
+  const uid = session.user.id;
+  if (typeof migrateLegacyStorageIfVerified === 'function') {
+    migrateLegacyStorageIfVerified(session.user);
+  }
+
   try {
     const { data, error } = await sb
       .from('orbit_state')
       .select('orbit_data, orbit_timer, updated_at')
-      .eq('user_id', session.user.id)
+      .eq('user_id', uid)
       .maybeSingle();
 
     if (error) {
-      console.warn('Error al verificar estado en Supabase:', error);
       updateSyncStatus('error');
       return;
     }
 
-    let localUpdatedAt = localStorage.getItem('orbitLocalUpdatedAt');
+    const localUpKey = typeof getUserStorageKey === 'function' ? getUserStorageKey('orbitLocalUpdatedAt', uid) : 'orbitLocalUpdatedAt';
+    const cloudUpKey = typeof getUserStorageKey === 'function' ? getUserStorageKey('orbitLastCloudUpdatedAt', uid) : 'orbitLastCloudUpdatedAt';
+    const unsyncKey = typeof getUserStorageKey === 'function' ? getUserStorageKey('orbitHasUnsyncedChanges', uid) : 'orbitHasUnsyncedChanges';
+
+    let localUpdatedAt = localStorage.getItem(localUpKey);
     if (!localUpdatedAt) {
       localUpdatedAt = new Date().toISOString();
-      localStorage.setItem('orbitLocalUpdatedAt', localUpdatedAt);
+      localStorage.setItem(localUpKey, localUpdatedAt);
     }
-    const hasUnsynced = localStorage.getItem('orbitHasUnsyncedChanges') === 'true';
+    const hasUnsynced = localStorage.getItem(unsyncKey) === 'true';
 
-    // Caso D: No existe fila en la nube -> crearla con el estado local actual
+    // Caso D: No existe fila en la nube -> crearla con el estado local actual del usuario
     if (!data || !data.orbit_data || !data.updated_at) {
       performAutoUpload();
       return;
@@ -274,11 +510,10 @@ async function autoSyncOnInit(session) {
 
     const cloudUpdatedAt = data.updated_at;
     const cloudTime = new Date(cloudUpdatedAt).getTime();
-    const lastKnownCloud = localStorage.getItem('orbitLastCloudUpdatedAt');
+    const lastKnownCloud = localStorage.getItem(cloudUpKey);
     const lastKnownCloudTime = lastKnownCloud ? new Date(lastKnownCloud).getTime() : 0;
     const localTime = new Date(localUpdatedAt).getTime();
 
-    // ¿La nube ha cambiado desde la última versión que este dispositivo conoció?
     const isCloudNewer = lastKnownCloudTime > 0 
       ? cloudTime > (lastKnownCloudTime + 1000) 
       : cloudTime > (localTime + 1000);
@@ -292,7 +527,7 @@ async function autoSyncOnInit(session) {
 
     // Caso A: La nube es más nueva y el contexto local NO tiene cambios pendientes -> Descargar
     if (isCloudNewer && !hasUnsynced) {
-      safeApplyCloudState(data.orbit_data, data.orbit_timer, cloudUpdatedAt);
+      safeApplyCloudState(data.orbit_data, data.orbit_timer, cloudUpdatedAt, uid);
       updateSyncStatus('synced');
       return;
     }
@@ -304,12 +539,11 @@ async function autoSyncOnInit(session) {
     }
 
     // Caso C: Ambos están al día y sin cambios pendientes
-    localStorage.setItem('orbitLastCloudUpdatedAt', cloudUpdatedAt);
-    localStorage.setItem('orbitHasUnsyncedChanges', 'false');
+    localStorage.setItem(cloudUpKey, cloudUpdatedAt);
+    localStorage.setItem(unsyncKey, 'false');
     hasConflict = false;
     updateSyncStatus('synced');
   } catch (err) {
-    console.error('Error en sincronización inicial:', err);
     updateSyncStatus('error');
   }
 }
@@ -339,6 +573,7 @@ async function performAutoUpload() {
     return;
   }
   currentCloudUser = session.user;
+  const uid = session.user.id;
 
   if (isSyncing) {
     pendingSync = true;
@@ -348,34 +583,40 @@ async function performAutoUpload() {
   updateSyncStatus('saving');
 
   try {
+    const v9Key = typeof getUserStorageKey === 'function' ? getUserStorageKey('orbitV9', uid) : 'orbitV9';
+    const timerKey = typeof getUserStorageKey === 'function' ? getUserStorageKey('orbitTimer', uid) : 'orbitTimer';
+    const localUpKey = typeof getUserStorageKey === 'function' ? getUserStorageKey('orbitLocalUpdatedAt', uid) : 'orbitLocalUpdatedAt';
+    const cloudUpKey = typeof getUserStorageKey === 'function' ? getUserStorageKey('orbitLastCloudUpdatedAt', uid) : 'orbitLastCloudUpdatedAt';
+    const unsyncKey = typeof getUserStorageKey === 'function' ? getUserStorageKey('orbitHasUnsyncedChanges', uid) : 'orbitHasUnsyncedChanges';
+
     let orbitData = null;
-    try { orbitData = JSON.parse(localStorage.getItem('orbitV9')); } catch (e) {}
-    if (!orbitData && typeof load === 'function') orbitData = load();
+    try { orbitData = JSON.parse(localStorage.getItem(v9Key)); } catch (e) {}
+    if (!orbitData && typeof load === 'function') orbitData = load(uid);
 
     let orbitTimer = null;
     try {
-      const raw = localStorage.getItem('orbitTimer');
+      const raw = localStorage.getItem(timerKey);
       if (raw) orbitTimer = JSON.parse(raw);
     } catch (e) {}
 
-    let localIso = localStorage.getItem('orbitLocalUpdatedAt');
+    let localIso = localStorage.getItem(localUpKey);
     if (!localIso) {
       localIso = new Date().toISOString();
-      localStorage.setItem('orbitLocalUpdatedAt', localIso);
+      localStorage.setItem(localUpKey, localIso);
     }
 
     // Verificar si la nube cambió remotamente antes de sobrescribir
     const { data: cloudCheck } = await sb
       .from('orbit_state')
       .select('updated_at')
-      .eq('user_id', session.user.id)
+      .eq('user_id', uid)
       .maybeSingle();
 
     if (cloudCheck && cloudCheck.updated_at) {
       const cloudTime = new Date(cloudCheck.updated_at).getTime();
-      const lastKnownCloud = localStorage.getItem('orbitLastCloudUpdatedAt');
+      const lastKnownCloud = localStorage.getItem(cloudUpKey);
       const lastKnownCloudTime = lastKnownCloud ? new Date(lastKnownCloud).getTime() : 0;
-      const hasUnsynced = localStorage.getItem('orbitHasUnsyncedChanges') === 'true';
+      const hasUnsynced = localStorage.getItem(unsyncKey) === 'true';
 
       if (lastKnownCloudTime > 0 && cloudTime > (lastKnownCloudTime + 1000) && hasUnsynced) {
         hasConflict = true;
@@ -386,7 +627,7 @@ async function performAutoUpload() {
     }
 
     const payload = {
-      user_id: session.user.id,
+      user_id: uid,
       orbit_data: orbitData,
       orbit_timer: orbitTimer,
       updated_at: localIso
@@ -401,18 +642,16 @@ async function performAutoUpload() {
     isSyncing = false;
 
     if (error) {
-      console.warn('Error en subida automática:', error);
       updateSyncStatus('error');
     } else {
       const confirmedTime = upsertData?.updated_at || localIso;
-      localStorage.setItem('orbitLastCloudUpdatedAt', confirmedTime);
-      localStorage.setItem('orbitHasUnsyncedChanges', 'false');
+      localStorage.setItem(cloudUpKey, confirmedTime);
+      localStorage.setItem(unsyncKey, 'false');
       hasConflict = false;
       updateSyncStatus('synced');
     }
   } catch (err) {
     isSyncing = false;
-    console.warn('Excepción en subida automática:', err);
     updateSyncStatus('error');
   }
 
@@ -435,22 +674,28 @@ async function uploadToCloud() {
     if (typeof toast === 'function') toast('Inicia sesión en la nube primero');
     return false;
   }
+  const uid = session.user.id;
+  const v9Key = typeof getUserStorageKey === 'function' ? getUserStorageKey('orbitV9', uid) : 'orbitV9';
+  const timerKey = typeof getUserStorageKey === 'function' ? getUserStorageKey('orbitTimer', uid) : 'orbitTimer';
+  const localUpKey = typeof getUserStorageKey === 'function' ? getUserStorageKey('orbitLocalUpdatedAt', uid) : 'orbitLocalUpdatedAt';
+  const cloudUpKey = typeof getUserStorageKey === 'function' ? getUserStorageKey('orbitLastCloudUpdatedAt', uid) : 'orbitLastCloudUpdatedAt';
+  const unsyncKey = typeof getUserStorageKey === 'function' ? getUserStorageKey('orbitHasUnsyncedChanges', uid) : 'orbitHasUnsyncedChanges';
 
   let orbitData = null;
-  try { orbitData = JSON.parse(localStorage.getItem('orbitV9')); } catch (e) { if (typeof load === 'function') orbitData = load(); }
-  if (!orbitData && typeof load === 'function') orbitData = load();
+  try { orbitData = JSON.parse(localStorage.getItem(v9Key)); } catch (e) { if (typeof load === 'function') orbitData = load(uid); }
+  if (!orbitData && typeof load === 'function') orbitData = load(uid);
 
   let orbitTimer = null;
   try {
-    const raw = localStorage.getItem('orbitTimer');
+    const raw = localStorage.getItem(timerKey);
     if (raw) orbitTimer = JSON.parse(raw);
   } catch (e) {}
 
   const nowIso = new Date().toISOString();
-  localStorage.setItem('orbitLocalUpdatedAt', nowIso);
+  localStorage.setItem(localUpKey, nowIso);
 
   const payload = {
-    user_id: session.user.id,
+    user_id: uid,
     orbit_data: orbitData,
     orbit_timer: orbitTimer,
     updated_at: nowIso
@@ -475,8 +720,8 @@ async function uploadToCloud() {
   }
 
   const confirmedTime = upsertData?.updated_at || nowIso;
-  localStorage.setItem('orbitLastCloudUpdatedAt', confirmedTime);
-  localStorage.setItem('orbitHasUnsyncedChanges', 'false');
+  localStorage.setItem(cloudUpKey, confirmedTime);
+  localStorage.setItem(unsyncKey, 'false');
   hasConflict = false;
   if (typeof toast === 'function') toast('Datos guardados en la nube');
   updateSyncStatus('synced');
@@ -496,6 +741,7 @@ async function restoreFromCloud() {
     if (typeof toast === 'function') toast('Inicia sesión en la nube primero');
     return false;
   }
+  const uid = session.user.id;
 
   const restoreBtn = document.getElementById('cloudRestoreBtn');
   if (restoreBtn) restoreBtn.disabled = true;
@@ -503,7 +749,7 @@ async function restoreFromCloud() {
   const { data, error } = await sb
     .from('orbit_state')
     .select('orbit_data, orbit_timer, updated_at')
-    .eq('user_id', session.user.id)
+    .eq('user_id', uid)
     .maybeSingle();
 
   if (restoreBtn) restoreBtn.disabled = false;
@@ -522,7 +768,7 @@ async function restoreFromCloud() {
   const ok = confirm(`¿Restaurar los datos guardados en la nube${dateStr ? ` (${dateStr})` : ''}?\n\nEsta acción reemplazará los datos locales en este dispositivo.`);
   if (!ok) return false;
 
-  safeApplyCloudState(data.orbit_data, data.orbit_timer, data.updated_at);
+  safeApplyCloudState(data.orbit_data, data.orbit_timer, data.updated_at, uid);
 
   if (typeof toast === 'function') toast('Datos de la nube restaurados');
   updateSyncStatus('synced');
@@ -560,9 +806,10 @@ async function initSupabaseAuth() {
 
     sb.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_OUT') {
-        localStorage.removeItem('orbitKnownUser');
+        if (typeof setOrbitActiveUser === 'function') setOrbitActiveUser(null);
         updateAppAuthState(null);
       } else if (session?.user) {
+        if (typeof setOrbitActiveUser === 'function') setOrbitActiveUser(session.user);
         updateAppAuthState(session.user);
         if (event === 'SIGNED_IN') {
           autoSyncOnInit(session);
@@ -570,7 +817,6 @@ async function initSupabaseAuth() {
       }
     });
   } catch (err) {
-    console.warn('Error verificando sesión de Supabase:', err);
     updateAppAuthState(null, true);
   }
 
@@ -587,19 +833,74 @@ async function initSupabaseAuth() {
   window.addEventListener('focus', handleForegroundTrigger);
 }
 
+function setAuthTab(tab) {
+  const loginTab = document.getElementById('authTabLogin');
+  const signupTab = document.getElementById('authTabSignup');
+  const loginForm = document.getElementById('authLoginForm');
+  const signupForm = document.getElementById('authSignupForm');
+
+  if (tab === 'signup') {
+    if (loginTab) loginTab.classList.remove('active');
+    if (signupTab) signupTab.classList.add('active');
+    if (loginForm) loginForm.style.display = 'none';
+    if (signupForm) signupForm.style.display = 'flex';
+  } else {
+    if (signupTab) signupTab.classList.remove('active');
+    if (loginTab) loginTab.classList.add('active');
+    if (signupForm) signupForm.style.display = 'none';
+    if (loginForm) loginForm.style.display = 'flex';
+  }
+}
+
 function handleCloudLoginSubmit(e) {
   if (e && e.preventDefault) e.preventDefault();
-  const emailInput = document.getElementById('cloudEmail');
-  const passInput = document.getElementById('cloudPassword');
-  const email = emailInput ? emailInput.value.trim() : '';
+  const idInput = document.getElementById('cloudLoginIdentifier');
+  const passInput = document.getElementById('cloudLoginPassword');
+  const identifier = idInput ? idInput.value.trim() : '';
   const password = passInput ? passInput.value : '';
 
-  if (!email || !password) {
-    if (typeof toast === 'function') toast('Introduce email y contraseña');
+  if (!identifier || !password) {
+    if (typeof toast === 'function') toast('Introduce usuario/email y contraseña');
     return;
   }
 
-  supabaseLogin(email, password);
+  supabaseLogin(identifier, password);
+}
+
+function handleCloudSignupSubmit(e) {
+  if (e && e.preventDefault) e.preventDefault();
+  const emailInput = document.getElementById('cloudSignupEmail');
+  const usernameInput = document.getElementById('cloudSignupUsername');
+  const passInput = document.getElementById('cloudSignupPassword');
+  const passRepeatInput = document.getElementById('cloudSignupPasswordRepeat');
+
+  const email = emailInput ? emailInput.value.trim() : '';
+  const username = usernameInput ? usernameInput.value.trim() : '';
+  const password = passInput ? passInput.value : '';
+  const passwordRepeat = passRepeatInput ? passRepeatInput.value : '';
+
+  if (!email || !username || !password || !passwordRepeat) {
+    if (typeof toast === 'function') toast('Completa todos los campos para registrarte');
+    return;
+  }
+
+  if (password !== passwordRepeat) {
+    if (typeof toast === 'function') toast('Las contraseñas no coinciden');
+    return;
+  }
+
+  supabaseSignUp(email, username, password);
+}
+
+function handleForgotPasswordSubmit(e) {
+  if (e && e.preventDefault) e.preventDefault();
+  const emailInput = document.getElementById('forgotPasswordEmail');
+  const email = emailInput ? emailInput.value.trim() : '';
+  if (!email) {
+    if (typeof toast === 'function') toast('Introduce tu correo electrónico');
+    return;
+  }
+  supabaseResetPassword(email);
 }
 
 function handleCloudLogout() {

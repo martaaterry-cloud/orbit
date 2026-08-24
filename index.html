@@ -13,28 +13,64 @@
 <link rel="manifest" href="manifest.webmanifest">
 <title>Orbit</title>
 
-  <link rel="stylesheet" href="css/orbit.css?v=1.2.38">
+  <link rel="stylesheet" href="css/orbit.css?v=1.2.39">
 </head>
 <body>
-<!-- Pantalla de Acceso Inicial -->
+<!-- Pantalla de Acceso Inicial Multiusuario -->
 <div id="authScreen" class="auth-screen" style="display:none;">
   <div class="auth-box">
     <div class="brand" style="margin-bottom:6px; font-size:24px; letter-spacing:0.15em;">ORBIT<span class="brand-mark"></span></div>
-    <p style="font-size:13px; color:var(--muted); margin-bottom:24px; line-height:1.5;">Tu espacio personal y protegido para volver a ti.</p>
+    <p style="font-size:13px; color:var(--muted); margin-bottom:20px; line-height:1.5;">Tu espacio personal y protegido para volver a ti.</p>
     
-    <form onsubmit="handleCloudLoginSubmit(event)" style="display:flex; flex-direction:column; gap:12px; width:100%;">
+    <div class="auth-tabs" style="display:flex; gap:6px; width:100%; margin-bottom:18px; background:var(--soft); padding:4px; border-radius:14px; border:1px solid var(--line);">
+      <button type="button" class="auth-tab-btn active" id="authTabLogin" onclick="setAuthTab('login')" style="flex:1;">Iniciar sesión</button>
+      <button type="button" class="auth-tab-btn" id="authTabSignup" onclick="setAuthTab('signup')" style="flex:1;">Crear cuenta</button>
+    </div>
+
+    <!-- Formulario Iniciar Sesión -->
+    <form id="authLoginForm" onsubmit="handleCloudLoginSubmit(event)" style="display:flex; flex-direction:column; gap:12px; width:100%;">
       <div class="field" style="text-align:left;">
-        <label style="font-size:11px; text-transform:uppercase; letter-spacing:0.05em; color:var(--muted); font-weight:600; margin-bottom:4px; display:block;">Email</label>
-        <input id="cloudEmail" type="email" placeholder="tu@email.com" required style="width:100%; box-sizing:border-box; padding:12px 14px; font-size:14px; border-radius:12px; border:1px solid var(--line); background:#fffdfb;" autocomplete="username">
+        <label style="font-size:11px; text-transform:uppercase; letter-spacing:0.05em; color:var(--muted); font-weight:600; margin-bottom:4px; display:block;">Email o usuario</label>
+        <input id="cloudLoginIdentifier" type="text" placeholder="tu@email.com o usuario" required style="width:100%; box-sizing:border-box; padding:12px 14px; font-size:14px; border-radius:12px; border:1px solid var(--line); background:#fffdfb;" autocomplete="username">
       </div>
       
       <div class="field" style="text-align:left;">
         <label style="font-size:11px; text-transform:uppercase; letter-spacing:0.05em; color:var(--muted); font-weight:600; margin-bottom:4px; display:block;">Contraseña</label>
-        <input id="cloudPassword" type="password" placeholder="••••••••" required style="width:100%; box-sizing:border-box; padding:12px 14px; font-size:14px; border-radius:12px; border:1px solid var(--line); background:#fffdfb;" autocomplete="current-password">
+        <input id="cloudLoginPassword" type="password" placeholder="••••••••" required style="width:100%; box-sizing:border-box; padding:12px 14px; font-size:14px; border-radius:12px; border:1px solid var(--line); background:#fffdfb;" autocomplete="current-password">
       </div>
       
+      <div style="text-align:right; margin-top:-4px;">
+        <button type="button" onclick="openModal('forgotPasswordModal')" style="background:none; border:none; padding:0; color:var(--wine); font-size:12px; font-weight:600; cursor:pointer; text-decoration:underline;">¿Has olvidado tu contraseña?</button>
+      </div>
+
       <button type="submit" class="btn btn-main btn-wide" style="margin-top:6px; padding:12px; font-size:14px; font-weight:600; border-radius:12px;" id="cloudLoginBtn">Entrar en Orbit</button>
     </form>
+
+    <!-- Formulario Crear Cuenta -->
+    <form id="authSignupForm" onsubmit="handleCloudSignupSubmit(event)" style="display:none; flex-direction:column; gap:12px; width:100%;">
+      <div class="field" style="text-align:left;">
+        <label style="font-size:11px; text-transform:uppercase; letter-spacing:0.05em; color:var(--muted); font-weight:600; margin-bottom:4px; display:block;">Email</label>
+        <input id="cloudSignupEmail" type="email" placeholder="tu@email.com" required style="width:100%; box-sizing:border-box; padding:12px 14px; font-size:14px; border-radius:12px; border:1px solid var(--line); background:#fffdfb;" autocomplete="email">
+      </div>
+
+      <div class="field" style="text-align:left;">
+        <label style="font-size:11px; text-transform:uppercase; letter-spacing:0.05em; color:var(--muted); font-weight:600; margin-bottom:4px; display:block;">Nombre de usuario</label>
+        <input id="cloudSignupUsername" type="text" placeholder="nombre_usuario (3 a 20 car.)" required pattern="[a-zA-Z0-9_]{3,20}" title="De 3 a 20 letras, números o guion bajo" style="width:100%; box-sizing:border-box; padding:12px 14px; font-size:14px; border-radius:12px; border:1px solid var(--line); background:#fffdfb;" autocomplete="username">
+      </div>
+      
+      <div class="field" style="text-align:left;">
+        <label style="font-size:11px; text-transform:uppercase; letter-spacing:0.05em; color:var(--muted); font-weight:600; margin-bottom:4px; display:block;">Contraseña (mín. 10 car.)</label>
+        <input id="cloudSignupPassword" type="password" placeholder="••••••••" required minlength="10" style="width:100%; box-sizing:border-box; padding:12px 14px; font-size:14px; border-radius:12px; border:1px solid var(--line); background:#fffdfb;" autocomplete="new-password">
+      </div>
+
+      <div class="field" style="text-align:left;">
+        <label style="font-size:11px; text-transform:uppercase; letter-spacing:0.05em; color:var(--muted); font-weight:600; margin-bottom:4px; display:block;">Repetir contraseña</label>
+        <input id="cloudSignupPasswordRepeat" type="password" placeholder="••••••••" required minlength="10" style="width:100%; box-sizing:border-box; padding:12px 14px; font-size:14px; border-radius:12px; border:1px solid var(--line); background:#fffdfb;" autocomplete="new-password">
+      </div>
+      
+      <button type="submit" class="btn btn-main btn-wide" style="margin-top:6px; padding:12px; font-size:14px; font-weight:600; border-radius:12px;" id="cloudSignupBtn">Crear mi cuenta</button>
+    </form>
+
     <div id="authOfflineNotice" style="display:none; margin-top:14px; font-size:11px; color:var(--muted); line-height:1.4;">Se requiere conexión a Internet para el primer acceso en este dispositivo.</div>
   </div>
 </div>
@@ -399,6 +435,28 @@
     </div>
   </div>
 
+  <!-- B2. SEGURIDAD DE LA CUENTA -->
+  <div class="section-head"><h2>Seguridad y acceso</h2></div>
+  <div class="card" style="padding:16px;">
+    <div style="font-size:12px; color:var(--muted); margin-bottom:12px;">Gestión de tus credenciales de acceso.</div>
+    <div style="display:flex; flex-direction:column; gap:14px;">
+      <div>
+        <label style="font-size:11px; text-transform:uppercase; letter-spacing:0.05em; color:var(--muted); font-weight:600; margin-bottom:4px; display:block;">Cambiar contraseña</label>
+        <div style="display:flex; gap:8px;">
+          <input type="password" id="settingsNewPassword" placeholder="Nueva contraseña (mín. 10 car.)" minlength="10" style="flex:1; box-sizing:border-box; padding:10px 12px; font-size:13px; border-radius:10px; border:1px solid var(--line); background:#fffdfb;" autocomplete="new-password">
+          <button type="button" class="btn btn-line" onclick="applySettingsChangePassword()" style="font-size:11px; padding:8px 12px; white-space:nowrap;">Actualizar</button>
+        </div>
+      </div>
+      <div>
+        <label style="font-size:11px; text-transform:uppercase; letter-spacing:0.05em; color:var(--muted); font-weight:600; margin-bottom:4px; display:block;">Cambiar correo electrónico</label>
+        <div style="display:flex; gap:8px;">
+          <input type="email" id="settingsNewEmail" placeholder="nuevo@email.com" style="flex:1; box-sizing:border-box; padding:10px 12px; font-size:13px; border-radius:10px; border:1px solid var(--line); background:#fffdfb;" autocomplete="email">
+          <button type="button" class="btn btn-line" onclick="applySettingsChangeEmail()" style="font-size:11px; padding:8px 12px; white-space:nowrap;">Actualizar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- C. DATOS -->
   <div class="section-head"><h2>Datos</h2></div>
   <div class="card" style="padding:16px;">
@@ -424,7 +482,7 @@
     <button class="btn btn-line" onclick="handleCloudLogout()" style="font-size:12px; padding:8px 16px; color:var(--wine);" id="cloudLogoutBtn">
       Cerrar sesión
     </button>
-    <div style="font-size:11px; color:var(--muted); opacity:0.6; margin-top:14px;">Orbit v1.2.38</div>
+    <div style="font-size:11px; color:var(--muted); opacity:0.6; margin-top:14px;">Orbit v1.2.39</div>
   </div>
 </section>
 
@@ -771,6 +829,20 @@
   </div>
 </div>
 
+<!-- Modal Recuperar Contraseña -->
+<div class="modal" id="forgotPasswordModal"><div class="sheet">
+  <button class="modal-close-x" onclick="closeModal('forgotPasswordModal')" aria-label="Cerrar"><svg class="icon" viewBox="0 0 24 24" style="width:14px; height:14px; stroke:currentColor; stroke-width:2;"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+  <h3>Recuperar contraseña</h3>
+  <p class="prompt-sub">Introduce tu correo electrónico para recibir un enlace de recuperación seguro.</p>
+  <form onsubmit="handleForgotPasswordSubmit(event)" style="display:flex; flex-direction:column; gap:12px; margin-top:14px;">
+    <div class="field">
+      <label for="forgotPasswordEmail">Correo electrónico</label>
+      <input id="forgotPasswordEmail" type="email" placeholder="tu@email.com" required autocomplete="email">
+    </div>
+    <button type="submit" class="btn btn-main btn-wide" style="margin-top:6px;">Enviar enlace de recuperación</button>
+  </form>
+</div></div>
+
 <div class="update-banner" id="updateBanner">
   <span>Hay una nueva versión de Orbit</span>
   <button onclick="applyAppUpdate()">Actualizar</button>
@@ -779,14 +851,14 @@
 <div class="toast" id="toast"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="data/templates.js?v=1.2.38"></script>
-  <script src="data/constellations.js?v=1.2.38"></script>
-  <script src="js/storage.js?v=1.2.38"></script>
-  <script src="js/supabase.js?v=1.2.38"></script>
-  <script src="js/stars.js?v=1.2.38"></script>
-  <script src="js/streak.js?v=1.2.38"></script>
-  <script src="js/journal.js?v=1.2.38"></script>
-  <script src="js/archive.js?v=1.2.38"></script>
-  <script src="js/app.js?v=1.2.38"></script>
+  <script src="data/templates.js?v=1.2.39"></script>
+  <script src="data/constellations.js?v=1.2.39"></script>
+  <script src="js/storage.js?v=1.2.39"></script>
+  <script src="js/supabase.js?v=1.2.39"></script>
+  <script src="js/stars.js?v=1.2.39"></script>
+  <script src="js/streak.js?v=1.2.39"></script>
+  <script src="js/journal.js?v=1.2.39"></script>
+  <script src="js/archive.js?v=1.2.39"></script>
+  <script src="js/app.js?v=1.2.39"></script>
 </body>
 </html>

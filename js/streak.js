@@ -92,29 +92,36 @@ function openUrge(id){
 
 let timerInterval=null,activeUrge=null;
 
-function getTimerState(){
- try{return JSON.parse(localStorage.getItem('orbitTimer'))}catch(e){return null}
+function getTimerState(userId){
+ let key = typeof getUserStorageKey === 'function' ? getUserStorageKey('orbitTimer', userId) : 'orbitTimer';
+ try{return JSON.parse(localStorage.getItem(key))}catch(e){return null}
 }
 
-function saveTimerState(state, markChange = true){
- if(!state){localStorage.removeItem('orbitTimer')}
- else{localStorage.setItem('orbitTimer',JSON.stringify(state))}
+function saveTimerState(state, markChange = true, userId){
+ let key = typeof getUserStorageKey === 'function' ? getUserStorageKey('orbitTimer', userId) : 'orbitTimer';
+ if(!state){localStorage.removeItem(key)}
+ else{localStorage.setItem(key,JSON.stringify(state))}
  if(markChange && typeof window !== 'undefined'){
   if(window.isApplyingCloudState) return;
-  localStorage.setItem('orbitLocalUpdatedAt', new Date().toISOString());
-  localStorage.setItem('orbitHasUnsyncedChanges', 'true');
+  let localUpKey = typeof getUserStorageKey === 'function' ? getUserStorageKey('orbitLocalUpdatedAt', userId) : 'orbitLocalUpdatedAt';
+  let unsyncKey = typeof getUserStorageKey === 'function' ? getUserStorageKey('orbitHasUnsyncedChanges', userId) : 'orbitHasUnsyncedChanges';
+  localStorage.setItem(localUpKey, new Date().toISOString());
+  localStorage.setItem(unsyncKey, 'true');
   if(typeof scheduleCloudSync === 'function'){
    scheduleCloudSync();
   }
  }
 }
 
-function clearTimerState(markChange = true){
- localStorage.removeItem('orbitTimer');
+function clearTimerState(markChange = true, userId){
+ let key = typeof getUserStorageKey === 'function' ? getUserStorageKey('orbitTimer', userId) : 'orbitTimer';
+ localStorage.removeItem(key);
  if(markChange && typeof window !== 'undefined'){
   if(window.isApplyingCloudState) return;
-  localStorage.setItem('orbitLocalUpdatedAt', new Date().toISOString());
-  localStorage.setItem('orbitHasUnsyncedChanges', 'true');
+  let localUpKey = typeof getUserStorageKey === 'function' ? getUserStorageKey('orbitLocalUpdatedAt', userId) : 'orbitLocalUpdatedAt';
+  let unsyncKey = typeof getUserStorageKey === 'function' ? getUserStorageKey('orbitHasUnsyncedChanges', userId) : 'orbitHasUnsyncedChanges';
+  localStorage.setItem(localUpKey, new Date().toISOString());
+  localStorage.setItem(unsyncKey, 'true');
   if(typeof scheduleCloudSync === 'function'){
    scheduleCloudSync();
   }

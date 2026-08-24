@@ -1677,14 +1677,48 @@ function saveProfile(){
   let un=document.getElementById('profileUsername');
   let bd=document.getElementById('profileBirthDate');
   if(!d.profile) d.profile={};
-  d.profile.displayName = dn ? dn.value.trim() : '';
-  d.profile.username = un ? un.value.trim() : '';
-  d.profile.birthDate = (bd && bd.value) ? bd.value : null;
+  let newName = dn ? dn.value.trim() : '';
+  let newUname = un ? un.value.trim().replace(/^@/,'') : '';
+  let newBdate = (bd && bd.value) ? bd.value : null;
+
+  d.profile.displayName = newName;
+  d.profile.username = newUname;
+  d.profile.birthDate = newBdate;
   save(d);
   isProfileEditing = false;
   toast('Perfil guardado');
   renderProfile(d);
   render();
+
+  if(newUname && typeof supabaseUpdateUsername === 'function' && typeof currentCloudUser !== 'undefined' && currentCloudUser){
+    supabaseUpdateUsername(newUname);
+  }
+}
+
+function applySettingsChangePassword(){
+  let input = document.getElementById('settingsNewPassword');
+  let val = input ? input.value : '';
+  if(!val || val.length < 10){
+    return toast('La nueva contraseña debe tener al menos 10 caracteres');
+  }
+  if(typeof supabaseUpdatePassword === 'function'){
+    supabaseUpdatePassword(val).then(() => {
+      if(input) input.value = '';
+    });
+  }
+}
+
+function applySettingsChangeEmail(){
+  let input = document.getElementById('settingsNewEmail');
+  let val = input ? input.value.trim() : '';
+  if(!val || !val.includes('@')){
+    return toast('Introduce un correo electrónico válido');
+  }
+  if(typeof supabaseUpdateEmail === 'function'){
+    supabaseUpdateEmail(val).then(() => {
+      if(input) input.value = '';
+    });
+  }
 }
 
 setInterval(render,60000);render();

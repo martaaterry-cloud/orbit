@@ -223,6 +223,16 @@ async function handleGoodPhotoSelect(e){
   let file = e.target.files?.[0];
   if(!file) return;
 
+  if(!file.type || !file.type.startsWith('image/')){
+    clearGoodPhotoSelect();
+    return toast('El archivo seleccionado debe ser una imagen válida (JPEG, PNG, WebP).');
+  }
+
+  if(file.size > 15 * 1024 * 1024){
+    clearGoodPhotoSelect();
+    return toast('La imagen es demasiado grande (máximo 15 MB).');
+  }
+
   if(typeof navigator !== 'undefined' && !navigator.onLine){
     clearGoodPhotoSelect();
     return toast('Necesitas conexión para añadir una foto. Puedes guardar el recuerdo sin ella.');
