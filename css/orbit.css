@@ -1837,13 +1837,14 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
 
 /* Pantalla de Ajustes Independiente */
 .settings-nav-header {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  justify-content: space-between;
-  padding: 4px 0 10px;
+  padding: 4px 0 12px;
   margin-bottom: 2px;
 }
 .settings-back-btn {
+  justify-self: start;
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -1863,9 +1864,10 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
 }
 .settings-header-title {
   font-family: Georgia, serif;
-  font-size: 16px;
+  font-size: 17px;
   font-weight: 600;
   color: var(--ink);
+  text-align: center;
 }
 
 /* Perfil: Modo Lectura y Edición */
