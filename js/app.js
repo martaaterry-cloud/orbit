@@ -298,22 +298,124 @@ function constellationSvg(def, unlocked, progress) {
   
   return `<svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">${ambientStars}${lines}${stars}</svg>`;
 }
+const skyRegionsList = [
+  { id: 'cielo-1', name: 'Primer cielo', col: 'norte', roman: 'I' },
+  { id: 'zodiaco', name: 'Zodiaco', col: 'zodiaco', roman: 'II' },
+  { id: 'orion', name: 'Cielo de invierno', col: 'invierno', roman: 'III' },
+  { id: 'profundo', name: 'Espacio profundo', col: 'profundo', roman: 'IV' }
+];
+
+let currentSkyIndex = 0;
+let skyTouchStartX = 0;
+let skyTouchStartY = 0;
+let isSkySwiping = false;
+
+function initSkySwipe(){
+  let sky = document.getElementById('universe');
+  if(!sky || sky._hasSwipeListener) return;
+  sky._hasSwipeListener = true;
+  
+  sky.addEventListener('touchstart', (e) => {
+    if(e.touches.length === 1){
+      skyTouchStartX = e.touches[0].clientX;
+      skyTouchStartY = e.touches[0].clientY;
+      isSkySwiping = true;
+    }
+  }, { passive: true });
+
+  sky.addEventListener('touchend', (e) => {
+    if(!isSkySwiping) return;
+    isSkySwiping = false;
+    let endX = e.changedTouches[0].clientX;
+    let endY = e.changedTouches[0].clientY;
+    let dx = endX - skyTouchStartX;
+    let dy = endY - skyTouchStartY;
+    
+    if(Math.abs(dx) > 35 && Math.abs(dx) > Math.abs(dy) * 1.2){
+      if(dx < 0) navigateSky(1);
+      else navigateSky(-1);
+    }
+  }, { passive: true });
+
+  sky.addEventListener('wheel', (e) => {
+    if(Math.abs(e.deltaX) > 35){
+      if(e.deltaX > 0) navigateSky(1);
+      else navigateSky(-1);
+    }
+  }, { passive: true });
+}
+
+function navigateSky(dir){
+  let d = (typeof load === 'function') ? load() : null;
+  if(!d) return;
+  let unlockedSkies = skyRegionsList.filter(r => d.unlockedRegions && d.unlockedRegions.includes(r.id));
+  if(unlockedSkies.length <= 1) return;
+  
+  let newIndex = (currentSkyIndex + dir + unlockedSkies.length) % unlockedSkies.length;
+  setSkyIndex(newIndex);
+}
+
+function setSkyIndex(idx){
+  let d = (typeof load === 'function') ? load() : null;
+  if(!d) return;
+  let unlockedSkies = skyRegionsList.filter(r => d.unlockedRegions && d.unlockedRegions.includes(r.id));
+  if(!unlockedSkies.length) return;
+  
+  currentSkyIndex = Math.max(0, Math.min(idx, unlockedSkies.length - 1));
+  
+  let stage = document.getElementById('constellationStage');
+  if(stage){
+    stage.classList.add('sky-fade');
+    setTimeout(() => {
+      renderUniverse(d);
+      stage.classList.remove('sky-fade');
+    }, 150);
+  } else {
+    renderUniverse(d);
+  }
+}
+
 function renderUniverse(d){
+  initSkySwipe();
   let total=Number(d.lifetimeStars||0),wallet=Number(d.wallet||0);
   if(typeof universeWallet!=='undefined'&&universeWallet) universeWallet.textContent=wallet.toFixed(1).replace('.',',');
   if(typeof universeLifetime!=='undefined'&&universeLifetime) universeLifetime.textContent=total.toFixed(1).replace('.',',');
   
-  // Filter constellationDefs by unlocked regions
-  let allowedCols = [];
-  if (d.unlockedRegions && d.unlockedRegions.includes('cielo-1')) allowedCols.push('norte');
-  if (d.unlockedRegions && d.unlockedRegions.includes('zodiaco')) allowedCols.push('zodiaco');
-  if (d.unlockedRegions && d.unlockedRegions.includes('orion')) allowedCols.push('invierno');
-  if (d.unlockedRegions && d.unlockedRegions.includes('profundo')) allowedCols.push('profundo');
+  // Filter unlocked skies
+  let unlockedSkies = skyRegionsList.filter(r => d.unlockedRegions && d.unlockedRegions.includes(r.id));
+  if(!unlockedSkies.length) unlockedSkies = [skyRegionsList[0]];
   
-  let available = constellationDefs.filter(c => allowedCols.includes(c.collection));
-  available.sort((a, b) => a.need - b.need);
-  
-  let next = available.find(c => total < c.need);
+  if (currentSkyIndex >= unlockedSkies.length) {
+    currentSkyIndex = 0;
+  }
+  let currentRegion = unlockedSkies[currentSkyIndex];
+
+  // Update header badge
+  let titleEl = document.getElementById('skyHeaderTitle');
+  if(titleEl) {
+    titleEl.textContent = `${currentRegion.name} · ${currentRegion.roman}`;
+  }
+  let dotsEl = document.getElementById('skyDotsIndicator');
+  if(dotsEl) {
+    if(unlockedSkies.length > 1){
+      dotsEl.innerHTML = unlockedSkies.map((r, i) => `<span class="sky-dot ${i === currentSkyIndex ? 'active' : ''}" onclick="setSkyIndex(${i})" title="${esc(r.name)}"></span>`).join('');
+      dotsEl.style.display = 'flex';
+    } else {
+      dotsEl.innerHTML = '';
+      dotsEl.style.display = 'none';
+    }
+  }
+
+  // Determine overall in-progress constellation across all unlocked regions
+  let allUnlockedCols = unlockedSkies.map(r => r.col);
+  let allAvailable = constellationDefs.filter(c => allUnlockedCols.includes(c.collection));
+  allAvailable.sort((a, b) => a.need - b.need);
+  let next = allAvailable.find(c => total < c.need);
+
+  // Filter constellations strictly for current region
+  let regionConsts = constellationDefs.filter(c => c.collection === currentRegion.col);
+  regionConsts.sort((a, b) => a.need - b.need);
+
   let vw = window.innerWidth || document.documentElement.clientWidth || 360;
   let vh = window.innerHeight || document.documentElement.clientHeight || 640;
 
@@ -326,13 +428,13 @@ function renderUniverse(d){
     constellationStage.style.transform = 'none';
 
     let skyHtml = '';
-    available.forEach((c) => {
+    regionConsts.forEach((c) => {
       let isClaimed = !!(d.claimed && d.claimed[c.id]);
       let isNext = (next && next.id === c.id);
       let isDiscovered = (!isClaimed && total >= c.need);
       
       let baseSize = c.size || 125;
-      let size = Math.round(Math.max(100, Math.min(vw * 0.38, (vh - 140) * 0.28, baseSize, 160)));
+      let size = Math.round(Math.max(85, Math.min(vw * 0.38, (vh - 140) * 0.28, baseSize, 160)));
       
       let progress = 0;
       let unlocked = false;
@@ -347,8 +449,8 @@ function renderUniverse(d){
         progress = 1.0;
         stateClass = 'discovered';
       } else if (isNext) {
-        let idx = available.indexOf(c);
-        let prevNeed = idx > 0 ? available[idx - 1].need : 0;
+        let idx = allAvailable.indexOf(c);
+        let prevNeed = idx > 0 ? allAvailable[idx - 1].need : 0;
         progress = Math.max(0, Math.min(1, (total - prevNeed) / (c.need - prevNeed)));
         unlocked = false;
         stateClass = 'in-progress';
@@ -379,8 +481,8 @@ function renderUniverse(d){
   let captionDetails = document.getElementById('constellationDetailsCaption');
   
   if (next) {
-    let idx = available.indexOf(next);
-    let prevNeed = idx > 0 ? available[idx - 1].need : 0;
+    let idx = allAvailable.indexOf(next);
+    let prevNeed = idx > 0 ? allAvailable[idx - 1].need : 0;
     let nextProgress = Math.max(0, Math.min(1, (total - prevNeed) / (next.need - prevNeed)));
     
     if (typeof constellationProgressText !== 'undefined' && constellationProgressText) {
