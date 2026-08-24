@@ -24,6 +24,59 @@ function getCorsHeaders(req: Request) {
   };
 }
 
+// Función auxiliar para listar recursivamente todos los objetos bajo un prefijo
+async function listAllFilesRecursively(
+  adminClient: any,
+  bucket: string,
+  rootPrefix: string
+): Promise<{ files: string[]; error: string | null }> {
+  const allFiles: string[] = [];
+  const foldersToScan: string[] = [rootPrefix];
+
+  while (foldersToScan.length > 0) {
+    const currentFolder = foldersToScan.shift()!;
+    let offset = 0;
+    const limit = 100;
+    let hasMore = true;
+
+    while (hasMore) {
+      const { data, error } = await adminClient.storage
+        .from(bucket)
+        .list(currentFolder, { limit, offset, sortBy: { column: "name", order: "asc" } });
+
+      if (error) {
+        return { files: [], error: `Error al listar carpeta de storage: ${error.message}` };
+      }
+
+      if (!data || data.length === 0) {
+        hasMore = false;
+      } else {
+        for (const item of data) {
+          if (!item.name || item.name === ".emptyFolderPlaceholder") continue;
+
+          const itemPath = currentFolder ? `${currentFolder}/${item.name}` : item.name;
+          // En Supabase Storage, si id es null o no tiene metadata, es un directorio
+          const isFolder = item.id === null || (!item.metadata && !item.created_at);
+
+          if (isFolder) {
+            foldersToScan.push(itemPath);
+          } else {
+            allFiles.push(itemPath);
+          }
+        }
+
+        if (data.length < limit) {
+          hasMore = false;
+        } else {
+          offset += limit;
+        }
+      }
+    }
+  }
+
+  return { files: allFiles, error: null };
+}
+
 serve(async (req) => {
   const corsHeaders = getCorsHeaders(req);
 
@@ -66,10 +119,13 @@ serve(async (req) => {
     // 1. Validar la identidad del usuario a partir de su JWT (nunca desde un user_id del body)
     const userClient = createClient(supabaseUrl, supabaseAnonKey, {
       auth: { persistSession: false, autoRefreshToken: false },
-      global: { headers: { Authorization: `Bearer ${token}` } }
+      global: { headers: { Authorization: `Bearer ${token}` } },
     });
 
-    const { data: { user }, error: userErr } = await userClient.auth.getUser(token);
+    const {
+      data: { user },
+      error: userErr,
+    } = await userClient.auth.getUser(token);
     if (userErr || !user?.id) {
       console.warn("[AUTH_VERIFICATION_FAILED]", { status: userErr?.status || 401 });
       return new Response(
@@ -83,57 +139,43 @@ serve(async (req) => {
 
     // 2. Cliente administrativo con service_role para ejecutar la eliminación ordenada
     const adminClient = createClient(supabaseUrl, supabaseServiceKey, {
-      auth: { persistSession: false, autoRefreshToken: false }
+      auth: { persistSession: false, autoRefreshToken: false },
     });
 
-    // 3. Limpieza de Storage: Borrar todos los archivos bajo el prefijo exacto del usuario
-    try {
-      let allPaths: string[] = [];
-      let offset = 0;
-      const limit = 100;
-      let hasMore = true;
+    // 3. Limpieza de Storage: Listar y borrar recursivamente todos los archivos bajo el prefijo del usuario
+    const { files: storageFiles, error: listError } = await listAllFilesRecursively(
+      adminClient,
+      "orbit-media",
+      userId
+    );
 
-      while (hasMore) {
-        const { data: fileList, error: listErr } = await adminClient.storage
-          .from("orbit-media")
-          .list(userId, { limit, offset });
+    if (listError) {
+      console.error("[STORAGE_LIST_FAILED]", { error: listError });
+      return new Response(
+        JSON.stringify({ error: "No se pudieron listar los archivos para su eliminación. Operación cancelada." }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
+      );
+    }
 
-        if (listErr) {
-          console.warn("[STORAGE_LIST_FAILED]", { message: "Error al listar archivos" });
-          break;
-        }
-
-        if (!fileList || fileList.length === 0) {
-          hasMore = false;
-        } else {
-          for (const f of fileList) {
-            if (f.name && f.name !== ".emptyFolderPlaceholder") {
-              allPaths.push(`${userId}/${f.name}`);
-            }
-          }
-          if (fileList.length < limit) {
-            hasMore = false;
-          } else {
-            offset += limit;
-          }
-        }
-      }
-
-      if (allPaths.length > 0) {
+    if (storageFiles.length > 0) {
+      // Eliminar en lotes de 100 archivos
+      for (let i = 0; i < storageFiles.length; i += 100) {
+        const batch = storageFiles.slice(i, i + 100);
         const { error: removeErr } = await adminClient.storage
           .from("orbit-media")
-          .remove(allPaths);
+          .remove(batch);
 
         if (removeErr) {
-          console.warn("[STORAGE_REMOVE_FAILED]", { message: "Fallo al remover algunos archivos" });
-        } else {
-          console.log("[STORAGE_CLEANUP_OK] Archivos de media eliminados");
+          console.error("[STORAGE_REMOVE_FAILED]", { error: removeErr.message });
+          return new Response(
+            JSON.stringify({ error: "Fallo al eliminar archivos de almacenamiento. Operación cancelada." }),
+            { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
+          );
         }
-      } else {
-        console.log("[STORAGE_CLEANUP_OK] Sin archivos de media para eliminar");
       }
-    } catch (storageErr) {
-      console.warn("[STORAGE_CLEANUP_ERROR]", { message: "Excepción en limpieza de storage" });
+      console.log("[STORAGE_CLEANUP_OK] Archivos de media eliminados recursivamente");
+    } else {
+      console.log("[STORAGE_CLEANUP_OK] Sin archivos de media para eliminar");
     }
 
     // 4. Borrar fila de orbit_state
@@ -143,10 +185,13 @@ serve(async (req) => {
       .eq("user_id", userId);
 
     if (stateErr) {
-      console.warn("[STATE_DELETE_FAILED]", { code: stateErr.code });
-    } else {
-      console.log("[STATE_DELETED] Estado en la nube eliminado");
+      console.error("[STATE_DELETE_FAILED]", { code: stateErr.code });
+      return new Response(
+        JSON.stringify({ error: "Fallo al eliminar los datos de la nube. Operación cancelada." }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
+      );
     }
+    console.log("[STATE_DELETED] Estado en la nube eliminado");
 
     // 5. Borrar fila de profiles
     const { error: profileErr } = await adminClient
@@ -155,23 +200,50 @@ serve(async (req) => {
       .eq("user_id", userId);
 
     if (profileErr) {
-      console.warn("[PROFILE_DELETE_FAILED]", { code: profileErr.code });
-    } else {
-      console.log("[PROFILE_DELETED] Perfil eliminado");
+      console.error("[PROFILE_DELETE_FAILED]", { code: profileErr.code });
+      return new Response(
+        JSON.stringify({ error: "Fallo al eliminar el perfil. Operación cancelada." }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
+      );
     }
+    console.log("[PROFILE_DELETED] Perfil eliminado");
 
-    // 6. Borrar usuario de auth.users (Paso crítico definitivo)
+    // 6. Borrar usuario de auth.users (Solo tras confirmar éxito en pasos 3, 4 y 5)
     const { error: deleteUserErr } = await adminClient.auth.admin.deleteUser(userId);
     if (deleteUserErr) {
-      console.error("[AUTH_USER_DELETE_FAILED]", { status: deleteUserErr.status, message: deleteUserErr.message });
+      console.error("[AUTH_USER_DELETE_FAILED]", {
+        status: deleteUserErr.status,
+        message: deleteUserErr.message,
+      });
       return new Response(
-        JSON.stringify({ error: "No se pudo completar la eliminación de la cuenta. Inténtalo de nuevo." }),
+        JSON.stringify({ error: "No se pudo completar la eliminación del usuario de autenticación." }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
+      );
+    }
+    console.log("[AUTH_USER_DELETED] Usuario auth eliminado");
+
+    // 7. Verificación posterior razonable de limpieza
+    const { data: remainingState } = await adminClient
+      .from("orbit_state")
+      .select("user_id")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    const { data: remainingProfile } = await adminClient
+      .from("profiles")
+      .select("user_id")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (remainingState || remainingProfile) {
+      console.warn("[POST_CHECK_RESIDUAL_DETECTED]");
+      return new Response(
+        JSON.stringify({ error: "Advertencia: se detectaron datos residuales tras la eliminación." }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
       );
     }
 
-    console.log("[AUTH_USER_DELETED] Usuario auth eliminado");
-    console.log("[DELETE_ACCOUNT_SUCCESS] Proceso de eliminación completado con éxito");
+    console.log("[DELETE_ACCOUNT_SUCCESS] Proceso de eliminación completado y verificado");
 
     return new Response(
       JSON.stringify({ success: true, message: "Cuenta eliminada correctamente." }),
