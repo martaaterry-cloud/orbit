@@ -1,5 +1,5 @@
 // Service Worker de Orbit - Estrategia Network-First para HTML y Cache con invalidación de versión
-const CACHE_VERSION = 'orbit-v1.3.10';
+const CACHE_VERSION = 'orbit-v1.3.11';
 const STATIC_ASSETS = [
   './',
   './index.html',
@@ -7,18 +7,18 @@ const STATIC_ASSETS = [
   './apple-touch-icon.png',
   './icon-192.png',
   './icon-512.png',
-  './css/orbit.css?v=1.3.10',
-  './js/constellation-utils.js?v=1.3.10',
-  './data/templates.js?v=1.3.10',
-  './data/constellations.js?v=1.3.10',
-  './js/storage.js?v=1.3.10',
-  './js/supabase.js?v=1.3.10',
-  './js/stars.js?v=1.3.10',
-  './js/streak.js?v=1.3.10',
-  './js/journal.js?v=1.3.10',
-  './js/archive.js?v=1.3.10',
-  './scripts/repair-user-streak.js?v=1.3.10',
-  './js/app.js?v=1.3.10'
+  './css/orbit.css?v=1.3.11',
+  './js/constellation-utils.js?v=1.3.11',
+  './data/templates.js?v=1.3.11',
+  './data/constellations.js?v=1.3.11',
+  './js/storage.js?v=1.3.11',
+  './js/supabase.js?v=1.3.11',
+  './js/stars.js?v=1.3.11',
+  './js/streak.js?v=1.3.11',
+  './js/journal.js?v=1.3.11',
+  './js/archive.js?v=1.3.11',
+  './scripts/repair-user-streak.js?v=1.3.11',
+  './js/app.js?v=1.3.11'
 ];
 
 self.addEventListener('install', (event) => {
