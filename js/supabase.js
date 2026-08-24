@@ -228,6 +228,9 @@ function updateAppAuthState(user, isOffline = false) {
     if (mainApp) mainApp.style.display = 'block';
     if (userEmailEl) userEmailEl.textContent = user.email || '';
     updateSyncStatus(offline ? 'offline' : (hasConflict ? 'conflict' : 'synced'));
+    if (typeof syncUserProfileFromCloud === 'function') {
+      syncUserProfileFromCloud(user);
+    }
   } else if (activeUserId && offline) {
     let knownObj = null;
     try { knownObj = JSON.parse(localStorage.getItem('orbitKnownUser') || '{}'); } catch(e){}
@@ -506,39 +509,85 @@ async function supabaseUpdateEmail(newEmail) {
   }
 }
 
-// Actualización de username desde Ajustes
-async function supabaseUpdateUsername(newUsername) {
+// Sincronización del perfil desde Supabase (fuente de verdad)
+async function syncUserProfileFromCloud(user) {
   const sb = getSupabase();
-  if (!sb || !currentCloudUser) return toast('Inicia sesión en la nube primero');
-  const clean = String(newUsername || '').trim().toLowerCase();
-  const usernameRegex = /^[a-z0-9_]{3,20}$/;
-  if (!usernameRegex.test(clean)) {
-    return toast('El usuario debe tener entre 3 y 20 caracteres (solo letras, números y _)');
+  const userId = user?.id || currentCloudUser?.id || (typeof getOrbitActiveUserId === 'function' ? getOrbitActiveUserId() : null);
+  if (!sb || !userId) return;
+
+  try {
+    const { data: profile, error } = await sb
+      .from('profiles')
+      .select('username, display_name')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (error || !profile) return;
+
+    let d = (typeof load === 'function') ? load() : null;
+    if (d) {
+      if (!d.profile) d.profile = {};
+      let changed = false;
+      if (profile.username && d.profile.username !== profile.username) {
+        d.profile.username = profile.username;
+        changed = true;
+      }
+      if (profile.display_name && d.profile.displayName !== profile.display_name) {
+        d.profile.displayName = profile.display_name;
+        changed = true;
+      }
+      if (changed && typeof save === 'function') {
+        save(d);
+        if (typeof renderProfile === 'function') renderProfile(d);
+        if (typeof render === 'function') render();
+      }
+    }
+  } catch (e) {}
+}
+
+// Actualización del perfil en Supabase (public.profiles) como fuente de verdad
+async function supabaseUpdateProfile({ username, displayName }) {
+  const sb = getSupabase();
+  if (!sb || !currentCloudUser) {
+    return { success: true, localOnly: true };
+  }
+
+  const updates = {
+    updated_at: new Date().toISOString()
+  };
+
+  if (typeof username === 'string' && username.length > 0) {
+    const cleanUsername = username.trim().toLowerCase().replace(/^@/, '');
+    const usernameRegex = /^[a-z0-9_]{3,20}$/;
+    if (!usernameRegex.test(cleanUsername)) {
+      return {
+        success: false,
+        error: 'El nombre de usuario debe tener entre 3 y 20 caracteres (solo letras, números y _)'
+      };
+    }
+    updates.username = cleanUsername;
+  }
+
+  if (typeof displayName === 'string') {
+    updates.display_name = displayName.trim() || (updates.username || 'Viajero Orbit');
   }
 
   try {
     const { error } = await sb
       .from('profiles')
-      .update({ username: clean, updated_at: new Date().toISOString() })
+      .update(updates)
       .eq('user_id', currentCloudUser.id);
 
     if (error) {
       if (error.code === '23505') {
-        return toast('Ese nombre de usuario ya está en uso');
+        return { success: false, error: 'Ese nombre de usuario ya está en uso' };
       }
-      return toast('Error al actualizar nombre de usuario');
+      return { success: false, error: error.message || 'Error al actualizar el perfil' };
     }
 
-    let d = (typeof load === 'function') ? load() : null;
-    if (d) {
-      if (!d.profile) d.profile = {};
-      d.profile.username = clean;
-      if (typeof save === 'function') save(d);
-    }
-    toast('Nombre de usuario actualizado');
-    if (typeof renderProfile === 'function') renderProfile(d);
+    return { success: true, updates };
   } catch (e) {
-    toast('Error al actualizar usuario');
+    return { success: false, error: 'Error de conexión al actualizar el perfil' };
   }
 }
 
@@ -688,6 +737,9 @@ async function autoSyncOnInit(session) {
   const uid = session.user.id;
   if (typeof migrateLegacyStorageIfVerified === 'function') {
     migrateLegacyStorageIfVerified(session.user);
+  }
+  if (typeof syncUserProfileFromCloud === 'function') {
+    syncUserProfileFromCloud(session.user);
   }
 
   try {

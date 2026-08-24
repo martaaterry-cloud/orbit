@@ -46,6 +46,7 @@ function openReward(){rewardModal.classList.add('show')}
 function addReward(){let n=rewardName.value.trim(),c=+rewardCost.value;if(!n||!c)return toast('Completa el premio');let d=load();d.rewards.push({id:uid(),name:n,cost:c});save(d);rewardName.value='';closeModal('rewardModal');render()}
 function deleteReward(id){let d=load();d.rewards=d.rewards.filter(r=>r.id!==id);save(d);toast('Premio eliminado');render()}
 function redeem(id){let d=load(),r=d.rewards.find(x=>x.id===id);if(r&&Number(d.wallet||0)>=r.cost){d.wallet=Number(d.wallet||0)-r.cost;d.bank=d.wallet;save(d);toast(`✦ Premio canjeado: ${r.name}`);render()}}
+function openModal(id){let el=document.getElementById(id);if(el){el.classList.add('show');el.classList.add('active');}}
 function closeModal(id){let el=document.getElementById(id);if(el){el.classList.remove('show');el.classList.remove('active');}}
 function closeTopModal(){let openModals=document.querySelectorAll('.modal.show, .ceremony-modal.active');if(openModals.length>0){let top=openModals[openModals.length-1];top.classList.remove('show');top.classList.remove('active');}}
 function toast(msg){let t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(window.toastTimeout);window.toastTimeout=setTimeout(()=>t.classList.remove('show'),1900)}
@@ -1573,7 +1574,7 @@ function renderProfile(d){
   let un = document.getElementById('profileUsername');
   let bd = document.getElementById('profileBirthDate');
   if(dn && document.activeElement !== dn) dn.value = name;
-  if(un && document.activeElement !== un) un.value = uname;
+  if(un && document.activeElement !== un) un.value = uname ? uname.replace(/^@/,'') : '';
   if(bd && document.activeElement !== bd) bd.value = bdate;
 
   let birthInfo = getProfileBirthInfo(d.profile?.birthDate);
@@ -1671,28 +1672,57 @@ function renderProfile(d){
   }
 }
 
-function saveProfile(){
-  let d=load();
-  let dn=document.getElementById('profileDisplayName');
-  let un=document.getElementById('profileUsername');
-  let bd=document.getElementById('profileBirthDate');
-  if(!d.profile) d.profile={};
+async function saveProfile(){
+  let d = load();
+  let dn = document.getElementById('profileDisplayName');
+  let un = document.getElementById('profileUsername');
+  let bd = document.getElementById('profileBirthDate');
+  if(!d.profile) d.profile = {};
+
   let newName = dn ? dn.value.trim() : '';
-  let newUname = un ? un.value.trim().replace(/^@/,'') : '';
+  let rawUname = un ? un.value.trim().replace(/^@/,'').toLowerCase() : '';
   let newBdate = (bd && bd.value) ? bd.value : null;
 
-  d.profile.displayName = newName;
-  d.profile.username = newUname;
+  // Validación previa de username si se proporciona
+  if (rawUname) {
+    const usernameRegex = /^[a-z0-9_]{3,20}$/;
+    if (!usernameRegex.test(rawUname)) {
+      return toast('El usuario debe tener entre 3 y 20 caracteres (solo letras, números y _)');
+    }
+  }
+
+  // 1. Si hay sesión en la nube, actualizar PRIMERO en Supabase (fuente de verdad)
+  if (typeof supabaseUpdateProfile === 'function' && typeof currentCloudUser !== 'undefined' && currentCloudUser) {
+    const result = await supabaseUpdateProfile({
+      username: rawUname || undefined,
+      displayName: newName
+    });
+
+    if (!result.success) {
+      toast(result.error || 'Error al actualizar el perfil');
+      // No guardamos localmente el cambio rechazado, recargamos la vista del perfil con los valores previos
+      renderProfile(d);
+      return;
+    }
+
+    if (result.updates?.username) {
+      d.profile.username = result.updates.username;
+    }
+    if (result.updates?.display_name) {
+      d.profile.displayName = result.updates.display_name;
+    }
+  } else {
+    if (rawUname) d.profile.username = rawUname;
+    if (newName) d.profile.displayName = newName;
+  }
+
+  // Guardar fecha de nacimiento y confirmar localmente
   d.profile.birthDate = newBdate;
   save(d);
   isProfileEditing = false;
   toast('Perfil guardado');
   renderProfile(d);
   render();
-
-  if(newUname && typeof supabaseUpdateUsername === 'function' && typeof currentCloudUser !== 'undefined' && currentCloudUser){
-    supabaseUpdateUsername(newUname);
-  }
 }
 
 function applySettingsChangePassword(){
