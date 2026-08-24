@@ -6,15 +6,22 @@ search:`<svg class="icon" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6"/
 };
 
 
+let lastActivePage = 'today';
+
 function showPage(id){
- document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
- document.querySelectorAll('.bottom button').forEach(b=>b.classList.remove('active'));
- let targetEl=document.getElementById(id);
- if(targetEl)targetEl.classList.add('active');
- let nav=document.getElementById('nav-'+id);if(nav)nav.classList.add('active');
- let bottomNav=document.querySelector('.bottom');
- if(bottomNav){bottomNav.style.display=id==='universe'?'none':'grid'}
- window.scrollTo({top:0,behavior:'smooth'});render()
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.bottom button').forEach(b=>b.classList.remove('active'));
+  let targetEl=document.getElementById(id);
+  if(targetEl)targetEl.classList.add('active');
+  let nav=document.getElementById('nav-'+id);if(nav)nav.classList.add('active');
+  let bottomNav=document.querySelector('.bottom');
+  if(bottomNav){bottomNav.style.display=(id==='universe'||id==='settings')?'none':'grid'}
+  if(id !== 'settings' && id !== 'universe') lastActivePage = id;
+  window.scrollTo({top:0,behavior:'smooth'});render()
+}
+
+function closeSettings(){
+  showPage(lastActivePage || 'today');
 }
 
 function openSettings(sectionId){
@@ -29,9 +36,23 @@ function openSettings(sectionId){
 
 function openReward(){rewardModal.classList.add('show')}
 function addReward(){let n=rewardName.value.trim(),c=+rewardCost.value;if(!n||!c)return toast('Completa el premio');let d=load();d.rewards.push({id:uid(),name:n,cost:c});save(d);rewardName.value='';closeModal('rewardModal');render()}
-function redeem(id){let d=load(),r=d.rewards.find(x=>x.id===id);if(r&&Number(d.wallet||0)>=r.cost){d.wallet=Number(d.wallet||0)-r.cost;d.bank=d.wallet;save(d);toast('Premio canjeado');render()}}
-function closeModal(id){document.getElementById(id).classList.remove('show')}
+function deleteReward(id){let d=load();d.rewards=d.rewards.filter(r=>r.id!==id);save(d);toast('Premio eliminado');render()}
+function redeem(id){let d=load(),r=d.rewards.find(x=>x.id===id);if(r&&Number(d.wallet||0)>=r.cost){d.wallet=Number(d.wallet||0)-r.cost;d.bank=d.wallet;save(d);toast(`✦ Premio canjeado: ${r.name}`);render()}}
+function closeModal(id){let el=document.getElementById(id);if(el){el.classList.remove('show');el.classList.remove('active');}}
+function closeTopModal(){let openModals=document.querySelectorAll('.modal.show, .ceremony-modal.active');if(openModals.length>0){let top=openModals[openModals.length-1];top.classList.remove('show');top.classList.remove('active');}}
 function toast(msg){let t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(window.toastTimeout);window.toastTimeout=setTimeout(()=>t.classList.remove('show'),1900)}
+
+// Global listeners para cerrar modales pulsando fuera o con Esc
+document.addEventListener('click', (e) => {
+  if(e.target && e.target.classList && e.target.classList.contains('modal') && e.target.classList.contains('show')){
+    closeModal(e.target.id);
+  }
+});
+document.addEventListener('keydown', (e) => {
+  if(e.key === 'Escape'){
+    closeTopModal();
+  }
+});
 
 // ==========================================================================
 // SWIPE TO DELETE REUTILIZABLE (TOUCH & DESKTOP)
@@ -926,14 +947,165 @@ function nextReflectionPrompt(){
   renderReflectionPrompt();
 }
 
+function openReflectionModal(){
+  let d = load();
+  let idx = getStoredReflectionIndex();
+  let p = reflectionPrompts[idx] || reflectionPrompts[0];
+  let titleEl = document.getElementById('reflectionModalPromptTitle');
+  let subEl = document.getElementById('reflectionModalPromptSub');
+  let textEl = document.getElementById('reflectionAnswerText');
+  if(titleEl) titleEl.textContent = p[0];
+  if(subEl) subEl.textContent = p[1];
+  let k = dayKey();
+  let saved = (d.reflections && d.reflections[k]) ? d.reflections[k].answer : '';
+  if(textEl) textEl.value = saved || '';
+  let modal = document.getElementById('reflectionModal');
+  if(modal) modal.classList.add('show');
+}
+
+function saveReflectionAnswer(){
+  let textEl = document.getElementById('reflectionAnswerText');
+  let text = textEl ? textEl.value.trim() : '';
+  if(!text) return toast('Escribe tu reflexión');
+  let d = load();
+  let idx = getStoredReflectionIndex();
+  let p = reflectionPrompts[idx] || reflectionPrompts[0];
+  let k = dayKey();
+  if(!d.reflections) d.reflections = {};
+  d.reflections[k] = {
+    prompt: p[0],
+    sub: p[1],
+    answer: text,
+    ts: Date.now()
+  };
+  save(d);
+  let got = awardDailyAction('journal', 0.1, 0.5, 'Reflexión: ' + p[0], 'reflection-' + k);
+  toast(got ? 'Reflexión guardada · +0,1' : 'Reflexión guardada');
+  closeModal('reflectionModal');
+  render();
+}
+
 function renderReflectionPrompt(){
   let tEl = document.getElementById('reflectionPromptTitle');
   let sEl = document.getElementById('reflectionPromptSub');
+  let badgeEl = document.getElementById('reflectionAnswerBadge');
   if(!tEl || !sEl) return;
   let idx = getStoredReflectionIndex();
   let p = reflectionPrompts[idx] || reflectionPrompts[0];
   tEl.textContent = p[0];
   sEl.textContent = p[1];
+  
+  let d = (typeof load === 'function') ? load() : null;
+  if(badgeEl && d){
+    let k = dayKey();
+    let saved = (d.reflections && d.reflections[k]);
+    if(saved && saved.answer){
+      badgeEl.innerHTML = `<span class="reflection-badge-answered">✦ Respondida hoy</span>`;
+    } else {
+      badgeEl.innerHTML = `<span class="reflection-badge-pending">✍️ Toca para reflexionar...</span>`;
+    }
+  }
+}
+
+function renderRewardsList(d){
+  let rewardsEl = document.getElementById('rewards');
+  if(!rewardsEl) return;
+  rewardsEl.innerHTML = (d.rewards||[]).length ? d.rewards.map(r => {
+    let canAfford = Number(d.wallet || 0) >= r.cost;
+    if(canAfford){
+      return `
+        <div class="card reward" style="display:flex; flex-direction:column; gap:10px; padding:12px 14px; margin-bottom:8px;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <strong style="font-size:13.5px; color:var(--ink);">${esc(r.name)}</strong>
+              <small style="display:block; color:var(--wine); font-weight:600; font-size:11px;">${r.cost} estrellas</small>
+            </div>
+            <button class="planet-spark" onclick="deleteReward('${r.id}')" title="Eliminar premio" style="color:var(--muted); font-size:13px; opacity:0.6;">✕</button>
+          </div>
+          <div class="swipe-to-redeem-track" data-reward-id="${r.id}" data-reward-name="${esc(r.name)}">
+            <div class="swipe-thumb"><span class="swipe-arrow">→</span></div>
+            <span class="swipe-label">Desliza para canjear</span>
+          </div>
+        </div>
+      `;
+    } else {
+      return `
+        <div class="card reward" style="display:flex; justify-content:space-between; align-items:center; opacity:0.65; padding:12px 14px; margin-bottom:8px;">
+          <div>
+            <strong style="font-size:13px; color:var(--ink);">${esc(r.name)}</strong>
+            <small style="display:block; color:var(--muted); font-size:10.5px;">${r.cost} estrellas (faltan ${(r.cost - Number(d.wallet||0)).toFixed(1).replace('.',',')})</small>
+          </div>
+          <button class="planet-spark" onclick="deleteReward('${r.id}')" title="Eliminar premio" style="color:var(--muted); font-size:13px; opacity:0.6;">✕</button>
+        </div>
+      `;
+    }
+  }).join('') : '<div class="empty" style="padding:14px; text-align:center; font-size:12px; color:var(--muted);">No tienes premios creados todavía.</div>';
+
+  initSwipeToRedeem();
+}
+
+function initSwipeToRedeem(){
+  let tracks = document.querySelectorAll('.swipe-to-redeem-track:not([data-swipe-bound])');
+  tracks.forEach(track => {
+    track.setAttribute('data-swipe-bound', 'true');
+    let thumb = track.querySelector('.swipe-thumb');
+    let label = track.querySelector('.swipe-label');
+    let rewardId = track.getAttribute('data-reward-id');
+    
+    let isDragging = false;
+    let startX = 0;
+    let currentX = 0;
+    let maxDist = 0;
+
+    function onStart(e){
+      isDragging = true;
+      startX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+      maxDist = track.clientWidth - (thumb ? thumb.clientWidth : 32) - 6;
+      track.classList.add('swiping');
+    }
+
+    function onMove(e){
+      if(!isDragging) return;
+      let clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+      let diff = clientX - startX;
+      currentX = Math.max(0, Math.min(diff, maxDist));
+      if(thumb) thumb.style.transform = `translateX(${currentX}px)`;
+      if(label){
+        let pct = currentX / (maxDist || 1);
+        label.style.opacity = String(Math.max(0, 1 - pct * 1.5));
+      }
+    }
+
+    function onEnd(){
+      if(!isDragging) return;
+      isDragging = false;
+      track.classList.remove('swiping');
+      let pct = currentX / (maxDist || 1);
+      if(pct >= 0.75){
+        track.classList.add('completed');
+        if(thumb) thumb.style.transform = `translateX(${maxDist}px)`;
+        if(label) {
+          label.textContent = '¡Canjeado! ✦';
+          label.style.opacity = '1';
+        }
+        setTimeout(() => {
+          redeem(rewardId);
+        }, 220);
+      } else {
+        if(thumb) thumb.style.transform = 'translateX(0px)';
+        if(label) label.style.opacity = '0.85';
+      }
+      currentX = 0;
+    }
+
+    track.addEventListener('mousedown', onStart);
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onEnd);
+
+    track.addEventListener('touchstart', onStart, { passive: true });
+    track.addEventListener('touchmove', onMove, { passive: true });
+    track.addEventListener('touchend', onEnd, { passive: true });
+  });
 }
 
 function render(){
@@ -980,7 +1152,7 @@ function render(){
  sharedStreak.textContent=fmt(now-d.returnToMe.since);
  sharedNextMilestone.textContent=sm.text;
  sharedProgress.style.width=sm.pct+'%';
-  rewards.innerHTML=d.rewards.map(r=>`<div class="card reward"><div><strong>${esc(r.name)}</strong><small>${r.cost} estrellas</small></div><button class="btn ${Number(d.wallet||0)>=r.cost?'btn-main':'btn-soft'}" ${Number(d.wallet||0)>=r.cost?'':'disabled'} onclick="redeem('${r.id}')">${Number(d.wallet||0)>=r.cost?'Canjear':'Aún no'}</button></div>`).join('');
+  renderRewardsList(d);
   renderShopBoosters(d);
   renderActiveBoosterBadge(d);
   renderFocusAreas(d);
@@ -1218,14 +1390,31 @@ function getProfileBirthInfo(birthDateStr){
   return { age, isToday, daysUntil };
 }
 
+let isProfileEditing = false;
+
+function toggleProfileEdit(editing){
+  isProfileEditing = (typeof editing === 'boolean') ? editing : !isProfileEditing;
+  let d = load();
+  renderProfile(d);
+}
+
 function renderProfile(d){
   if(!d) d=load();
-  let dn=document.getElementById('profileDisplayName');
-  let un=document.getElementById('profileUsername');
-  let bd=document.getElementById('profileBirthDate');
-  if(dn && document.activeElement !== dn) dn.value = d.profile?.displayName || '';
-  if(un && document.activeElement !== un) un.value = d.profile?.username || '';
-  if(bd && document.activeElement !== bd) bd.value = d.profile?.birthDate || '';
+  let viewCard = document.getElementById('profileViewCard');
+  let formCard = document.getElementById('profileFormCard');
+  let cancelBtn = document.getElementById('profileCancelEditBtn');
+  
+  let name = d.profile?.displayName || '';
+  let uname = d.profile?.username || '';
+  let bdate = d.profile?.birthDate || '';
+  let hasData = !!(name || uname || bdate);
+
+  let dn = document.getElementById('profileDisplayName');
+  let un = document.getElementById('profileUsername');
+  let bd = document.getElementById('profileBirthDate');
+  if(dn && document.activeElement !== dn) dn.value = name;
+  if(un && document.activeElement !== un) un.value = uname;
+  if(bd && document.activeElement !== bd) bd.value = bdate;
 
   let birthInfo = getProfileBirthInfo(d.profile?.birthDate);
 
@@ -1243,13 +1432,10 @@ function renderProfile(d){
     }
   }
 
-  // Tarjeta de perfil en ajustes
-  let sumCard=document.getElementById('profileSummaryCard');
-  if(sumCard){
-    let name=d.profile?.displayName || '';
-    let uname=d.profile?.username || '';
-    if(name || uname || birthInfo){
-      sumCard.style.display='block';
+  // Tarjeta de perfil en ajustes: modo lectura vs edición
+  if(hasData && !isProfileEditing){
+    if(viewCard){
+      viewCard.style.display = 'block';
       let initial = (name ? name.charAt(0) : (uname ? uname.replace('@','').charAt(0) : '✦')).toUpperCase();
       let ageText = '';
       if(birthInfo){
@@ -1260,23 +1446,31 @@ function renderProfile(d){
           ageText = `<div style="font-size:11px; color:var(--muted); margin-top:4px;">🎂 ${birthInfo.age} años · Próximo cumple ${bdayLabel}</div>`;
         }
       }
-      sumCard.innerHTML = `
-        <div style="display:flex; align-items:center; gap:14px;">
-          <div style="width:46px; height:46px; border-radius:50%; background:linear-gradient(135deg,#f0cfd4,#aa5966); color:white; display:grid; place-items:center; font-family:Georgia,serif; font-size:20px; font-weight:600; flex-shrink:0; box-shadow:0 4px 12px rgba(141,76,87,0.2);">
-            ${esc(initial)}
-          </div>
-          <div style="flex:1; min-width:0;">
-            <div style="font-family:Georgia,serif; font-size:17px; font-weight:600; color:var(--ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-              ${esc(name || 'Mi Perfil Orbit')}
+      viewCard.innerHTML = `
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
+          <div style="display:flex; align-items:center; gap:14px; min-width:0;">
+            <div style="width:46px; height:46px; border-radius:50%; background:linear-gradient(135deg,#f0cfd4,#aa5966); color:white; display:grid; place-items:center; font-family:Georgia,serif; font-size:20px; font-weight:600; flex-shrink:0; box-shadow:0 4px 12px rgba(141,76,87,0.2);">
+              ${esc(initial)}
             </div>
-            ${uname ? `<div style="font-size:12px; color:var(--wine); font-weight:600;">@${esc(uname.replace(/^@/,''))}</div>` : ''}
-            ${ageText}
+            <div style="min-width:0;">
+              <div style="font-family:Georgia,serif; font-size:17px; font-weight:600; color:var(--ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                ${esc(name || 'Mi Perfil Orbit')}
+              </div>
+              ${uname ? `<div style="font-size:12px; color:var(--wine); font-weight:600;">@${esc(uname.replace(/^@/,''))}</div>` : ''}
+              ${ageText}
+            </div>
           </div>
+          <button class="profile-edit-btn" onclick="toggleProfileEdit(true)" title="Editar datos del perfil">
+            <svg class="icon" viewBox="0 0 24 24" style="width:15px; height:15px; stroke:currentColor;"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+          </button>
         </div>
       `;
-    } else {
-      sumCard.style.display='none';
     }
+    if(formCard) formCard.style.display = 'none';
+  } else {
+    if(viewCard) viewCard.style.display = 'none';
+    if(formCard) formCard.style.display = 'block';
+    if(cancelBtn) cancelBtn.style.display = hasData ? 'inline-block' : 'none';
   }
 
   // Personalización del saludo en la pantalla de inicio (Today)
@@ -1325,6 +1519,7 @@ function saveProfile(){
   d.profile.username = un ? un.value.trim() : '';
   d.profile.birthDate = (bd && bd.value) ? bd.value : null;
   save(d);
+  isProfileEditing = false;
   toast('Perfil guardado');
   renderProfile(d);
   render();

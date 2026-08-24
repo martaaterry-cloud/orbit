@@ -117,6 +117,13 @@ function renderDayDetail(d){
       <p>${parts.join('<br>')}</p>`;
       html+=wrapSwipe(checkinContent, `deleteCheckin('${selectedDay}')`, 'entry-card');
     }
+    let ref = d.reflections?.[selectedDay];
+    if(ref && ref.answer){
+      let refContent = `<div class="entry-meta"><span class="entry-type">reflexión del día</span><span>${ref.ts?new Date(ref.ts).toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'}):''}</span></div>
+      <h3 style="font-family:Georgia,serif; font-size:15px; margin:6px 0 4px; color:var(--ink);">${esc(ref.prompt || 'Pregunta del día')}</h3>
+      <p style="font-size:12px; line-height:1.48; margin:0; white-space:pre-wrap;">${esc(ref.answer)}</p>`;
+      html += `<div class="card entry-card">${refContent}</div>`;
+    }
     if(Array.isArray(d.journal)) d.journal.filter(e=>e && e.ts && dayKey(e.ts)===selectedDay).forEach(e=>html+=entryHTML(e));
     if(Array.isArray(d.goodThings)) d.goodThings.filter(g=>g && g.ts && dayKey(g.ts)===selectedDay).forEach(g=>html+=goodHTML(g, d));
     if(Array.isArray(d.urges)) d.urges.filter(u=>u && u.ts && dayKey(u.ts)===selectedDay).forEach(u=>html+=urgeHTML(u,d));

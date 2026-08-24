@@ -13,7 +13,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <title>Orbit</title>
 
-  <link rel="stylesheet" href="css/orbit.css?v=1.2.31">
+  <link rel="stylesheet" href="css/orbit.css?v=1.2.32">
 </head>
 <body>
 <!-- Pantalla de Acceso Inicial -->
@@ -99,10 +99,16 @@
     <button class="btn btn-soft btn-wide" style="margin-top:10px;" onclick="saveGratitudeEntry()">Guardar agradecimientos</button>
   </div>
 
-  <div class="section-head"><h2>Pregunta para reflexionar hoy</h2><button class="icon-button" style="padding:4px;" onclick="nextReflectionPrompt()" title="Cambiar pregunta"><svg class="icon" viewBox="0 0 24 24" style="width:16px; height:16px;"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg></button></div>
-  <div class="card prompt-card" id="reflectionCard">
+  <div class="section-head">
+    <h2>Pregunta para reflexionar hoy</h2>
+    <button class="icon-button" style="padding:4px;" onclick="event.stopPropagation(); nextReflectionPrompt()" title="Cambiar pregunta">
+      <svg class="icon" viewBox="0 0 24 24" style="width:16px; height:16px;"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
+    </button>
+  </div>
+  <div class="card prompt-card reflection-card" id="reflectionCard" onclick="openReflectionModal()" style="cursor:pointer;" title="Toca para responder o reflexionar">
     <div class="prompt-title" id="reflectionPromptTitle" style="font-size:15px; margin-bottom:4px;"></div>
     <div class="prompt-sub" id="reflectionPromptSub"></div>
+    <div id="reflectionAnswerBadge" style="margin-top:10px;"></div>
   </div>
 
   <div class="quote">“Lo invisible también deja gravedad.”<small>Hay cosas que no se ven y aun así forman parte de lo que somos.</small></div>
@@ -314,9 +320,18 @@
   </div>
 </section>
 
-<!-- Sección Ajustes -->
-<section id="settings" class="page">
-  <div class="card hero">
+<!-- Sección Ajustes (Pantalla independiente) -->
+<section id="settings" class="page settings-page">
+  <div class="settings-nav-header">
+    <button class="settings-back-btn" onclick="closeSettings()" title="Volver">
+      <svg class="icon" viewBox="0 0 24 24" style="width:18px; height:18px; stroke:currentColor;"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      <span>Volver</span>
+    </button>
+    <div class="settings-header-title">Ajustes</div>
+    <div style="width:70px;"></div>
+  </div>
+
+  <div class="card hero" style="margin-top:12px;">
     <div class="kicker">ajustes</div>
     <h1>Ajustes</h1>
     <p>Tu Orbit, tus datos y tus áreas.</p>
@@ -324,8 +339,12 @@
 
   <!-- PERFIL -->
   <div class="section-head"><h2>Perfil</h2></div>
-  <div id="profileSummaryCard" class="card" style="padding:16px; margin-bottom:10px; display:none;"></div>
-  <div class="card" style="padding:16px;">
+  
+  <!-- Modo Lectura del Perfil -->
+  <div id="profileViewCard" class="card profile-view-card" style="padding:16px; margin-bottom:10px; display:none;"></div>
+
+  <!-- Modo Edición del Perfil -->
+  <div id="profileFormCard" class="card" style="padding:16px;">
     <div class="field" style="margin-top:0;">
       <label for="profileDisplayName">Nombre</label>
       <input id="profileDisplayName" type="text" placeholder="Cómo quieres que te llame Orbit">
@@ -338,7 +357,10 @@
       <label for="profileBirthDate">Fecha de nacimiento</label>
       <input id="profileBirthDate" type="date">
     </div>
-    <button class="btn btn-main btn-wide" onclick="saveProfile()" style="margin-top:6px;">Guardar perfil</button>
+    <div style="display:flex; gap:8px; margin-top:8px;">
+      <button class="btn btn-main btn-wide" onclick="saveProfile()">Guardar perfil</button>
+      <button class="btn btn-line" id="profileCancelEditBtn" onclick="toggleProfileEdit(false)" style="display:none; padding:8px 16px;">Cancelar</button>
+    </div>
   </div>
 
   <!-- A. ÁREAS QUE ESTOY TRABAJANDO -->
@@ -394,7 +416,7 @@
     <button class="btn btn-line" onclick="handleCloudLogout()" style="font-size:12px; padding:8px 16px; color:var(--wine);" id="cloudLogoutBtn">
       Cerrar sesión
     </button>
-    <div style="font-size:11px; color:var(--muted); opacity:0.6; margin-top:14px;">Orbit v1.2.31</div>
+    <div style="font-size:11px; color:var(--muted); opacity:0.6; margin-top:14px;">Orbit v1.2.32</div>
   </div>
 </section>
 
@@ -455,6 +477,7 @@
 </nav>
 
 <div class="modal" id="urgeModal"><div class="sheet">
+  <button class="modal-close-x" onclick="closeModal('urgeModal')" aria-label="Cerrar">✕</button>
   <h3>Antes de comprobar</h3><p>Solo necesitamos crear un poco de espacio entre el impulso y lo que haces.</p>
   <div class="field"><label>¿Qué quiero comprobar?</label><select id="urgeGoal"></select></div>
   <div class="field"><label>¿Qué espero encontrar?</label><textarea id="urgeHope" placeholder="Lo que mi cabeza cree que me tranquilizaría..."></textarea></div>
@@ -470,36 +493,36 @@
       <button class="btn btn-line" id="cancelTimerBtn" onclick="resetUrgeTimer()" style="display:none;">Cancelar pausa</button>
     </div>
   </div>
-  <button class="btn btn-line btn-wide" style="margin-top:9px" onclick="closeModal('urgeModal')">Cerrar</button>
 </div></div>
 
 <div class="modal" id="slipModal"><div class="sheet">
+  <button class="modal-close-x" onclick="closeModal('slipModal')" aria-label="Cerrar">✕</button>
   <h3>Lo he comprobado</h3><p>No se borra lo que ya habías conseguido. Solo reiniciamos este contador desde ahora.</p>
   <input type="hidden" id="slipGoalId">
   <div class="field"><label>¿Qué estaba pasando justo antes? (opcional)</label><textarea id="slipNote"></textarea></div>
   <button class="btn btn-main btn-wide" onclick="confirmSlip()">Reiniciar contador</button>
-  <button class="btn btn-line btn-wide" style="margin-top:7px" onclick="closeModal('slipModal')">Cancelar</button>
 </div></div>
 
 <div class="modal" id="rewardModal"><div class="sheet">
+  <button class="modal-close-x" onclick="closeModal('rewardModal')" aria-label="Cerrar">✕</button>
   <h3>Un premio para mí</h3><p>Puede ser tiempo, un plan o un pequeño gesto.</p>
   <div class="field"><label>Premio</label><input id="rewardName"></div>
   <div class="field"><label>Coste en estrellas</label><input id="rewardCost" type="number" min="1" value="10"></div>
   <button class="btn btn-main btn-wide" onclick="addReward()">Guardar</button>
-  <button class="btn btn-line btn-wide" style="margin-top:7px" onclick="closeModal('rewardModal')">Cancelar</button>
 </div></div>
 
 <div class="modal" id="orbitModal"><div class="sheet">
+  <button class="modal-close-x" onclick="closeModal('orbitModal')" aria-label="Cerrar">✕</button>
   <h3 id="orbitModalTitle">Añadir un pilar</h3>
   <p id="orbitModalSub">Algo que quieras recordar que forma parte de ti y de tu vida.</p>
   <input type="hidden" id="orbitEditId" value="">
   <div class="field"><label>Nombre</label><input id="orbitName" placeholder="Ej: Mi espacio, Amigos, Creatividad..."></div>
   <div class="field"><label>Qué me aporta</label><input id="orbitMeaning" placeholder="Ej: Me conecta conmigo, me da calma..."></div>
   <button class="btn btn-main btn-wide" id="orbitSubmitBtn" onclick="saveOrbitItem()">Añadir</button>
-  <button class="btn btn-line btn-wide" style="margin-top:7px" onclick="closeModal('orbitModal')">Cancelar</button>
 </div></div>
 
 <div class="modal" id="dateRangeModal"><div class="sheet">
+  <button class="modal-close-x" onclick="closeModal('dateRangeModal')" aria-label="Cerrar">✕</button>
   <h3>Elegir fechas</h3><p>Solo se mostrarán registros dentro de este periodo.</p>
   <input type="hidden" id="dateRangeTarget">
   <div class="grid2">
@@ -507,19 +530,30 @@
     <div class="field"><label>Hasta</label><input id="dateTo" type="date"></div>
   </div>
   <button class="btn btn-main btn-wide" onclick="applyDateRange()">Aplicar</button>
-  <button class="btn btn-line btn-wide" style="margin-top:7px" onclick="closeModal('dateRangeModal')">Cancelar</button>
 </div></div>
 
 <!-- Modal Visor de Fotos -->
 <div class="modal" id="photoModal" onclick="closeModal('photoModal')"><div class="sheet" style="padding:14px; max-width:90vw; max-height:85vh; width:100%; max-width:420px; display:flex; flex-direction:column; align-items:center; box-sizing:border-box;" onclick="event.stopPropagation()">
-  <div style="flex:1; width:100%; display:flex; align-items:center; justify-content:center; overflow:hidden; margin-bottom:12px;">
+  <button class="modal-close-x" onclick="closeModal('photoModal')" aria-label="Cerrar">✕</button>
+  <div style="flex:1; width:100%; display:flex; align-items:center; justify-content:center; overflow:hidden;">
     <img id="photoModalImg" src="" style="max-width:100%; max-height:68vh; object-fit:contain; border-radius:12px; display:block; background:var(--soft);">
   </div>
-  <button class="btn btn-line btn-wide" onclick="closeModal('photoModal')">Cerrar</button>
+</div></div>
+
+<!-- Modal Responder Pregunta de Reflexión -->
+<div class="modal" id="reflectionModal"><div class="sheet">
+  <button class="modal-close-x" onclick="closeModal('reflectionModal')" aria-label="Cerrar">✕</button>
+  <h3 id="reflectionModalPromptTitle">Pregunta para reflexionar</h3>
+  <p class="prompt-sub" id="reflectionModalPromptSub">Tómate un momento para responder con calma.</p>
+  <div class="field" style="margin-top:14px;">
+    <textarea id="reflectionAnswerText" placeholder="Escribe aquí tu reflexión..." style="min-height:110px;"></textarea>
+  </div>
+  <button class="btn btn-main btn-wide" onclick="saveReflectionAnswer()">Guardar reflexión</button>
 </div></div>
 
 <!-- Modal de Tienda -->
 <div class="modal" id="shopModal"><div class="sheet">
+  <button class="modal-close-x" onclick="closeModal('shopModal')" aria-label="Cerrar">✕</button>
   <h3>Tienda de recompensas</h3>
   <div class="universe-star-balance" style="margin: 14px 0; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
     <div class="universe-stat-chip">
@@ -549,11 +583,11 @@
   </div>
   <div id="rewards" style="margin-top:4px"></div>
   <button class="btn btn-dashed btn-wide" style="margin-top:12px" onclick="closeModal('shopModal'); openReward()">Añadir mi propio premio</button>
-  <button class="btn btn-line btn-wide" style="margin-top:9px" onclick="closeModal('shopModal')">Cerrar</button>
 </div></div>
 
 <!-- Modal de Estrellas Ganadas Hoy -->
 <div class="modal" id="todayPointsModal"><div class="sheet">
+  <button class="modal-close-x" onclick="closeModal('todayPointsModal')" aria-label="Cerrar">✕</button>
   <h3 id="todayPointsModalTitle">Cómo ganaste tus estrellas hoy</h3>
   <p class="prompt-sub" id="todayPointsSubtitle" style="margin-bottom:12px">Desglose de tus logros y pausas de hoy.</p>
   <div id="todayPointsList" style="max-height:min(50vh, 320px); overflow-y:auto; margin-bottom:12px; scrollbar-width:none;"></div>
@@ -561,11 +595,11 @@
     <span style="font-size:12px; font-weight:600; color:var(--ink);">Total ganado hoy</span>
     <strong id="todayPointsModalTotal" style="font-size:18px; color:var(--wine);">0,0 ★</strong>
   </div>
-  <button class="btn btn-line btn-wide" onclick="closeModal('todayPointsModal')">Cerrar</button>
 </div></div>
 
 <!-- Modal Informativo de Estrellas -->
 <div class="modal" id="infoModal"><div class="sheet">
+  <button class="modal-close-x" onclick="closeModal('infoModal')" aria-label="Cerrar">✕</button>
   <h3>¿Cómo gano estrellas?</h3>
   <div class="info-scroll-box" style="text-align:left; font-size:13px; line-height:1.6; margin-top:12px; max-height: 300px; overflow-y: auto;">
     <b>Racha común:</b>
@@ -599,11 +633,11 @@
     </ul>
     <p>Las <i>estrellas de hoy</i> se reinician cada mañana. Todo lo ganado entra en tu <i>cesta</i> para canjear en la tienda o desbloquear el universo.</p>
   </div>
-  <button class="btn btn-line btn-wide" style="margin-top:15px" onclick="closeModal('infoModal')">Entendido</button>
 </div></div>
 
 <!-- Modal de Nave / Exploración -->
 <div class="modal" id="shipModal"><div class="sheet">
+  <button class="modal-close-x" onclick="closeModal('shipModal')" aria-label="Cerrar">✕</button>
   <h3>Exploración Espacial</h3>
   
   <div class="tabs" style="margin-top: 10px; margin-bottom: 15px; display: flex; gap: 7px;">
@@ -623,20 +657,19 @@
     <p class="prompt-sub">Desbloquea regiones del cielo para ampliar tu campo de visión.</p>
     <div id="skyRegions" style="margin-top:15px"></div>
   </div>
-
-  <button class="btn btn-line btn-wide" style="margin-top:20px" onclick="closeModal('shipModal')">Cerrar</button>
 </div></div>
 
 <!-- Modal del Libro de Constelaciones -->
 <div class="modal" id="constellationBookModal"><div class="sheet">
+  <button class="modal-close-x" onclick="closeModal('constellationBookModal')" aria-label="Cerrar">✕</button>
   <h3>Libro de constelaciones</h3>
   <p class="prompt-sub" style="margin-bottom:10px">Atlas celeste de tus descubrimientos</p>
   <div id="constellationBook"></div>
-  <button class="btn btn-line btn-wide" style="margin-top:12px" onclick="closeModal('constellationBookModal')">Cerrar</button>
 </div></div>
 
 <!-- Modal de Detalles de Universo -->
 <div class="modal" id="universeDetailsModal"><div class="sheet">
+  <button class="modal-close-x" onclick="closeModal('universeDetailsModal')" aria-label="Cerrar">✕</button>
   <h3>Mi Progreso Estelar</h3>
   <div class="universe-star-balance" style="margin: 14px 0; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
     <div class="universe-stat-chip">
@@ -657,19 +690,19 @@
   <div class="section-head"><h2>Constelación en curso</h2><small id="constellationProgressText"></small></div>
   <div class="constellation-stage" id="universeDetailsStage" style="min-height:200px; height:200px; margin: 15px 0;"></div>
   <div id="constellationDetailsCaption" style="margin-top:10px;"></div>
-  <button class="btn btn-line btn-wide" style="margin-top:20px" onclick="closeModal('universeDetailsModal')">Cerrar</button>
 </div></div>
 
 <!-- Modal de Ficha de Constelación -->
 <div class="modal" id="constellationDetailModal"><div class="sheet">
+  <button class="modal-close-x" onclick="closeModal('constellationDetailModal')" aria-label="Cerrar">✕</button>
   <h3 id="detailConstName"></h3>
   <p class="prompt-sub" id="detailConstMeta"></p>
   <p style="font-size:14px; margin-top:15px; line-height:1.6;" id="detailConstDesc"></p>
-  <button class="btn btn-line btn-wide" style="margin-top:20px" onclick="closeModal('constellationDetailModal')">Cerrar</button>
 </div></div>
 
 <!-- Modal Añadir Recuerdo a Día Pasado -->
 <div class="modal" id="addPastMemoryModal"><div class="sheet">
+  <button class="modal-close-x" onclick="closeModal('addPastMemoryModal')" aria-label="Cerrar">✕</button>
   <h3 id="addPastMemoryModalTitle">Añadir recuerdo</h3>
   <p class="prompt-sub" id="addPastMemoryModalSub">Guarda un momento o vivencia de este día.</p>
   <div class="field"><label>¿Qué quiero recordar de este día?</label><input id="pastMemoryText" placeholder="Un momento, algo que hice o sentí..."></div>
@@ -695,7 +728,6 @@
   </div>
   <div class="prompt-sub" style="font-size:10px; margin-bottom:12px; opacity:0.8;">Este registro se asociará a la fecha seleccionada (0 estrellas por registrarse fuera de su día).</div>
   <button class="btn btn-main btn-wide" id="savePastMemoryBtn" onclick="savePastMemory()">Guardar recuerdo</button>
-  <button class="btn btn-line btn-wide" style="margin-top:8px;" onclick="closeModal('addPastMemoryModal')">Cancelar</button>
 </div></div>
 
 <!-- Modal Ceremonial de Adquisición de Constelación -->
@@ -720,14 +752,14 @@
 <div class="toast" id="toast"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="data/templates.js?v=1.2.31"></script>
-  <script src="data/constellations.js?v=1.2.31"></script>
-  <script src="js/storage.js?v=1.2.31"></script>
-  <script src="js/supabase.js?v=1.2.31"></script>
-  <script src="js/stars.js?v=1.2.31"></script>
-  <script src="js/streak.js?v=1.2.31"></script>
-  <script src="js/journal.js?v=1.2.31"></script>
-  <script src="js/archive.js?v=1.2.31"></script>
-  <script src="js/app.js?v=1.2.31"></script>
+  <script src="data/templates.js?v=1.2.32"></script>
+  <script src="data/constellations.js?v=1.2.32"></script>
+  <script src="js/storage.js?v=1.2.32"></script>
+  <script src="js/supabase.js?v=1.2.32"></script>
+  <script src="js/stars.js?v=1.2.32"></script>
+  <script src="js/streak.js?v=1.2.32"></script>
+  <script src="js/journal.js?v=1.2.32"></script>
+  <script src="js/archive.js?v=1.2.32"></script>
+  <script src="js/app.js?v=1.2.32"></script>
 </body>
 </html>

@@ -104,8 +104,33 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
 .bottom button .icon{width:19px;height:19px;margin:auto auto 3px}
 .bottom button.active{background:var(--soft);color:var(--wine);font-weight:700}
 .modal{position:fixed;inset:0;background:rgba(20,16,28,.55);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);display:none;align-items:center;justify-content:center;z-index:30;padding:24px 16px;box-sizing:border-box}.modal.show{display:flex}
-.sheet{width:min(440px,88vw);height:auto;max-height:min(70vh,520px);overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;margin:auto;box-sizing:border-box;background:var(--paper);border-radius:24px;box-shadow:0 16px 40px rgba(0,0,0,.25);padding:22px 18px}
-.sheet h3{font-family:Georgia,serif;font-weight:500;font-size:21px;margin:0 0 5px}.sheet>p{font-size:11px;color:var(--muted);line-height:1.45;margin-top:0}
+.sheet{position:relative;width:min(440px,88vw);height:auto;max-height:min(70vh,520px);overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;margin:auto;box-sizing:border-box;background:var(--paper);border-radius:24px;box-shadow:0 16px 40px rgba(0,0,0,.25);padding:22px 18px}
+.sheet h3{font-family:Georgia,serif;font-weight:500;font-size:21px;margin:0 0 5px;padding-right:24px}.sheet>p{font-size:11px;color:var(--muted);line-height:1.45;margin-top:0}
+.modal-close-x {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 50%;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  z-index: 10;
+  padding: 0;
+}
+.modal-close-x:hover {
+  background: var(--soft);
+  color: var(--wine);
+  transform: scale(1.08);
+}
 .pause{text-align:center;background:linear-gradient(145deg,#fffafa,#f5e2e5);padding:17px;border-radius:18px;margin-top:15px}.timer{font-family:Georgia,serif;font-size:39px;margin:6px 0 10px}
 .toast{position:fixed;left:50%;bottom:94px;transform:translateX(-50%) translateY(18px);background:#3e3133;color:white;padding:10px 14px;border-radius:999px;font-size:11px;opacity:0;transition:.25s;z-index:60}.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 .empty{padding:14px;color:var(--muted);font-size:11px;text-align:center}
@@ -1785,4 +1810,172 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
   color: #ffffff;
   text-shadow: 0 0 16px rgba(255, 240, 200, 0.6);
   font-weight: 500;
+}
+
+/* ==========================================================================
+   REVISIÓN GLOBAL UX/UI (v1.2.32)
+   ========================================================================== */
+
+/* Botón de cierre en modales oscuros del universo */
+#shipModal .modal-close-x,
+#constellationBookModal .modal-close-x,
+#universeDetailsModal .modal-close-x,
+#constellationDetailModal .modal-close-x,
+#shopModal .modal-close-x {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.75);
+}
+#shipModal .modal-close-x:hover,
+#constellationBookModal .modal-close-x:hover,
+#universeDetailsModal .modal-close-x:hover,
+#constellationDetailModal .modal-close-x:hover,
+#shopModal .modal-close-x:hover {
+  background: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+}
+
+/* Pantalla de Ajustes Independiente */
+.settings-nav-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 0 10px;
+  margin-bottom: 2px;
+}
+.settings-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--soft);
+  border: 1px solid var(--line);
+  color: var(--wine);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 7px 14px;
+  border-radius: 99px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.settings-back-btn:hover {
+  background: #f0cfd4;
+  transform: translateX(-2px);
+}
+.settings-header-title {
+  font-family: Georgia, serif;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+/* Perfil: Modo Lectura y Edición */
+.profile-view-card {
+  position: relative;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  transition: all 0.2s ease;
+}
+.profile-edit-btn {
+  background: var(--soft);
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  color: var(--wine);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.profile-edit-btn:hover {
+  background: #f0cfd4;
+  transform: scale(1.08);
+}
+
+/* Deslizar para Canjear (Swipe to Redeem) */
+.swipe-to-redeem-track {
+  position: relative;
+  height: 38px;
+  background: var(--soft);
+  border: 1px solid rgba(141, 76, 87, 0.18);
+  border-radius: 99px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  user-select: none;
+  cursor: grab;
+  touch-action: pan-y;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+.swipe-to-redeem-track:active {
+  cursor: grabbing;
+}
+.swipe-to-redeem-track.swiping {
+  border-color: var(--rose2);
+}
+.swipe-to-redeem-track.completed {
+  background: linear-gradient(135deg, #aa5966, #854650);
+}
+.swipe-to-redeem-track.completed .swipe-label {
+  color: #ffffff;
+  font-weight: 700;
+}
+.swipe-thumb {
+  position: absolute;
+  left: 3px;
+  top: 3px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #aa5966, #854650);
+  box-shadow: 0 2px 8px rgba(133, 70, 80, 0.35);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  transition: transform 0.05s ease;
+  pointer-events: none;
+}
+.swipe-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  color: var(--wine);
+  opacity: 0.85;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+/* Tarjeta de Pregunta para reflexionar */
+.reflection-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.reflection-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(80, 58, 61, 0.1);
+  border-color: var(--rose2);
+}
+.reflection-badge-answered {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: #2e7d32;
+  background: rgba(46, 125, 50, 0.08);
+  border: 1px solid rgba(46, 125, 50, 0.2);
+  padding: 3px 10px;
+  border-radius: 99px;
+}
+.reflection-badge-pending {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--wine);
+  opacity: 0.85;
 }
