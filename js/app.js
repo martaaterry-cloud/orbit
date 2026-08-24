@@ -277,11 +277,17 @@ function drawOrbit(d){
 }
 
 function constellationSvg(def, unlocked, progress) {
-  let N = def.pts.length;
+  let cDef = (typeof ConstellationUtils !== 'undefined' && ConstellationUtils.normalizeConstellation)
+    ? ConstellationUtils.normalizeConstellation(def)
+    : def;
+  
+  let pts = cDef.pts || (cDef.stars ? cDef.stars.map(s => [s.x, s.y]) : []);
+  let edges = cDef.edges || [];
+  let N = pts.length;
   let pVal = unlocked ? 1 : Math.max(0, Math.min(1, Number(progress) || 0));
   
   // Progresión estrella por estrella: cada estrella ganada activa un nodo y sus conexiones
-  let totalNeed = def.need || N;
+  let totalNeed = cDef.need || N;
   let earned = Math.floor(pVal * totalNeed);
   let achieved = unlocked ? N : Math.min(N, earned);
   let nextTarget = unlocked ? -1 : (achieved < N ? achieved : -1);
@@ -299,15 +305,16 @@ function constellationSvg(def, unlocked, progress) {
     [64, 12, 0.9, 0.24]
   ].map(([cx, cy, r, op]) => `<circle class="ambient-sky-star" cx="${cx}%" cy="${cy}%" r="${r}" opacity="${op}"/>`).join('');
 
-  let lines = def.edges.map(([a, b]) => {
+  let lines = edges.map(([a, b]) => {
     let active = a < achieved && b < achieved;
     let cls = active ? ('line' + (isRefined ? ' refined-line' : '')) : 'ghost-line';
-    return `<line class="${cls}" x1="${def.pts[a][0]}%" y1="${def.pts[a][1]}%" x2="${def.pts[b][0]}%" y2="${def.pts[b][1]}%"/>`;
+    if (!pts[a] || !pts[b]) return '';
+    return `<line class="${cls}" x1="${pts[a][0]}%" y1="${pts[a][1]}%" x2="${pts[b][0]}%" y2="${pts[b][1]}%"/>`;
   }).join('');
   
-  let stars = def.pts.map((p, i) => {
+  let stars = pts.map((p, i) => {
     let cls = 'ghost-star';
-    let isMain = (def.id === 'lyra' && i === 0);
+    let isMain = (cDef.id === 'lyra' && i === 0);
     let r = isMain ? 2.3 : 2.1;
     
     if (i < achieved) {
@@ -534,7 +541,7 @@ function renderUniverse(d){
       constellationProgressText.textContent = 'Has cartografiado todo lo accesible en tus regiones desbloqueadas.';
     }
     if (detailsStage) {
-      let lastConst = available.length ? available[available.length - 1] : null;
+      let lastConst = allAvailable.length ? allAvailable[allAvailable.length - 1] : null;
       detailsStage.innerHTML = lastConst ? constellationSvg(lastConst, true, 1.0) : '<div class="empty" style="padding:40px;color:rgba(255,255,255,0.4);text-align:center;font-size:12px;">Todo cartografiado</div>';
     }
     if (captionDetails) {
@@ -873,10 +880,16 @@ function guardarConstelacion(id, cost = 1){
 }
 
 function verFichaConstelacion(id){
-  let c=constellationDefs.find(x=>x.id===id);
-  detailConstName.textContent=c.name;
-  detailConstMeta.textContent=c.collection === 'zodiaco' ? 'Colección: Zodiaco' : c.collection === 'norte' ? 'Colección: Cielo del norte' : c.collection === 'invierno' ? 'Colección: Cielo de invierno' : 'Colección: Espacio profundo';
-  detailConstDesc.textContent=c.desc;
+  let c = constellationDefs.find(x => x.id === id);
+  if (!c) return;
+  detailConstName.textContent = c.name;
+  detailConstMeta.textContent = c.collection === 'zodiaco' ? 'Colección: Zodiaco' : (c.collection === 'norte' ? 'Colección: Primer cielo' : (c.collection === 'invierno' ? 'Colección: Cielo de invierno' : 'Colección: Espacio profundo'));
+  
+  let descHtml = esc(c.desc || '');
+  if (c.myth) {
+    descHtml += `<div style="margin-top:12px; padding:10px 12px; background:var(--soft); border-radius:10px; border:1px solid var(--line); font-size:12px; color:var(--muted); line-height:1.5;">“${esc(c.myth)}”</div>`;
+  }
+  detailConstDesc.innerHTML = descHtml;
   document.getElementById('constellationDetailModal').classList.add('show');
 }
 
