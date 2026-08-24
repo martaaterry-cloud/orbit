@@ -14,7 +14,7 @@
 <title>Orbit</title>
 
   <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
-  <link rel="stylesheet" href="css/orbit.css?v=1.3.1">
+  <link rel="stylesheet" href="css/orbit.css?v=1.3.2">
 </head>
 <body>
 <!-- Pantalla de Acceso Inicial Multiusuario -->
@@ -489,13 +489,31 @@
     </div>
   </div>
 
+  <!-- E. HERRAMIENTAS DE PRUEBA (Exclusivo para la cuenta @prueba) -->
+  <div id="settingsTestToolsSection" style="display:none;">
+    <div class="section-head"><h2 style="color:var(--wine);">Entorno de pruebas</h2></div>
+    <div class="card" style="padding:16px; border:1px dashed var(--rose2); background:rgba(217,143,158,0.06);">
+      <div style="font-size:12px; color:var(--muted); margin-bottom:12px; line-height:1.4;">
+        Herramientas de evaluación exclusivas para la cuenta <strong>@prueba</strong>. Permite revisar el Universo, compras estelares y ceremonias sin alterar la economía de usuarios reales.
+      </div>
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <button class="btn btn-main" style="font-size:11px; padding:8px 14px;" onclick="cargarEstadoPrueba()">
+          Cargar estado de prueba
+        </button>
+        <button class="btn btn-line" style="font-size:11px; padding:8px 14px; color:var(--wine); border-color:var(--wine);" onclick="restablecerEstadoPrueba()">
+          Restablecer prueba
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- D. SESIÓN -->
   <div class="section-head"><h2>Sesión</h2></div>
   <div class="card" style="padding:16px; text-align:center;">
     <button class="btn btn-line" onclick="handleCloudLogout()" style="font-size:12px; padding:8px 16px; color:var(--wine);" id="cloudLogoutBtn">
       Cerrar sesión
     </button>
-    <div style="font-size:11px; color:var(--muted); opacity:0.6; margin-top:14px;">Orbit v1.3.1</div>
+    <div style="font-size:11px; color:var(--muted); opacity:0.6; margin-top:14px;">Orbit v1.3.2</div>
   </div>
 </section>
 
@@ -885,15 +903,15 @@
 <div class="toast" id="toast"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="js/constellation-utils.js?v=1.3.1"></script>
-  <script src="data/templates.js?v=1.3.1"></script>
-  <script src="data/constellations.js?v=1.3.1"></script>
-  <script src="js/storage.js?v=1.3.1"></script>
-  <script src="js/supabase.js?v=1.3.1"></script>
-  <script src="js/stars.js?v=1.3.1"></script>
-  <script src="js/streak.js?v=1.3.1"></script>
-  <script src="js/journal.js?v=1.3.1"></script>
-  <script src="js/archive.js?v=1.3.1"></script>
-  <script src="js/app.js?v=1.3.1"></script>
+  <script src="js/constellation-utils.js?v=1.3.2"></script>
+  <script src="data/templates.js?v=1.3.2"></script>
+  <script src="data/constellations.js?v=1.3.2"></script>
+  <script src="js/storage.js?v=1.3.2"></script>
+  <script src="js/supabase.js?v=1.3.2"></script>
+  <script src="js/stars.js?v=1.3.2"></script>
+  <script src="js/streak.js?v=1.3.2"></script>
+  <script src="js/journal.js?v=1.3.2"></script>
+  <script src="js/archive.js?v=1.3.2"></script>
+  <script src="js/app.js?v=1.3.2"></script>
 </body>
 </html>

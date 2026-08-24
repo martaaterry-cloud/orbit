@@ -1683,6 +1683,69 @@ function renderProfile(d){
       bdayBanner.style.display='none';
     }
   }
+
+  updateTestToolsVisibility(d);
+}
+
+function isTestAccount(d){
+  if (!d) d = (typeof load === 'function') ? load() : null;
+  let username = d?.profile?.username || '';
+  let clean = String(username).trim().toLowerCase().replace(/^@/, '');
+  return clean === 'prueba';
+}
+
+function updateTestToolsVisibility(d){
+  let sec = document.getElementById('settingsTestToolsSection');
+  if (sec) {
+    sec.style.display = isTestAccount(d) ? 'block' : 'none';
+  }
+}
+
+function cargarEstadoPrueba(){
+  let d = load();
+  if (!isTestAccount(d)) {
+    return toast('Esta acción solo está disponible para la cuenta @prueba.');
+  }
+  if (!confirm('¿Cargar estado de prueba con 9.999 estrellas disponibles y todas las regiones celestes desbloqueadas en @prueba?')) {
+    return;
+  }
+  
+  d.wallet = 9999;
+  d.bank = 9999;
+  d.lifetimeStars = Math.max(Number(d.lifetimeStars || 0), 9999);
+  d.unlockedRegions = ['cielo-1', 'zodiaco', 'orion', 'profundo'];
+  d.shipLevel = Math.max(Number(d.shipLevel || 0), 4);
+  // Mantener d.claimed intacto sin pre-comprar todas las constelaciones para probar compras y ceremonias
+  if (!d.claimed) d.claimed = {};
+  
+  save(d);
+  toast('✦ Estado de prueba cargado: 9.999 ★ y todos los cielos desbloqueados.');
+  render();
+}
+
+function restablecerEstadoPrueba(){
+  let d = load();
+  if (!isTestAccount(d)) {
+    return toast('Esta acción solo está disponible para la cuenta @prueba.');
+  }
+  if (!confirm('⚠️ ¿Estás segura de restablecer el estado de Orbit para la cuenta @prueba a valores iniciales limpios?')) {
+    return;
+  }
+  
+  let preservedProfile = d.profile ? { ...d.profile } : { username: 'prueba', displayName: 'Prueba' };
+  
+  let cleanD = defaults();
+  cleanD.profile = preservedProfile;
+  cleanD.unlockedRegions = ['cielo-1'];
+  cleanD.wallet = 0;
+  cleanD.bank = 0;
+  cleanD.lifetimeStars = 0;
+  cleanD.claimed = {};
+  cleanD.shipLevel = 0;
+  
+  save(cleanD);
+  toast('✦ Estado de @prueba restablecido a valores limpios.');
+  render();
 }
 
 async function saveProfile(){
