@@ -31,10 +31,24 @@ serve(async (req) => {
     return new Response("ok", { headers: corsHeaders });
   }
 
+  console.log("[LOGIN_USERNAME_START] Solicitud recibida");
+
+  let body: Record<string, unknown> = {};
   try {
-    const { username, password, captcha_token } = await req.json();
+    body = await req.json();
+  } catch (parseErr) {
+    console.warn("[BODY_PARSE_FAILED] Error al parsear JSON del body");
+    return new Response(
+      JSON.stringify({ error: "Formato de solicitud no válido." }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
+    );
+  }
+
+  try {
+    const { username, password, captcha_token } = body;
 
     if (!username || !password || typeof username !== "string" || typeof password !== "string") {
+      console.warn("[VALIDATION_FAILED] Campos username o password ausentes o inválidos");
       return new Response(
         JSON.stringify({ error: "Introduce usuario y contraseña válidos." }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
@@ -47,6 +61,7 @@ serve(async (req) => {
     const turnstileSecret = Deno.env.get("TURNSTILE_SECRET_KEY") ?? "";
 
     if (!supabaseUrl || !supabaseServiceKey || !supabaseAnonKey) {
+      console.error("[ENV_CHECK_FAILED] Variables de entorno ausentes en Supabase Edge Function");
       return new Response(
         JSON.stringify({ error: "Configuración del servidor incompleta." }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
@@ -57,6 +72,7 @@ serve(async (req) => {
     if (turnstileSecret) {
       const token = typeof captcha_token === "string" ? captcha_token.trim() : "";
       if (!token) {
+        console.warn("[TURNSTILE_TOKEN_MISSING] Token de Turnstile ausente");
         return new Response(
           JSON.stringify({ error: "Verificación de seguridad requerida." }),
           { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 403 }
@@ -72,11 +88,13 @@ serve(async (req) => {
       });
       const cfData = await cfRes.json();
       if (!cfData || cfData.success !== true) {
+        console.warn("[TURNSTILE_FAILED] Validación de Turnstile fallida");
         return new Response(
           JSON.stringify({ error: "Verificación de seguridad no válida. Inténtalo de nuevo." }),
           { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 403 }
         );
       }
+      console.log("[TURNSTILE_OK] Validación de Turnstile superada");
     }
 
     // Cliente administrativo exclusivo de servidor
@@ -94,21 +112,30 @@ serve(async (req) => {
       .maybeSingle();
 
     if (profileErr || !profile?.user_id) {
-      // Respuesta genérica para evitar enumeración de usuarios
+      console.warn("[PROFILE_NOT_FOUND]", {
+        code: profileErr?.code || "NOT_FOUND",
+        hasProfile: !!profile
+      });
       return new Response(
         JSON.stringify({ error: "Usuario o contraseña incorrectos." }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
       );
     }
+    console.log("[PROFILE_FOUND] Perfil localizado correctamente");
 
     // 2. Obtener el email del usuario mediante API administrativa
     const { data: userData, error: userErr } = await adminClient.auth.admin.getUserById(profile.user_id);
     if (userErr || !userData?.user?.email) {
+      console.warn("[AUTH_USER_NOT_FOUND]", {
+        code: userErr?.name || "USER_EMAIL_MISSING",
+        status: userErr?.status || 404
+      });
       return new Response(
         JSON.stringify({ error: "Usuario o contraseña incorrectos." }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
       );
     }
+    console.log("[AUTH_USER_FOUND] Usuario de auth localizado");
 
     // 3. Autenticar con anon key verificando contraseña
     const anonClient = createClient(supabaseUrl, supabaseAnonKey, {
@@ -121,11 +148,18 @@ serve(async (req) => {
     });
 
     if (authErr || !authData.session) {
+      console.warn("[PASSWORD_AUTH_FAILED]", {
+        code: authErr?.name || "INVALID_CREDENTIALS",
+        status: authErr?.status || 400
+      });
       return new Response(
         JSON.stringify({ error: "Usuario o contraseña incorrectos." }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
       );
     }
+
+    console.log("[PASSWORD_AUTH_OK] Autenticación de contraseña correcta");
+    console.log("[SESSION_RETURNED] Sesión generada y enviada");
 
     // 4. Retornar sesión segura al cliente
     return new Response(
@@ -133,6 +167,9 @@ serve(async (req) => {
       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
     );
   } catch (err) {
+    console.error("[UNEXPECTED_ERROR]", {
+      name: (err as Error)?.name || "UnknownError"
+    });
     return new Response(
       JSON.stringify({ error: "Error en el servidor al autenticar." }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
