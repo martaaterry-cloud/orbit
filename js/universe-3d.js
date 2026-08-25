@@ -1,5 +1,5 @@
 // ==========================================================================
-// ORBIT · Controlador del Universo 3D (Firmamento y Constelaciones en Three.js)
+// ORBIT · Controlador del Universo 3D (Firmamento, Constelaciones y Regiones en Three.js)
 // ==========================================================================
 
 (function() {
@@ -8,6 +8,7 @@
   let universeScene = null;
   let isInitialized = false;
   let constellationsGroup = null;
+  let regionsGroup = null;
   let starTexture = null;
   let labelsList = [];
   let labelsContainer = null;
@@ -20,6 +21,46 @@
     'invierno': -4.5,  // Cielo de Invierno
     'profundo': -7.0   // Espacio Profundo
   };
+
+  // Coordenadas espaciales deterministas para los centros de las 4 regiones
+  const REGIONS_CONFIG = [
+    {
+      id: 'cielo-1',
+      name: 'Primer cielo',
+      roman: 'I',
+      col: 'norte',
+      pos: { x: -3.6, y: 3.0, z: 0.0 },
+      color: 0x6da4e8,
+      type: 'nebula-blue'
+    },
+    {
+      id: 'zodiaco',
+      name: 'Zodiaco',
+      roman: 'II',
+      col: 'zodiaco',
+      pos: { x: 4.4, y: 2.6, z: -2.2 },
+      color: 0xf6c87a,
+      type: 'arc-gold'
+    },
+    {
+      id: 'orion',
+      name: 'Cielo de invierno',
+      roman: 'III',
+      col: 'invierno',
+      pos: { x: -4.5, y: -3.2, z: -4.5 },
+      color: 0x7fe3ff,
+      type: 'crystal-ice'
+    },
+    {
+      id: 'profundo',
+      name: 'Espacio profundo',
+      roman: 'IV',
+      col: 'profundo',
+      pos: { x: 4.6, y: -3.6, z: -7.0 },
+      color: 0x8a55a8,
+      type: 'gravitational-lens'
+    }
+  ];
 
   // Textura circular procedural en memoria (círculo suave con centro brillante)
   function getStarTexture() {
@@ -107,7 +148,6 @@
     const unlockedSkies = (typeof skyRegionsList !== 'undefined') ? skyRegionsList.filter(r => (d.unlockedRegions && d.unlockedRegions.includes(r.id)) || r.id === 'cielo-1') : [];
     const allUnlockedCols = unlockedSkies.map(r => r.col);
 
-    // Comprobar si la región está desbloqueada
     const isRegionUnlocked = allUnlockedCols.length === 0 || allUnlockedCols.includes(c.collection);
 
     if (!isRegionUnlocked) {
@@ -122,7 +162,6 @@
       return { status: 'discovered', progress: 1.0 };
     }
 
-    // Calcular si es la siguiente en progreso
     const allAvailable = (typeof constellationDefs !== 'undefined') ? constellationDefs.filter(item => allUnlockedCols.includes(item.collection)) : [];
     allAvailable.sort((a, b) => a.need - b.need);
     const next = allAvailable.find(item => total < item.need);
@@ -141,13 +180,11 @@
     const group = new THREE.Group();
     const scale = ((c.size || 120) / 120) * 0.018;
 
-    // Posición espacial 3D
     group.position.x = (c.x - 50) * 0.12;
     group.position.y = -(c.y - 50) * 0.12;
     group.position.z = REGION_DEPTH[c.collection] !== undefined ? REGION_DEPTH[c.collection] : 0;
     group.rotation.z = -THREE.MathUtils.degToRad(c.rot || 0);
 
-    // 1. Puntos de estrellas circulares locales
     const stars = c.stars || [];
     const starPositions = [];
     const starCoordsById = new Map();
@@ -201,7 +238,6 @@
       group.add(starPoints);
     }
 
-    // 2. Aristas conectoras finas (LineSegments)
     const edges = c.edges || [];
     const linePositions = [];
 
@@ -244,12 +280,148 @@
       group.add(lines);
     }
 
-    // 3. Hitbox invisible esférica para raycast interactivo
     const hitRadius = Math.max(0.65, scale * 45);
     const hitGeo = new THREE.SphereGeometry(hitRadius, 8, 8);
     const hitMat = new THREE.MeshBasicMaterial({ visible: false });
     const hitMesh = new THREE.Mesh(hitGeo, hitMat);
-    hitMesh.userData = { constellationId: c.id, name: c.name };
+    hitMesh.userData = { type: 'constellation', constellationId: c.id, name: c.name };
+    group.add(hitMesh);
+
+    return { group, hitMesh, worldPos: group.position };
+  }
+
+  // 4 Formaciones Cósmicas 3D para Regiones del Universo
+  function buildRegionMesh(regConfig, isUnlocked) {
+    const group = new THREE.Group();
+    group.position.set(regConfig.pos.x, regConfig.pos.y, regConfig.pos.z);
+
+    const baseOpacity = isUnlocked ? 0.75 : 0.22;
+    const baseColor = isUnlocked ? regConfig.color : 0x252e3d;
+
+    if (regConfig.type === 'nebula-blue') {
+      // Primer cielo: nebulosa suave azul/blanca
+      const ringGeo = new THREE.RingGeometry(1.2, 1.9, 32);
+      const ringMat = new THREE.MeshBasicMaterial({
+        color: baseColor,
+        transparent: true,
+        opacity: baseOpacity * 0.35,
+        side: THREE.DoubleSide
+      });
+      const ringMesh = new THREE.Mesh(ringGeo, ringMat);
+      group.add(ringMesh);
+
+      const count = 36;
+      const pos = new Float32Array(count * 3);
+      for (let i = 0; i < count; i++) {
+        const a = (i / count) * Math.PI * 2;
+        const r = 1.3 + Math.sin(i * 3) * 0.35;
+        pos[i * 3] = Math.cos(a) * r;
+        pos[i * 3 + 1] = Math.sin(a) * r;
+        pos[i * 3 + 2] = 0;
+      }
+      const partGeo = new THREE.BufferGeometry();
+      partGeo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+      const partMat = new THREE.PointsMaterial({
+        size: 0.40,
+        map: getStarTexture(),
+        color: isUnlocked ? 0xffffff : 0x4a5568,
+        transparent: true,
+        depthWrite: false,
+        opacity: baseOpacity
+      });
+      group.add(new THREE.Points(partGeo, partMat));
+
+    } else if (regConfig.type === 'arc-gold') {
+      // Zodiaco: arco estelar cálido/dorado sutil
+      const arcGeo = new THREE.RingGeometry(1.4, 2.1, 32, 1, 0, Math.PI * 1.5);
+      const arcMat = new THREE.MeshBasicMaterial({
+        color: baseColor,
+        transparent: true,
+        opacity: baseOpacity * 0.40,
+        side: THREE.DoubleSide
+      });
+      const arcMesh = new THREE.Mesh(arcGeo, arcMat);
+      group.add(arcMesh);
+
+      const count = 42;
+      const pos = new Float32Array(count * 3);
+      for (let i = 0; i < count; i++) {
+        const a = (i / count) * Math.PI * 1.5;
+        const r = 1.45 + (i % 3) * 0.2;
+        pos[i * 3] = Math.cos(a) * r;
+        pos[i * 3 + 1] = Math.sin(a) * r;
+        pos[i * 3 + 2] = 0;
+      }
+      const partGeo = new THREE.BufferGeometry();
+      partGeo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+      const partMat = new THREE.PointsMaterial({
+        size: 0.42,
+        map: getStarTexture(),
+        color: isUnlocked ? 0xffe8b4 : 0x4a5568,
+        transparent: true,
+        depthWrite: false,
+        opacity: baseOpacity
+      });
+      group.add(new THREE.Points(partGeo, partMat));
+
+    } else if (regConfig.type === 'crystal-ice') {
+      // Cielo de invierno: nebulosa fría azul cristalina
+      const hexGeo = new THREE.RingGeometry(1.3, 1.8, 8);
+      const hexMat = new THREE.MeshBasicMaterial({
+        color: baseColor,
+        transparent: true,
+        opacity: baseOpacity * 0.35,
+        side: THREE.DoubleSide
+      });
+      const hexMesh = new THREE.Mesh(hexGeo, hexMat);
+      group.add(hexMesh);
+
+      const count = 32;
+      const pos = new Float32Array(count * 3);
+      for (let i = 0; i < count; i++) {
+        const a = (i / count) * Math.PI * 2;
+        const r = 1.25 + Math.cos(i * 4) * 0.25;
+        pos[i * 3] = Math.cos(a) * r;
+        pos[i * 3 + 1] = Math.sin(a) * r;
+        pos[i * 3 + 2] = 0;
+      }
+      const partGeo = new THREE.BufferGeometry();
+      partGeo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+      const partMat = new THREE.PointsMaterial({
+        size: 0.40,
+        map: getStarTexture(),
+        color: isUnlocked ? 0xcfeeff : 0x4a5568,
+        transparent: true,
+        depthWrite: false,
+        opacity: baseOpacity
+      });
+      group.add(new THREE.Points(partGeo, partMat));
+
+    } else if (regConfig.type === 'gravitational-lens') {
+      // Espacio profundo: pozo gravitacional con anillo de lente
+      const coreGeo = new THREE.CircleGeometry(0.75, 32);
+      const coreMat = new THREE.MeshBasicMaterial({
+        color: 0x020306,
+        transparent: true,
+        opacity: 0.90
+      });
+      group.add(new THREE.Mesh(coreGeo, coreMat));
+
+      const ringGeo = new THREE.RingGeometry(0.8, 1.6, 32);
+      const ringMat = new THREE.MeshBasicMaterial({
+        color: baseColor,
+        transparent: true,
+        opacity: baseOpacity * 0.45,
+        side: THREE.DoubleSide
+      });
+      group.add(new THREE.Mesh(ringGeo, ringMat));
+    }
+
+    // Hitbox invisible de la región para raycast interactivo
+    const hitGeo = new THREE.SphereGeometry(2.1, 8, 8);
+    const hitMat = new THREE.MeshBasicMaterial({ visible: false });
+    const hitMesh = new THREE.Mesh(hitGeo, hitMat);
+    hitMesh.userData = { type: 'region', regionId: regConfig.id, name: regConfig.name, isUnlocked };
     group.add(hitMesh);
 
     return { group, hitMesh, worldPos: group.position };
@@ -265,8 +437,7 @@
       tempProjectVec.copy(item.worldPos);
       tempProjectVec.project(camera);
 
-      // Si el punto queda detrás de la cámara o muy fuera de los bordes visibles
-      if (tempProjectVec.z > 1.0 || tempProjectVec.x < -1.15 || tempProjectVec.x > 1.15 || tempProjectVec.y < -1.15 || tempProjectVec.y > 1.15) {
+      if (tempProjectVec.z > 1.0 || tempProjectVec.x < -1.18 || tempProjectVec.x > 1.18 || tempProjectVec.y < -1.18 || tempProjectVec.y > 1.18) {
         item.element.style.display = 'none';
         return;
       }
@@ -276,18 +447,20 @@
 
       item.element.style.display = 'block';
       item.element.style.left = `${Math.round(screenX)}px`;
-      item.element.style.top = `${Math.round(screenY + 14)}px`;
+      item.element.style.top = `${Math.round(screenY + (item.isRegion ? -24 : 14))}px`;
     });
   }
 
-  function renderConstellations(sceneInstance) {
-    if (!sceneInstance || typeof constellationDefs === 'undefined') return;
+  function renderUniverseScene(sceneInstance) {
+    if (!sceneInstance) return;
 
-    // Si ya existía un grupo previo, eliminarlo
     if (constellationsGroup) {
       sceneInstance.remove(constellationsGroup);
-      sceneInstance.clearInteractiveObjects();
     }
+    if (regionsGroup) {
+      sceneInstance.remove(regionsGroup);
+    }
+    sceneInstance.clearInteractiveObjects();
 
     labelsContainer = document.getElementById('universeLabelsLayer');
     if (labelsContainer) {
@@ -295,40 +468,84 @@
     }
     labelsList = [];
 
-    constellationsGroup = new THREE.Group();
     const d = (typeof load === 'function') ? load() : {};
 
-    constellationDefs.forEach(c => {
-      const state = getConstellationState(c, d);
-      const { group, hitMesh, worldPos } = buildConstellationMesh(c, state);
-      constellationsGroup.add(group);
+    // 1. Renderizar Formaciones 3D de las 4 Regiones
+    regionsGroup = new THREE.Group();
+    REGIONS_CONFIG.forEach(reg => {
+      const isUnlocked = (d.unlockedRegions && d.unlockedRegions.includes(reg.id)) || reg.id === 'cielo-1';
+      const { group, hitMesh, worldPos } = buildRegionMesh(reg, isUnlocked);
+      regionsGroup.add(group);
       sceneInstance.registerInteractiveObject(hitMesh);
 
-      // Crear label proyectado solo para constelaciones no bloqueadas
-      if (state.status !== 'locked' && labelsContainer) {
-        const labelEl = document.createElement('div');
-        labelEl.className = `universe-3d-label label-status-${state.status}`;
-        labelEl.style.position = 'absolute';
-        labelEl.style.transform = 'translate(-50%, -50%)';
-        labelEl.style.pointerEvents = 'none';
-        labelEl.style.fontSize = '10px';
-        labelEl.style.fontWeight = '500';
-        labelEl.style.letterSpacing = '0.04em';
-        labelEl.style.whiteSpace = 'nowrap';
-        labelEl.style.color = state.status === 'claimed' ? 'rgba(255, 255, 255, 0.95)' : (state.status === 'discovered' ? 'rgba(255, 235, 214, 0.85)' : 'rgba(230, 220, 205, 0.70)');
-        labelEl.style.textShadow = '0 1px 3px rgba(0,0,0,0.85)';
-        labelEl.textContent = `${c.name}${state.status === 'claimed' ? ' ✦' : ''}`;
-        labelsContainer.appendChild(labelEl);
+      // Badge HTML proyectado de la región
+      if (labelsContainer) {
+        const badgeEl = document.createElement('div');
+        badgeEl.className = `universe-3d-region-badge ${isUnlocked ? 'unlocked' : 'locked'}`;
+        badgeEl.style.position = 'absolute';
+        badgeEl.style.transform = 'translate(-50%, -50%)';
+        badgeEl.style.pointerEvents = 'none';
+        badgeEl.style.fontSize = '9px';
+        badgeEl.style.fontWeight = '700';
+        badgeEl.style.letterSpacing = '0.08em';
+        badgeEl.style.textTransform = 'uppercase';
+        badgeEl.style.whiteSpace = 'nowrap';
+        badgeEl.style.padding = '2px 7px';
+        badgeEl.style.borderRadius = '99px';
+        badgeEl.style.border = isUnlocked ? '1px solid rgba(255,255,255,0.22)' : '1px solid rgba(255,255,255,0.08)';
+        badgeEl.style.background = isUnlocked ? 'rgba(15,10,25,0.75)' : 'rgba(10,12,18,0.75)';
+        badgeEl.style.color = isUnlocked ? '#fff' : 'rgba(255,255,255,0.45)';
+        badgeEl.style.textShadow = '0 1px 3px rgba(0,0,0,0.85)';
+        badgeEl.textContent = `${isUnlocked ? '✦ ' : '⚿ '}${reg.name} · ${reg.roman}`;
+        labelsContainer.appendChild(badgeEl);
 
         labelsList.push({
-          id: c.id,
+          id: `region-${reg.id}`,
           worldPos: worldPos.clone(),
-          element: labelEl
+          element: badgeEl,
+          isRegion: true
         });
       }
     });
+    sceneInstance.add(regionsGroup);
 
-    sceneInstance.add(constellationsGroup);
+    // 2. Renderizar Constelaciones en Three.js
+    if (typeof constellationDefs !== 'undefined') {
+      constellationsGroup = new THREE.Group();
+
+      constellationDefs.forEach(c => {
+        const state = getConstellationState(c, d);
+        const { group, hitMesh, worldPos } = buildConstellationMesh(c, state);
+        constellationsGroup.add(group);
+        sceneInstance.registerInteractiveObject(hitMesh);
+
+        if (state.status !== 'locked' && labelsContainer) {
+          const labelEl = document.createElement('div');
+          labelEl.className = `universe-3d-label label-status-${state.status}`;
+          labelEl.style.position = 'absolute';
+          labelEl.style.transform = 'translate(-50%, -50%)';
+          labelEl.style.pointerEvents = 'none';
+          labelEl.style.fontSize = '10px';
+          labelEl.style.fontWeight = '500';
+          labelEl.style.letterSpacing = '0.04em';
+          labelEl.style.whiteSpace = 'nowrap';
+          labelEl.style.color = state.status === 'claimed' ? 'rgba(255, 255, 255, 0.95)' : (state.status === 'discovered' ? 'rgba(255, 235, 214, 0.85)' : 'rgba(230, 220, 205, 0.70)');
+          labelEl.style.textShadow = '0 1px 3px rgba(0,0,0,0.85)';
+          labelEl.textContent = `${c.name}${state.status === 'claimed' ? ' ✦' : ''}`;
+          labelsContainer.appendChild(labelEl);
+
+          labelsList.push({
+            id: c.id,
+            worldPos: worldPos.clone(),
+            element: labelEl,
+            isRegion: false
+          });
+        }
+      });
+
+      sceneInstance.add(constellationsGroup);
+    }
+
     updateLabelsProjection(sceneInstance);
     sceneInstance.invalidate();
   }
@@ -339,14 +556,12 @@
       return;
     }
 
-    // Si ya existe la instancia, reanudarla y sincronizar
     if (isInitialized && universeScene) {
       universeScene.resume();
-      renderConstellations(universeScene);
+      renderUniverseScene(universeScene);
       return;
     }
 
-    // Crear la instancia de escena 3D a través de Orbit3D Core
     universeScene = Orbit3D.createScene({
       containerId: 'universeHeroScene',
       canvasId: 'universeCanvas',
@@ -366,9 +581,17 @@
         updateLabelsProjection(universeScene);
       },
       onObjectClick: function(hit) {
-        const constId = hit.object && hit.object.userData ? hit.object.userData.constellationId : null;
-        if (constId && typeof verFichaConstelacion === 'function') {
-          verFichaConstelacion(constId);
+        if (!hit || !hit.object || !hit.object.userData) return;
+        const uData = hit.object.userData;
+
+        if (uData.type === 'constellation' && uData.constellationId) {
+          if (typeof verFichaConstelacion === 'function') {
+            verFichaConstelacion(uData.constellationId);
+          }
+        } else if (uData.type === 'region' && uData.regionId) {
+          if (typeof verFichaRegion === 'function') {
+            verFichaRegion(uData.regionId);
+          }
         }
       }
     });
@@ -376,7 +599,7 @@
     if (!universeScene.scene) return;
 
     buildCosmicBackground(universeScene);
-    renderConstellations(universeScene);
+    renderUniverseScene(universeScene);
 
     isInitialized = true;
   }
@@ -396,7 +619,16 @@
 
   function refreshUniverse3D() {
     if (universeScene) {
-      renderConstellations(universeScene);
+      renderUniverseScene(universeScene);
+    }
+  }
+
+  // Preparación para futura fase de enfoque y viaje de cámara a una región
+  function focusRegion(regionId) {
+    const reg = REGIONS_CONFIG.find(r => r.id === regionId);
+    if (!reg || !universeScene) return;
+    if (typeof verFichaRegion === 'function') {
+      verFichaRegion(regionId);
     }
   }
 
@@ -405,5 +637,6 @@
   window.pauseUniverse3D = pauseUniverse3D;
   window.resizeUniverse3D = resizeUniverse3D;
   window.refreshUniverse3D = refreshUniverse3D;
+  window.focusRegion = focusRegion;
 
 })();

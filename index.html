@@ -14,7 +14,7 @@
 <title>Orbit</title>
 
   <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
-  <link rel="stylesheet" href="css/orbit.css?v=1.3.37">
+  <link rel="stylesheet" href="css/orbit.css?v=1.3.38">
 </head>
 <body>
 <!-- Pantalla de Acceso Inicial Multiusuario -->
@@ -490,7 +490,7 @@
     <button class="btn btn-line settings-logout-btn" onclick="handleCloudLogout()" id="cloudLogoutBtn">
       Cerrar sesión
     </button>
-    <div class="settings-version-label">Orbit v1.3.37</div>
+    <div class="settings-version-label">Orbit v1.3.38</div>
   </div>
 </section>
 
@@ -1009,6 +1009,18 @@
   </div>
 </div></div>
 
+<!-- Modal Ficha de Región del Universo 3D -->
+<div class="modal" id="universeRegionModal"><div class="sheet observatory-sheet" style="max-height:85vh; display:flex; flex-direction:column;">
+  <button class="modal-close-x" onclick="closeModal('universeRegionModal')" aria-label="Cerrar"><svg class="icon" viewBox="0 0 24 24" style="width:14px; height:14px; stroke:currentColor; stroke-width:2;"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+  <div class="observatory-modal-tag" id="regionModalStatusTag">✦ Región Cartografiada</div>
+  <h3 id="regionModalTitle" style="margin-top:4px;">Primer cielo · I</h3>
+  <p class="prompt-sub" id="regionModalDesc" style="margin-bottom:12px;">El firmamento boreal visible a simple vista.</p>
+
+  <div id="regionModalContent" style="margin:8px 0 16px 0;"></div>
+
+  <div id="regionModalActions" style="margin-top:auto;"></div>
+</div></div>
+
 <div class="update-banner" id="updateBanner">
   <span>Hay una nueva versión de Orbit</span>
   <button onclick="applyAppUpdate()">Actualizar</button>
@@ -1017,20 +1029,20 @@
 <div class="toast" id="toast"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="js/vendor/three.min.js?v=1.3.37"></script>
-  <script src="js/vendor/GLTFLoader.js?v=1.3.37"></script>
-  <script src="js/scene-3d-core.js?v=1.3.37"></script>
-  <script src="js/observatory-3d.js?v=1.3.37"></script>
-  <script src="js/universe-3d.js?v=1.3.37"></script>
-  <script src="js/constellation-utils.js?v=1.3.37"></script>
-  <script src="data/templates.js?v=1.3.37"></script>
-  <script src="data/constellations.js?v=1.3.37"></script>
-  <script src="js/storage.js?v=1.3.37"></script>
-  <script src="js/supabase.js?v=1.3.37"></script>
-  <script src="js/stars.js?v=1.3.37"></script>
-  <script src="js/streak.js?v=1.3.37"></script>
-  <script src="js/journal.js?v=1.3.37"></script>
-  <script src="js/archive.js?v=1.3.37"></script>
-  <script src="js/app.js?v=1.3.37"></script>
+  <script src="js/vendor/three.min.js?v=1.3.38"></script>
+  <script src="js/vendor/GLTFLoader.js?v=1.3.38"></script>
+  <script src="js/scene-3d-core.js?v=1.3.38"></script>
+  <script src="js/observatory-3d.js?v=1.3.38"></script>
+  <script src="js/universe-3d.js?v=1.3.38"></script>
+  <script src="js/constellation-utils.js?v=1.3.38"></script>
+  <script src="data/templates.js?v=1.3.38"></script>
+  <script src="data/constellations.js?v=1.3.38"></script>
+  <script src="js/storage.js?v=1.3.38"></script>
+  <script src="js/supabase.js?v=1.3.38"></script>
+  <script src="js/stars.js?v=1.3.38"></script>
+  <script src="js/streak.js?v=1.3.38"></script>
+  <script src="js/journal.js?v=1.3.38"></script>
+  <script src="js/archive.js?v=1.3.38"></script>
+  <script src="js/app.js?v=1.3.38"></script>
 </body>
 </html>

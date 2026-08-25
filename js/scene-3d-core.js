@@ -346,7 +346,9 @@
       const intersects = this.raycaster.intersectObjects(this.interactiveObjects, true);
 
       if (intersects.length > 0) {
-        const hit = intersects[0];
+        // Priorizar constelaciones sobre regiones si hay solapamiento
+        const constHit = intersects.find(h => h.object && h.object.userData && h.object.userData.type === 'constellation');
+        const hit = constHit || intersects[0];
         if (typeof this.options.onObjectClick === 'function') {
           this.options.onObjectClick(hit, e);
         }

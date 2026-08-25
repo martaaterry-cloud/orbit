@@ -386,38 +386,7 @@ let skyTouchStartY = 0;
 let isSkySwiping = false;
 
 function initSkySwipe(){
-  let sky = document.getElementById('universe');
-  if(!sky || sky._hasSwipeListener) return;
-  sky._hasSwipeListener = true;
-  
-  sky.addEventListener('touchstart', (e) => {
-    if(e.touches.length === 1){
-      skyTouchStartX = e.touches[0].clientX;
-      skyTouchStartY = e.touches[0].clientY;
-      isSkySwiping = true;
-    }
-  }, { passive: true });
-
-  sky.addEventListener('touchend', (e) => {
-    if(!isSkySwiping) return;
-    isSkySwiping = false;
-    let endX = e.changedTouches[0].clientX;
-    let endY = e.changedTouches[0].clientY;
-    let dx = endX - skyTouchStartX;
-    let dy = endY - skyTouchStartY;
-    
-    if(Math.abs(dx) > 35 && Math.abs(dx) > Math.abs(dy) * 1.2){
-      if(dx < 0) navigateSky(1);
-      else navigateSky(-1);
-    }
-  }, { passive: true });
-
-  sky.addEventListener('wheel', (e) => {
-    if(Math.abs(e.deltaX) > 35){
-      if(e.deltaX > 0) navigateSky(1);
-      else navigateSky(-1);
-    }
-  }, { passive: true });
+  // Desactivado en favor de la navegación espacial 3D por regiones
 }
 
 let currentSkyId = 'cielo-1';
@@ -425,19 +394,8 @@ let currentSkyId = 'cielo-1';
 function setSkyById(regionId){
   let d = (typeof load === 'function') ? load() : null;
   if(!d) return;
-  
   currentSkyId = regionId;
-  
-  let stage = document.getElementById('constellationStage');
-  if(stage){
-    stage.classList.add('sky-fade');
-    setTimeout(() => {
-      renderUniverse(d);
-      stage.classList.remove('sky-fade');
-    }, 150);
-  } else {
-    renderUniverse(d);
-  }
+  renderUniverse(d);
 }
 
 function navigateSky(dir){
@@ -454,7 +412,6 @@ function renderUniverse(d){
   if (typeof window.refreshUniverse3D === 'function') {
     window.refreshUniverse3D();
   }
-  initSkySwipe();
   let total=Number(d.lifetimeStars||0),wallet=Number(d.wallet||0);
   if(typeof universeWallet!=='undefined'&&universeWallet) universeWallet.textContent=wallet.toFixed(1).replace('.',',');
   if(typeof universeLifetime!=='undefined'&&universeLifetime) universeLifetime.textContent=total.toFixed(1).replace('.',',');
@@ -1042,6 +999,80 @@ function verFichaConstelacion(id){
   }
   detailConstDesc.innerHTML = descHtml;
   document.getElementById('constellationDetailModal').classList.add('show');
+}
+
+function verFichaRegion(regionId){
+  const d = (typeof load === 'function') ? load() : {};
+  const reg = skyRegionsList.find(r => r.id === regionId) || { id: regionId, name: 'Región desconocida', roman: '?', col: 'norte' };
+  const isUnlocked = (d.unlockedRegions && d.unlockedRegions.includes(reg.id)) || reg.id === 'cielo-1';
+  const constCount = (typeof constellationDefs !== 'undefined') ? constellationDefs.filter(c => c.collection === reg.col).length : 0;
+
+  const costs = { 'cielo-1': 0, 'zodiaco': 5, 'orion': 10, 'profundo': 15 };
+  const descs = {
+    'cielo-1': 'El firmamento boreal visible a simple vista.',
+    'zodiaco': 'Las 12 constelaciones del cinturón solar.',
+    'orion': 'Estrellas brillantes de las noches frías.',
+    'profundo': 'Galaxias externas y horizontes lejanos.'
+  };
+
+  const modal = document.getElementById('universeRegionModal');
+  if (!modal) return;
+
+  const tagEl = document.getElementById('regionModalStatusTag');
+  const titleEl = document.getElementById('regionModalTitle');
+  const descEl = document.getElementById('regionModalDesc');
+  const contentEl = document.getElementById('regionModalContent');
+  const actionsEl = document.getElementById('regionModalActions');
+
+  if (tagEl) tagEl.textContent = isUnlocked ? '✦ Región Cartografiada' : '⚿ Región No Cartografiada';
+  if (titleEl) titleEl.textContent = `${reg.name} · ${reg.roman}`;
+  if (descEl) descEl.textContent = descs[reg.id] || 'Sector cósmico del firmamento.';
+
+  if (contentEl) {
+    if (isUnlocked) {
+      contentEl.innerHTML = `
+        <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:12px; font-size:12px; line-height:1.5; color:#eeddf0;">
+          <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+            <span style="color:rgba(255,255,255,0.6);">Constelaciones:</span>
+            <strong style="color:#fff;">${constCount} en este sector</strong>
+          </div>
+          <div style="display:flex; justify-content:space-between;">
+            <span style="color:rgba(255,255,255,0.6);">Estado:</span>
+            <strong style="color:var(--rose2);">Explorable</strong>
+          </div>
+        </div>
+      `;
+    } else {
+      const cost = costs[reg.id] || 5;
+      contentEl.innerHTML = `
+        <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:12px; font-size:12px; line-height:1.5; color:#eeddf0;">
+          <p style="margin:0 0 8px 0; color:rgba(255,255,255,0.7);">Esta región del firmamento aún no ha sido cartografiada en tu carta estelar.</p>
+          <div style="display:flex; justify-content:space-between; align-items:center; padding-top:6px; border-top:1px solid rgba(255,255,255,0.06);">
+            <span style="color:rgba(255,255,255,0.6);">Coste de investigación:</span>
+            <strong style="color:var(--rose2);">${cost} ★ en Observatorio</strong>
+          </div>
+        </div>
+      `;
+    }
+  }
+
+  if (actionsEl) {
+    if (isUnlocked) {
+      actionsEl.innerHTML = `
+        <button type="button" class="btn btn-main btn-wide" onclick="closeModal('universeRegionModal'); if(typeof toast==='function') toast('Sector cartografiado: usa pan y zoom para explorar');">
+          Explorar región
+        </button>
+      `;
+    } else {
+      actionsEl.innerHTML = `
+        <button type="button" class="btn btn-main btn-wide" onclick="closeModal('universeRegionModal'); showPage('observatory'); if(typeof setObservatoryTab==='function') setObservatoryTab('regiones');">
+          Desbloquear en Observatorio
+        </button>
+      `;
+    }
+  }
+
+  modal.classList.add('show');
 }
 
 function setObservatoryTab(tab){
