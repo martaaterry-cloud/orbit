@@ -20,7 +20,7 @@ DECLARE
   v_current_updated_at TIMESTAMPTZ;
   v_prev_data JSONB;
   v_clean_label TEXT;
-  v_history_id BIGINT;
+  v_history_id UUID;
   
   -- Métricas para validación defensiva
   v_cur_lifetime NUMERIC;
@@ -49,30 +49,75 @@ BEGIN
     RAISE EXCEPTION 'No existe un estado previo en la nube para este usuario';
   END IF;
 
-  -- 2. Obtener el último snapshot previo del historial (si existe) para comprobar invariantes
+  -- 2. Obtener el último snapshot previo del historial (orden cronológico) para comprobar invariantes
   SELECT orbit_data
     INTO v_prev_data
     FROM public.orbit_state_history
    WHERE user_id = v_user_id
-   ORDER BY id DESC
+   ORDER BY created_at DESC, id DESC
    LIMIT 1;
 
   IF v_prev_data IS NOT NULL THEN
-    -- Extraer métricas actuales
-    v_cur_lifetime := COALESCE((v_current_data->>'lifetimeStars')::NUMERIC, 0);
-    v_prev_lifetime := COALESCE((v_prev_data->>'lifetimeStars')::NUMERIC, 0);
+    -- Extraer métricas de forma segura con validación de tipos
+    v_cur_lifetime := CASE 
+      WHEN (v_current_data->>'lifetimeStars') ~ '^-?[0-9]+(\.[0-9]+)?$' 
+      THEN (v_current_data->>'lifetimeStars')::NUMERIC 
+      ELSE 0 
+    END;
 
-    v_cur_milestones := COALESCE(jsonb_array_length(v_current_data->'returnToMe'->'awardedMilestones'), 0);
-    v_prev_milestones := COALESCE(jsonb_array_length(v_prev_data->'returnToMe'->'awardedMilestones'), 0);
+    v_prev_lifetime := CASE 
+      WHEN (v_prev_data->>'lifetimeStars') ~ '^-?[0-9]+(\.[0-9]+)?$' 
+      THEN (v_prev_data->>'lifetimeStars')::NUMERIC 
+      ELSE 0 
+    END;
 
-    v_cur_regions := COALESCE(jsonb_array_length(v_current_data->'unlockedRegions'), 1);
-    v_prev_regions := COALESCE(jsonb_array_length(v_prev_data->'unlockedRegions'), 1);
+    v_cur_milestones := CASE 
+      WHEN jsonb_typeof(v_current_data->'returnToMe'->'awardedMilestones') = 'array' 
+      THEN jsonb_array_length(v_current_data->'returnToMe'->'awardedMilestones') 
+      ELSE 0 
+    END;
 
-    v_cur_goods := COALESCE(jsonb_array_length(v_current_data->'goodThings'), 0);
-    v_prev_goods := COALESCE(jsonb_array_length(v_prev_data->'goodThings'), 0);
+    v_prev_milestones := CASE 
+      WHEN jsonb_typeof(v_prev_data->'returnToMe'->'awardedMilestones') = 'array' 
+      THEN jsonb_array_length(v_prev_data->'returnToMe'->'awardedMilestones') 
+      ELSE 0 
+    END;
 
-    v_cur_journals := COALESCE(jsonb_array_length(v_current_data->'journal'), 0);
-    v_prev_journals := COALESCE(jsonb_array_length(v_prev_data->'journal'), 0);
+    v_cur_regions := CASE 
+      WHEN jsonb_typeof(v_current_data->'unlockedRegions') = 'array' 
+      THEN jsonb_array_length(v_current_data->'unlockedRegions') 
+      ELSE 1 
+    END;
+
+    v_prev_regions := CASE 
+      WHEN jsonb_typeof(v_prev_data->'unlockedRegions') = 'array' 
+      THEN jsonb_array_length(v_prev_data->'unlockedRegions') 
+      ELSE 1 
+    END;
+
+    v_cur_goods := CASE 
+      WHEN jsonb_typeof(v_current_data->'goodThings') = 'array' 
+      THEN jsonb_array_length(v_current_data->'goodThings') 
+      ELSE 0 
+    END;
+
+    v_prev_goods := CASE 
+      WHEN jsonb_typeof(v_prev_data->'goodThings') = 'array' 
+      THEN jsonb_array_length(v_prev_data->'goodThings') 
+      ELSE 0 
+    END;
+
+    v_cur_journals := CASE 
+      WHEN jsonb_typeof(v_current_data->'journal') = 'array' 
+      THEN jsonb_array_length(v_current_data->'journal') 
+      ELSE 0 
+    END;
+
+    v_prev_journals := CASE 
+      WHEN jsonb_typeof(v_prev_data->'journal') = 'array' 
+      THEN jsonb_array_length(v_prev_data->'journal') 
+      ELSE 0 
+    END;
 
     -- GUARDIA 1: Caída sospechosa en estrellas acumuladas
     IF v_prev_lifetime > 0 AND v_cur_lifetime < (v_prev_lifetime - 0.5) THEN
@@ -121,14 +166,14 @@ BEGIN
     'manual:' || v_clean_label
   ) RETURNING id INTO v_history_id;
 
-  -- 5. Podar versiones antiguas si superan 100 snapshots
+  -- 5. Podar versiones antiguas si superan 100 snapshots (orden cronológico)
   DELETE FROM public.orbit_state_history
    WHERE user_id = v_user_id
      AND id NOT IN (
        SELECT id
          FROM public.orbit_state_history
         WHERE user_id = v_user_id
-        ORDER BY id DESC
+        ORDER BY created_at DESC, id DESC
         LIMIT 100
      );
 
