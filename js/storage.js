@@ -353,6 +353,236 @@ function detectSuspiciousReduction(currentState, incomingState) {
   };
 }
 
+// Comparación precisa de contenido basada en identificadores reales
+function compareOrbitStateContent(localState, cloudState) {
+  const localM = getOrbitStateMetrics(localState);
+  const cloudM = getOrbitStateMetrics(cloudState);
+
+  const isLocalEmpty = localM.isEmpty;
+  const isCloudEmpty = cloudM.isEmpty;
+
+  if (isLocalEmpty && isCloudEmpty) {
+    return {
+      status: 'identical',
+      localIsSubsetOfCloud: true,
+      cloudIsSubsetOfLocal: true,
+      localExclusiveCount: 0,
+      cloudExclusiveCount: 0,
+      localExclusiveDetails: [],
+      cloudExclusiveDetails: [],
+      localM,
+      cloudM
+    };
+  }
+
+  if (isLocalEmpty && !isCloudEmpty) {
+    return {
+      status: 'local_is_subset_of_cloud',
+      localIsSubsetOfCloud: true,
+      cloudIsSubsetOfLocal: false,
+      localExclusiveCount: 0,
+      cloudExclusiveCount: 1,
+      localExclusiveDetails: [],
+      cloudExclusiveDetails: ['La nube contiene datos mientras el local está vacío.'],
+      localM,
+      cloudM
+    };
+  }
+
+  if (!isLocalEmpty && isCloudEmpty) {
+    return {
+      status: 'cloud_is_subset_of_local',
+      localIsSubsetOfCloud: false,
+      cloudIsSubsetOfLocal: true,
+      localExclusiveCount: 1,
+      cloudExclusiveCount: 0,
+      localExclusiveDetails: ['El local contiene datos mientras la nube está vacía.'],
+      cloudExclusiveDetails: [],
+      localM,
+      cloudM
+    };
+  }
+
+  const localExclusiveDetails = [];
+  const cloudExclusiveDetails = [];
+
+  // Helper para comparar arrays de objetos con id
+  function compareIdArray(name, localArr, cloudArr) {
+    const lArr = Array.isArray(localArr) ? localArr : [];
+    const cArr = Array.isArray(cloudArr) ? cloudArr : [];
+
+    const lMap = new Map();
+    lArr.forEach((item, idx) => {
+      const id = item?.id || `idx_${idx}_${JSON.stringify(item)}`;
+      lMap.set(id, item);
+    });
+
+    const cMap = new Map();
+    cArr.forEach((item, idx) => {
+      const id = item?.id || `idx_${idx}_${JSON.stringify(item)}`;
+      cMap.set(id, item);
+    });
+
+    lMap.forEach((_, id) => {
+      if (!cMap.has(id)) {
+        localExclusiveDetails.push(`Elemento exclusivo en ${name} local (id: ${id})`);
+      }
+    });
+
+    cMap.forEach((_, id) => {
+      if (!lMap.has(id)) {
+        cloudExclusiveDetails.push(`Elemento exclusivo en ${name} nube (id: ${id})`);
+      }
+    });
+  }
+
+  // 1. Recuerdos (goodThings)
+  compareIdArray('recuerdos', localState?.goodThings, cloudState?.goodThings);
+
+  // 2. Diario (journal)
+  compareIdArray('diario', localState?.journal, cloudState?.journal);
+
+  // 3. Impulsos (urges)
+  compareIdArray('impulsos', localState?.urges, cloudState?.urges);
+
+  // 4. Tropiezos (slips)
+  compareIdArray('tropiezos', localState?.slips, cloudState?.slips);
+
+  // 5. Check-ins por fecha
+  const lCheckins = localState?.checkins && typeof localState.checkins === 'object' ? Object.keys(localState.checkins) : [];
+  const cCheckins = cloudState?.checkins && typeof cloudState.checkins === 'object' ? Object.keys(cloudState.checkins) : [];
+  const lCheckinsSet = new Set(lCheckins);
+  const cCheckinsSet = new Set(cCheckins);
+
+  lCheckinsSet.forEach(day => {
+    if (!cCheckinsSet.has(day)) localExclusiveDetails.push(`Check-in exclusivo local (${day})`);
+  });
+  cCheckinsSet.forEach(day => {
+    if (!lCheckinsSet.has(day)) cloudExclusiveDetails.push(`Check-in exclusivo nube (${day})`);
+  });
+
+  // 6. PointAwards (Eventos de estrellas)
+  function extractPointAwardIds(pointAwardsObj) {
+    const ids = new Set();
+    if (pointAwardsObj && typeof pointAwardsObj === 'object') {
+      Object.entries(pointAwardsObj).forEach(([day, dayObj]) => {
+        if (dayObj && Array.isArray(dayObj.events)) {
+          dayObj.events.forEach((ev, idx) => {
+            const id = ev?.id || `${day}_${ev?.type || 'pt'}_${ev?.points || 0}_${idx}`;
+            ids.add(id);
+          });
+        }
+      });
+    }
+    return ids;
+  }
+  const lPts = extractPointAwardIds(localState?.pointAwards);
+  const cPts = extractPointAwardIds(cloudState?.pointAwards);
+  lPts.forEach(id => {
+    if (!cPts.has(id)) localExclusiveDetails.push(`Evento de estrella exclusivo local (${id})`);
+  });
+  cPts.forEach(id => {
+    if (!lPts.has(id)) cloudExclusiveDetails.push(`Evento de estrella exclusivo nube (${id})`);
+  });
+
+  // 7. Hitos de racha (awardedMilestones)
+  const lMilestones = new Set(Array.isArray(localState?.returnToMe?.awardedMilestones) ? localState.returnToMe.awardedMilestones : []);
+  const cMilestones = new Set(Array.isArray(cloudState?.returnToMe?.awardedMilestones) ? cloudState.returnToMe.awardedMilestones : []);
+  lMilestones.forEach(m => {
+    if (!cMilestones.has(m)) localExclusiveDetails.push(`Hito de racha exclusivo local (${m})`);
+  });
+  cMilestones.forEach(m => {
+    if (!lMilestones.has(m)) cloudExclusiveDetails.push(`Hito de racha exclusivo nube (${m})`);
+  });
+
+  // 8. Regiones celestes (unlockedRegions)
+  const lRegions = new Set(Array.isArray(localState?.unlockedRegions) ? localState.unlockedRegions : ['cielo-1']);
+  const cRegions = new Set(Array.isArray(cloudState?.unlockedRegions) ? cloudState.unlockedRegions : ['cielo-1']);
+  lRegions.forEach(r => {
+    if (!cRegions.has(r)) localExclusiveDetails.push(`Región celeste exclusiva local (${r})`);
+  });
+  cRegions.forEach(r => {
+    if (!lRegions.has(r)) cloudExclusiveDetails.push(`Región celeste exclusiva nube (${r})`);
+  });
+
+  // Evaluación de métricas monotónicas
+  const localLifetime = Number(localState?.lifetimeStars || 0);
+  const cloudLifetime = Number(cloudState?.lifetimeStars || 0);
+  const localObservatory = Number(localState?.observatoryLevel || 0);
+  const cloudObservatory = Number(cloudState?.observatoryLevel || 0);
+  const localShip = Number(localState?.shipLevel || 0);
+  const cloudShip = Number(cloudState?.shipLevel || 0);
+
+  const localHasStrictlyHigherMonotonic = (localLifetime > cloudLifetime + 0.1) ||
+                                         (localObservatory > cloudObservatory) ||
+                                         (localShip > cloudShip);
+  const cloudHasStrictlyHigherMonotonic = (cloudLifetime > localLifetime + 0.1) ||
+                                         (cloudObservatory > localObservatory) ||
+                                         (cloudShip > localShip);
+
+  const localExclusiveCount = localExclusiveDetails.length;
+  const cloudExclusiveCount = cloudExclusiveDetails.length;
+
+  let status = 'diverged';
+  let localIsSubsetOfCloud = false;
+  let cloudIsSubsetOfLocal = false;
+
+  if (localExclusiveCount === 0 && cloudExclusiveCount === 0) {
+    if (!localHasStrictlyHigherMonotonic && !cloudHasStrictlyHigherMonotonic) {
+      status = 'identical';
+      localIsSubsetOfCloud = true;
+      cloudIsSubsetOfLocal = true;
+    } else if (cloudHasStrictlyHigherMonotonic && !localHasStrictlyHigherMonotonic) {
+      status = 'local_is_subset_of_cloud';
+      localIsSubsetOfCloud = true;
+      cloudIsSubsetOfLocal = false;
+    } else if (localHasStrictlyHigherMonotonic && !cloudHasStrictlyHigherMonotonic) {
+      status = 'cloud_is_subset_of_local';
+      localIsSubsetOfCloud = false;
+      cloudIsSubsetOfLocal = true;
+    } else {
+      status = 'diverged';
+    }
+  } else if (localExclusiveCount === 0 && cloudExclusiveCount > 0) {
+    // Todo lo local está en la nube, y la nube tiene contenido adicional
+    if (!localHasStrictlyHigherMonotonic) {
+      status = 'local_is_subset_of_cloud';
+      localIsSubsetOfCloud = true;
+      cloudIsSubsetOfLocal = false;
+    } else {
+      // Conflicto: local tiene menos ítems pero más estrellas históricas
+      status = 'diverged';
+    }
+  } else if (cloudExclusiveCount === 0 && localExclusiveCount > 0) {
+    // Todo lo de la nube está en local, y local tiene contenido adicional
+    if (!cloudHasStrictlyHigherMonotonic) {
+      status = 'cloud_is_subset_of_local';
+      localIsSubsetOfCloud = false;
+      cloudIsSubsetOfLocal = true;
+    } else {
+      // Conflicto: nube tiene menos ítems pero más estrellas históricas
+      status = 'diverged';
+    }
+  } else {
+    // Ambos lados tienen contenido exclusivo
+    status = 'diverged';
+  }
+
+  return {
+    status,
+    localIsSubsetOfCloud,
+    cloudIsSubsetOfLocal,
+    localExclusiveCount,
+    cloudExclusiveCount,
+    localExclusiveDetails,
+    cloudExclusiveDetails,
+    localHasStrictlyHigherMonotonic,
+    cloudHasStrictlyHigherMonotonic,
+    localM,
+    cloudM
+  };
+}
+
 function load(userId){
  let d;
  let isVirgin = false;

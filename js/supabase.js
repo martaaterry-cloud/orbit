@@ -1089,8 +1089,39 @@ async function autoSyncOnInit(session) {
       ? cloudTime > (lastKnownCloudTime + 1000)
       : false;
 
-    // Conflicto REAL: La nube cambió remotamente Y este cliente tiene cambios locales no sincronizados
+    // Conflicto potencial: La nube cambió remotamente Y este cliente tiene cambios locales no sincronizados
     if (isCloudNewer && hasUnsynced && !isLocalVirgin) {
+      if (typeof compareOrbitStateContent === 'function') {
+        const contentComp = compareOrbitStateContent(localData, cloudRow.orbit_data);
+        const reductionCheck = typeof detectSuspiciousReduction === 'function'
+          ? detectSuspiciousReduction(localData, cloudRow.orbit_data)
+          : { isSuspicious: false };
+
+        // CASO A: Autorresolución NUBE -> LOCAL
+        // Todo el contenido significativo local está contenido en nube, la nube es más reciente, no hay reducción sospechosa y nube tiene igual o mayor progreso monotónico
+        if (
+          (contentComp.status === 'local_is_subset_of_cloud' || contentComp.status === 'identical') &&
+          !reductionCheck.isSuspicious &&
+          !contentComp.localHasStrictlyHigherMonotonic
+        ) {
+          console.log('[AUTO_RECONCILE] Nube contiene todo el contenido local y es más reciente. Aplicando nube -> local automáticamente.');
+          createPreSyncBackup(uid, 'auto_reconcile_cloud', localData, localTimer);
+          try { await sb.rpc('create_manual_state_snapshot', { p_label: 'auto_reconcile_cloud' }); } catch(e) {}
+          const applyRes = safeApplyCloudState(cloudRow.orbit_data, cloudRow.orbit_timer, cloudUpdatedAt, uid, { forceRestore: true });
+          if (applyRes && applyRes.ok) {
+            localStorage.setItem(cloudUpKey, cloudUpdatedAt);
+            localStorage.setItem(unsyncKey, 'false');
+            hasConflict = false;
+            currentSyncConflict = null;
+            syncProtectionReason = '';
+            lastCloudSyncSuccessTime = Date.now();
+            updateSyncStatus('synced');
+            return { ok: true, status: 'auto_reconciled_cloud' };
+          }
+        }
+      }
+
+      // Si no cumple las condiciones de contención estricta (divergencia real o reducción):
       hasConflict = true;
       syncProtectionReason = 'La versión en la nube contiene cambios remotos y tienes cambios locales sin sincronizar.';
       currentSyncConflict = {
@@ -1282,28 +1313,92 @@ async function performAutoUpload() {
       const hasUnsynced = localStorage.getItem(unsyncKey) === 'true';
 
       if (lastKnownCloudTime > 0 && cloudTime > (lastKnownCloudTime + 1000) && hasUnsynced && !isLocalVirgin) {
-        hasConflict = true;
-        syncProtectionReason = 'La versión en la nube ha sido actualizada remotamente y tienes cambios locales pendientes.';
-        currentSyncConflict = {
-          type: 'remote_newer_with_local_unsynced',
-          reason: syncProtectionReason,
-          localData: orbitData,
-          localTimer: orbitTimer,
-          localUpdatedAt: localStorage.getItem(localUpKey) || null,
-          cloudData: cloudCheck.orbit_data,
-          cloudTimer: cloudCheck.orbit_timer,
-          cloudUpdatedAt: cloudCheck.updated_at,
-          localMetrics: typeof getOrbitStateMetrics === 'function' ? getOrbitStateMetrics(orbitData) : {},
-          cloudMetrics: typeof getOrbitStateMetrics === 'function' ? getOrbitStateMetrics(cloudCheck.orbit_data) : {},
-          detectedAt: Date.now()
-        };
-        isSyncing = false;
-        updateSyncStatus('conflict', 'Cambios pendientes de revisar');
-        return {
-          ok: false,
-          status: 'conflict',
-          reason: 'remote_newer_with_local_unsynced'
-        };
+        if (typeof compareOrbitStateContent === 'function') {
+          const contentComp = compareOrbitStateContent(orbitData, cloudCheck.orbit_data);
+          const reductionCheck = typeof detectSuspiciousReduction === 'function'
+            ? detectSuspiciousReduction(orbitData, cloudCheck.orbit_data)
+            : { isSuspicious: false };
+
+          // CASO A: Nube contiene todo lo local -> Autorresolver Nube -> Local
+          if (
+            (contentComp.status === 'local_is_subset_of_cloud' || contentComp.status === 'identical') &&
+            !reductionCheck.isSuspicious &&
+            !contentComp.localHasStrictlyHigherMonotonic
+          ) {
+            console.log('[AUTO_RECONCILE] Subida detectó nube más completa. Aplicando nube -> local automáticamente.');
+            isSyncing = false;
+            createPreSyncBackup(uid, 'auto_reconcile_cloud', orbitData, orbitTimer);
+            try { await sb.rpc('create_manual_state_snapshot', { p_label: 'auto_reconcile_cloud' }); } catch(e) {}
+            const applyRes = safeApplyCloudState(cloudCheck.orbit_data, cloudCheck.orbit_timer, cloudCheck.updated_at, uid, { forceRestore: true });
+            if (applyRes && applyRes.ok) {
+              localStorage.setItem(cloudUpKey, cloudCheck.updated_at);
+              localStorage.setItem(unsyncKey, 'false');
+              hasConflict = false;
+              currentSyncConflict = null;
+              syncProtectionReason = '';
+              lastCloudSyncSuccessTime = Date.now();
+              updateSyncStatus('synced');
+              return { ok: true, status: 'auto_reconciled_cloud' };
+            }
+          }
+
+          // CASO B: Local contiene todo lo de la nube y no hay reducción sospechosa -> Autorresolver Local -> Nube
+          if (
+            contentComp.status === 'cloud_is_subset_of_local' &&
+            !contentComp.cloudHasStrictlyHigherMonotonic
+          ) {
+            console.log('[AUTO_RECONCILE] Local contiene todo lo de la nube con adiciones. Subiendo local -> nube.');
+            try { await sb.rpc('create_manual_state_snapshot', { p_label: 'pre_auto_reconcile_local' }); } catch(e) {}
+            // Continúa hacia la subida normal abajo
+          } else {
+            // Hay divergencia real (datos exclusivos en ambos lados) -> Bloquear con conflicto manual
+            hasConflict = true;
+            syncProtectionReason = 'La versión en la nube ha sido actualizada remotamente y tienes cambios locales pendientes.';
+            currentSyncConflict = {
+              type: 'remote_newer_with_local_unsynced',
+              reason: syncProtectionReason,
+              localData: orbitData,
+              localTimer: orbitTimer,
+              localUpdatedAt: localStorage.getItem(localUpKey) || null,
+              cloudData: cloudCheck.orbit_data,
+              cloudTimer: cloudCheck.orbit_timer,
+              cloudUpdatedAt: cloudCheck.updated_at,
+              localMetrics: typeof getOrbitStateMetrics === 'function' ? getOrbitStateMetrics(orbitData) : {},
+              cloudMetrics: typeof getOrbitStateMetrics === 'function' ? getOrbitStateMetrics(cloudCheck.orbit_data) : {},
+              detectedAt: Date.now()
+            };
+            isSyncing = false;
+            updateSyncStatus('conflict', 'Cambios pendientes de revisar');
+            return {
+              ok: false,
+              status: 'conflict',
+              reason: 'remote_newer_with_local_unsynced'
+            };
+          }
+        } else {
+          hasConflict = true;
+          syncProtectionReason = 'La versión en la nube ha sido actualizada remotamente y tienes cambios locales pendientes.';
+          currentSyncConflict = {
+            type: 'remote_newer_with_local_unsynced',
+            reason: syncProtectionReason,
+            localData: orbitData,
+            localTimer: orbitTimer,
+            localUpdatedAt: localStorage.getItem(localUpKey) || null,
+            cloudData: cloudCheck.orbit_data,
+            cloudTimer: cloudCheck.orbit_timer,
+            cloudUpdatedAt: cloudCheck.updated_at,
+            localMetrics: typeof getOrbitStateMetrics === 'function' ? getOrbitStateMetrics(orbitData) : {},
+            cloudMetrics: typeof getOrbitStateMetrics === 'function' ? getOrbitStateMetrics(cloudCheck.orbit_data) : {},
+            detectedAt: Date.now()
+          };
+          isSyncing = false;
+          updateSyncStatus('conflict', 'Cambios pendientes de revisar');
+          return {
+            ok: false,
+            status: 'conflict',
+            reason: 'remote_newer_with_local_unsynced'
+          };
+        }
       }
     }
 
@@ -1368,12 +1463,18 @@ async function performAutoUpload() {
   }
 }
 
-// Crear copia de seguridad manual en la nube (server-side snapshot)
+// Crear copia de seguridad manual en la nube (server-side snapshot con protecciones)
 async function createCloudSnapshotNow(label) {
   const sb = getSupabase();
   if (!sb || (typeof navigator !== 'undefined' && !navigator.onLine)) {
     if (typeof toast === 'function') toast('Se requiere conexión a Internet');
     return { ok: false, error: 'offline' };
+  }
+
+  // GUARDIA 1: Si hay conflicto activo, no permitir snapshot manual
+  if (hasConflict) {
+    if (typeof toast === 'function') toast('Antes de crear una copia, revisa los cambios pendientes.');
+    return { ok: false, error: 'has_conflict' };
   }
 
   const validSession = await ensureValidSession();
@@ -1383,13 +1484,46 @@ async function createCloudSnapshotNow(label) {
   }
 
   const uid = validSession.user.id;
-
-  // Respaldo local de seguridad preventivo
   const v9Key = typeof getUserStorageKey === 'function' ? getUserStorageKey('orbitV9', uid) : `orbitV9:${uid}`;
   const timerKey = typeof getUserStorageKey === 'function' ? getUserStorageKey('orbitTimer', uid) : `orbitTimer:${uid}`;
+  const unsyncKey = typeof getUserStorageKey === 'function' ? getUserStorageKey('orbitHasUnsyncedChanges', uid) : `orbitHasUnsyncedChanges:${uid}`;
+
   let localData = null, localTimer = null;
   try { localData = JSON.parse(localStorage.getItem(v9Key)); } catch (e) {}
   try { localTimer = JSON.parse(localStorage.getItem(timerKey)); } catch (e) {}
+  const hasUnsynced = localStorage.getItem(unsyncKey) === 'true';
+
+  // GUARDIA 2: Leer el estado actual de la nube para validación previa
+  const { data: cloudRow, error: fetchErr } = await sb
+    .from('orbit_state')
+    .select('orbit_data, orbit_timer, updated_at')
+    .eq('user_id', uid)
+    .maybeSingle();
+
+  if (fetchErr || !cloudRow || !cloudRow.orbit_data) {
+    if (typeof toast === 'function') toast('No se pudo verificar el estado en la nube.');
+    return { ok: false, error: 'cloud_fetch_error' };
+  }
+
+  // GUARDIA 3: Comprobar que local no tenga información exclusiva pendiente de subir
+  if (localData && typeof compareOrbitStateContent === 'function') {
+    const comp = compareOrbitStateContent(localData, cloudRow.orbit_data);
+    if (hasUnsynced || comp.localExclusiveCount > 0) {
+      if (typeof toast === 'function') toast('Orbit ha detectado que todavía hay datos pendientes de sincronizar o revisar. Tus datos no se han modificado.');
+      return { ok: false, error: 'pending_unsynced_data' };
+    }
+
+    // GUARDIA 4: Comprobar que la nube no tenga una reducción sospechosa frente a local
+    if (typeof detectSuspiciousReduction === 'function') {
+      const reductionCheck = detectSuspiciousReduction(localData, cloudRow.orbit_data);
+      if (reductionCheck.isSuspicious) {
+        if (typeof toast === 'function') toast('Esta versión parece contener menos información de la esperada. Orbit ha evitado guardarla como copia segura.');
+        return { ok: false, error: 'suspicious_reduction' };
+      }
+    }
+  }
+
+  // Respaldo local de seguridad preventivo
   createPreSyncBackup(uid, 'manual_snapshot', localData, localTimer);
 
   try {
@@ -1398,7 +1532,8 @@ async function createCloudSnapshotNow(label) {
     });
 
     if (error) {
-      if (typeof toast === 'function') toast(error.message || 'No se pudo crear la copia segura');
+      console.warn('[MANUAL_SNAPSHOT] Error rechazado por backend:', error);
+      if (typeof toast === 'function') toast('Esta versión parece contener menos información de la esperada. Orbit ha evitado guardarla como copia segura.');
       return { ok: false, error: error.message };
     }
 
