@@ -186,6 +186,173 @@ function isOrbitStateVirginOrEmpty(d) {
   return true;
 }
 
+function getOrbitStateMetrics(d) {
+  if (!d || typeof d !== 'object') {
+    return {
+      isEmpty: true,
+      journalCount: 0,
+      goodThingsCount: 0,
+      checkinsCount: 0,
+      urgesCount: 0,
+      slipsCount: 0,
+      pointAwardsEventsCount: 0,
+      pointAwardsDaysCount: 0,
+      wallet: 0,
+      lifetimeStars: 0,
+      milestonesCount: 0,
+      customPillarsCount: 0,
+      rewardsCount: 0,
+      boostersCount: 0,
+      unlockedRegionsCount: 0,
+      observatoryLevel: 0
+    };
+  }
+
+  const journalCount = Array.isArray(d.journal) ? d.journal.length : 0;
+  const goodThingsCount = Array.isArray(d.goodThings) ? d.goodThings.length : 0;
+  const checkinsCount = (d.checkins && typeof d.checkins === 'object') ? Object.keys(d.checkins).length : 0;
+  const urgesCount = Array.isArray(d.urges) ? d.urges.length : 0;
+  const slipsCount = Array.isArray(d.slips) ? d.slips.length : 0;
+
+  let pointAwardsEventsCount = 0;
+  let pointAwardsDaysCount = 0;
+  if (d.pointAwards && typeof d.pointAwards === 'object') {
+    const days = Object.keys(d.pointAwards);
+    pointAwardsDaysCount = days.length;
+    days.forEach(k => {
+      const dayObj = d.pointAwards[k];
+      if (dayObj && Array.isArray(dayObj.events)) {
+        pointAwardsEventsCount += dayObj.events.length;
+      }
+    });
+  }
+
+  const wallet = Number(d.wallet || 0);
+  const lifetimeStars = Number(d.lifetimeStars || 0);
+  const milestonesCount = (d.returnToMe && Array.isArray(d.returnToMe.awardedMilestones)) ? d.returnToMe.awardedMilestones.length : 0;
+
+  let customPillarsCount = 0;
+  if (Array.isArray(d.orbit)) {
+    const defaultIds = ['o1', 'o2', 'o3', 'o4', 'o5'];
+    customPillarsCount = d.orbit.filter(o => o && !defaultIds.includes(o.id)).length;
+  }
+
+  const rewardsCount = Array.isArray(d.rewards) ? d.rewards.length : 0;
+  let boostersCount = 0;
+  if (d.boosters) {
+    boostersCount += (Array.isArray(d.boosters.active) ? d.boosters.active.length : 0);
+    boostersCount += (Array.isArray(d.boosters.inventory) ? d.boosters.inventory.length : 0);
+    if (d.boosters.progress && Array.isArray(d.boosters.progress.awardedBraveThresholds)) {
+      boostersCount += d.boosters.progress.awardedBraveThresholds.length;
+    }
+  }
+
+  const unlockedRegionsCount = Array.isArray(d.unlockedRegions) ? d.unlockedRegions.length : 1;
+  const observatoryLevel = Number(d.observatoryLevel || d.shipLevel || 0);
+
+  const isVirgin = isOrbitStateVirginOrEmpty(d);
+
+  return {
+    isEmpty: isVirgin,
+    journalCount,
+    goodThingsCount,
+    checkinsCount,
+    urgesCount,
+    slipsCount,
+    pointAwardsEventsCount,
+    pointAwardsDaysCount,
+    wallet,
+    lifetimeStars,
+    milestonesCount,
+    customPillarsCount,
+    rewardsCount,
+    boostersCount,
+    unlockedRegionsCount,
+    observatoryLevel
+  };
+}
+
+function detectSuspiciousReduction(currentState, incomingState) {
+  const currentMetrics = getOrbitStateMetrics(currentState);
+  const incomingMetrics = getOrbitStateMetrics(incomingState);
+
+  // Si el estado actual es virgen o vacío, cualquier incoming es válido
+  if (currentMetrics.isEmpty) {
+    return { isSuspicious: false, reasons: [], currentMetrics, incomingMetrics };
+  }
+
+  // Si el nuevo estado está completamente vacío mientras el actual tiene datos reales
+  if (incomingMetrics.isEmpty && !currentMetrics.isEmpty) {
+    return {
+      isSuspicious: true,
+      reasons: ['El nuevo estado está vacío mientras el estado actual contiene datos.'],
+      currentMetrics,
+      incomingMetrics
+    };
+  }
+
+  const reasons = [];
+
+  // 1. CAMPOS MONOTÓNICOS / IRREVERSIBLES (Caída es altamente sospechosa)
+  if (currentMetrics.lifetimeStars > 0 && incomingMetrics.lifetimeStars < (currentMetrics.lifetimeStars - 0.5)) {
+    reasons.push(`Caída de estrellas históricas (${currentMetrics.lifetimeStars} ★ → ${incomingMetrics.lifetimeStars} ★).`);
+  }
+
+  if (currentMetrics.milestonesCount > 0 && incomingMetrics.milestonesCount < currentMetrics.milestonesCount) {
+    reasons.push(`Pérdida de hitos de racha concedidos (${currentMetrics.milestonesCount} → ${incomingMetrics.milestonesCount}).`);
+  }
+
+  if (currentMetrics.unlockedRegionsCount > 1 && incomingMetrics.unlockedRegionsCount < currentMetrics.unlockedRegionsCount) {
+    reasons.push(`Pérdida de regiones celestes desbloqueadas (${currentMetrics.unlockedRegionsCount} → ${incomingMetrics.unlockedRegionsCount}).`);
+  }
+
+  if (currentMetrics.observatoryLevel > 0 && incomingMetrics.observatoryLevel < currentMetrics.observatoryLevel) {
+    reasons.push(`Caída de nivel del observatorio (${currentMetrics.observatoryLevel} → ${incomingMetrics.observatoryLevel}).`);
+  }
+
+  // 2. COLECCIONES VARIABLES (El usuario puede borrar elementos puntuales de 1 en 1 de forma legítima,
+  //    pero una caída masiva o simultánea en varias categorías es sospechosa de mutilación)
+  // Diario: caída >= 50% y de al menos 3 entradas
+  if (currentMetrics.journalCount >= 4 && (currentMetrics.journalCount - incomingMetrics.journalCount) >= 3) {
+    const ratio = incomingMetrics.journalCount / currentMetrics.journalCount;
+    if (ratio <= 0.5) {
+      reasons.push(`Reducción importante en el diario (${currentMetrics.journalCount} → ${incomingMetrics.journalCount} entradas).`);
+    }
+  } else if (currentMetrics.journalCount >= 2 && incomingMetrics.journalCount === 0) {
+    reasons.push(`Desaparición completa de las entradas de diario (${currentMetrics.journalCount} → 0).`);
+  }
+
+  // Recuerdos (goodThings): caída >= 50% y de al menos 3 recuerdos
+  if (currentMetrics.goodThingsCount >= 4 && (currentMetrics.goodThingsCount - incomingMetrics.goodThingsCount) >= 3) {
+    const ratio = incomingMetrics.goodThingsCount / currentMetrics.goodThingsCount;
+    if (ratio <= 0.5) {
+      reasons.push(`Reducción importante en recuerdos (${currentMetrics.goodThingsCount} → ${incomingMetrics.goodThingsCount}).`);
+    }
+  } else if (currentMetrics.goodThingsCount >= 2 && incomingMetrics.goodThingsCount === 0) {
+    reasons.push(`Desaparición completa de recuerdos (${currentMetrics.goodThingsCount} → 0).`);
+  }
+
+  // Checkins: desaparición completa si había varios
+  if (currentMetrics.checkinsCount >= 3 && incomingMetrics.checkinsCount === 0) {
+    reasons.push(`Desaparición de registros de check-in (${currentMetrics.checkinsCount} → 0).`);
+  }
+
+  // Eventos de estrellas (pointAwards): caída drástica
+  if (currentMetrics.pointAwardsEventsCount >= 6 && incomingMetrics.pointAwardsEventsCount <= 1) {
+    reasons.push(`Pérdida de eventos de esfuerzo (${currentMetrics.pointAwardsEventsCount} → ${incomingMetrics.pointAwardsEventsCount}).`);
+  }
+
+  // NOTA: 'wallet' puede disminuir normalmente por compras, no se evalúa como pérdida.
+
+  const isSuspicious = reasons.length > 0;
+  return {
+    isSuspicious,
+    reasons,
+    currentMetrics,
+    incomingMetrics
+  };
+}
+
 function load(userId){
  let d;
  let isVirgin = false;

@@ -2371,6 +2371,116 @@ function executeAccountDeletion() {
     supabaseDeleteAccount();
   }
 }
+
+function openMyDataModal(){
+  openModal('myDataModal');
+}
+
+function openCloudDetailsModal(){
+  if (typeof updateSyncStatus === 'function' && typeof currentSyncState !== 'undefined') {
+    updateSyncStatus(currentSyncState);
+  }
+  let emailEl = document.getElementById('cloudModalEmail');
+  if (emailEl && typeof currentCloudUser !== 'undefined' && currentCloudUser) {
+    emailEl.textContent = currentCloudUser.email || '';
+  }
+  openModal('cloudDetailsModal');
+}
+
+async function openCloudHistoryModal(){
+  openModal('cloudHistoryModal');
+  let container = document.getElementById('cloudHistoryList');
+  if (!container) return;
+  container.innerHTML = '<div style="text-align:center; padding:20px; font-size:12px; color:var(--muted);">Cargando historial de versiones…</div>';
+
+  if (typeof fetchStateHistory !== 'function') {
+    container.innerHTML = '<div style="text-align:center; padding:20px; font-size:12px; color:var(--muted);">Servicio de historial no disponible</div>';
+    return;
+  }
+
+  const res = await fetchStateHistory(50);
+  if (!res.ok || !Array.isArray(res.history)) {
+    container.innerHTML = `<div style="text-align:center; padding:20px; font-size:12px; color:var(--muted);">${esc(res.error || 'No se pudo cargar el historial')}</div>`;
+    return;
+  }
+
+  if (res.history.length === 0) {
+    container.innerHTML = '<div style="text-align:center; padding:20px; font-size:12px; color:var(--muted);">No hay snapshots previos guardados todavía.</div>';
+    return;
+  }
+
+  renderCloudHistoryList(res.history);
+}
+
+function renderCloudHistoryList(historyItems){
+  let container = document.getElementById('cloudHistoryList');
+  if (!container) return;
+
+  container.innerHTML = historyItems.map(item => {
+    let dateStr = 'Fecha desconocida';
+    try {
+      const dt = new Date(item.created_at || item.source_updated_at);
+      dateStr = dt.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' }) + ' · ' + dt.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+    } catch(e){}
+
+    const p = item.data_preview || {};
+    const wallet = Number(p.wallet || 0).toFixed(1).replace('.', ',');
+    const lifetime = Number(p.lifetimeStars || 0).toFixed(1).replace('.', ',');
+    const journal = Number(p.journalCount || 0);
+    const goods = Number(p.goodThingsCount || 0);
+    const urges = Number(p.urgesCount || 0);
+    const regions = Number(p.regionsCount || 1);
+
+    let reasonLabel = 'Copia automática';
+    if (item.reason && item.reason.startsWith('manual:')) {
+      reasonLabel = 'Copia segura manual';
+    }
+
+    const summaryMeta = `${journal} diario, ${goods} recuerdos, ${lifetime} ★`;
+
+    return `
+      <div class="cloud-history-item">
+        <div class="history-meta-top">
+          <span class="history-date">${esc(dateStr)}</span>
+          <span class="history-reason-badge">${esc(reasonLabel)}</span>
+        </div>
+        <div class="history-badges-row">
+          <span class="history-badge"><strong>${goods}</strong> recuerdos</span>
+          <span class="history-badge"><strong>${journal}</strong> diario</span>
+          <span class="history-badge"><strong>${lifetime}</strong> ★ total</span>
+          <span class="history-badge"><strong>${wallet}</strong> ★ disponibles</span>
+          ${regions > 1 ? `<span class="history-badge"><strong>${regions}</strong> cielos</span>` : ''}
+          ${urges > 0 ? `<span class="history-badge"><strong>${urges}</strong> impulsos</span>` : ''}
+        </div>
+        <button type="button" class="btn btn-line history-restore-btn" onclick="executeRestoreCloudHistory('${esc(item.history_id)}', '${esc(dateStr)} (${esc(summaryMeta)})')">
+          <svg class="icon" viewBox="0 0 24 24" style="width:13px; height:13px; stroke:currentColor;"><path d="M2.5 2v6h6M21.5 22v-6h-6M22 11.5a10 10 0 0 0-18.8-4.3M2 12.5a10 10 0 0 0 18.8 4.2"/></svg>
+          <span>Restaurar esta versión</span>
+        </button>
+      </div>
+    `;
+  }).join('');
+}
+
+async function handleCreateSafeBackupNow(){
+  if (typeof createCloudSnapshotNow !== 'function') return;
+  toast('Creando copia segura…');
+  const res = await createCloudSnapshotNow('manual_settings');
+  if (res.ok) {
+    if (typeof updateSyncStatus === 'function' && typeof currentSyncState !== 'undefined') {
+      updateSyncStatus(currentSyncState);
+    }
+  }
+}
+
+async function executeRestoreCloudHistory(historyId, metaSummary){
+  if (!historyId) return;
+  const ok = confirm(`¿Estás segura de restaurar la versión de ${metaSummary}?\n\nSe sustituirán los datos actuales por esta copia anterior. Se creará automáticamente un respaldo previo del estado que vas a reemplazar.`);
+  if (!ok) return;
+
+  if (typeof restoreFromCloudHistory !== 'function') return;
+  toast('Restaurando versión…');
+  await restoreFromCloudHistory(historyId);
+}
 function clearActiveFormInputs() {
   const ids = [
     'slipNote', 'needToday', 'forMeToday', 'gratitude1', 'gratitude2', 'gratitude3',

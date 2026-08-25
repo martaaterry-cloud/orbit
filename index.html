@@ -14,7 +14,7 @@
 <title>Orbit</title>
 
   <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
-  <link rel="stylesheet" href="css/orbit.css?v=1.3.17">
+  <link rel="stylesheet" href="css/orbit.css?v=1.3.18">
 </head>
 <body>
 <!-- Pantalla de Acceso Inicial Multiusuario -->
@@ -383,11 +383,13 @@
       <span>Volver</span>
     </button>
     <div class="settings-header-title">Ajustes</div>
-    <div></div>
+    <button class="settings-data-header-btn" onclick="openMyDataModal()" title="Mis datos y copias de seguridad">
+      <svg class="icon" viewBox="0 0 24 24" style="width:17px; height:17px; stroke:currentColor;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+    </button>
   </div>
 
-  <!-- PERFIL -->
-  <div class="section-head" style="margin-top:10px;"><h2>Perfil</h2></div>
+  <!-- 1. PERFIL -->
+  <div class="section-head" style="margin-top:8px;"><h2>Perfil</h2></div>
   
   <!-- Modo Lectura del Perfil -->
   <div id="profileViewCard" class="card profile-view-card" style="padding:16px; margin-bottom:10px; display:none;"></div>
@@ -412,25 +414,13 @@
     </div>
   </div>
 
-  <!-- A. ÁREAS QUE ESTOY TRABAJANDO -->
-  <div class="section-head"><h2>Áreas que estoy trabajando</h2></div>
+  <!-- 2. MI PROCESO (Áreas que estoy trabajando) -->
+  <div class="section-head"><h2>Mi proceso</h2></div>
   <div class="card" style="padding:16px;">
     <div id="focusAreasList" style="display:flex; flex-direction:column; gap:8px;"></div>
   </div>
 
-  <!-- B. CUENTA Y NUBE -->
-  <div class="section-head" id="settingsCloudHead"><h2>Cuenta y nube</h2></div>
-  <div class="card" id="settingsCloudSection" style="padding:16px;">
-    <div id="cloudLoggedSection" style="text-align:center; padding:4px 0;">
-      <div style="display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:600; color:#2e7d32; background:rgba(46,125,50,0.08); border:1px solid rgba(46,125,50,0.2); padding:4px 10px; border-radius:99px; margin-bottom:6px;" id="cloudStatusBadge">
-        <span style="display:inline-block; width:7px; height:7px; border-radius:50%; background:#2e7d32;" id="cloudStatusDot"></span>
-        <span id="cloudStatusText">Nube conectada</span>
-      </div>
-      <div style="font-size:11px; color:var(--muted); margin-bottom:4px;"><span id="cloudUserEmail"></span></div>
-    </div>
-  </div>
-
-  <!-- B2. CUENTA Y SEGURIDAD -->
+  <!-- 3. CUENTA -->
   <div class="section-head"><h2>Cuenta</h2></div>
   <div class="card" style="padding:16px;">
     <div style="font-size:12px; color:var(--muted); margin-bottom:12px;">Gestión de tus credenciales y cuenta personal.</div>
@@ -460,26 +450,7 @@
     </div>
   </div>
 
-  <!-- C. DATOS -->
-  <div class="section-head"><h2>Datos</h2></div>
-  <div class="card" style="padding:16px;">
-    <div style="text-align:center;">
-      <p style="font-size:12px; color:var(--muted); margin-top:0; margin-bottom:12px;">Guarda una copia local o recupera una exportación anterior.</p>
-      <div style="display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
-        <button class="btn btn-line" style="font-size:11px; padding:8px 12px; display:inline-flex; align-items:center; gap:6px;" onclick="exportBackup()">
-          <svg class="icon" viewBox="0 0 24 24" style="width:14px; height:14px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
-          <span>Exportar datos</span>
-        </button>
-        <button class="btn btn-line" style="font-size:11px; padding:8px 12px; display:inline-flex; align-items:center; gap:6px;" onclick="triggerImportBackup()">
-          <svg class="icon" viewBox="0 0 24 24" style="width:14px; height:14px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
-          <span>Importar datos</span>
-        </button>
-      </div>
-      <input type="file" id="backupFileInput" accept=".json,application/json" style="display:none" onchange="handleBackupFile(event)">
-    </div>
-  </div>
-
-  <!-- E. HERRAMIENTAS DE PRUEBA (Exclusivo para la cuenta @prueba) -->
+  <!-- 4. ENTORNO DE PRUEBAS (Exclusivo para la cuenta @prueba) -->
   <div id="settingsTestToolsSection" style="display:none;">
     <div class="section-head"><h2 style="color:var(--wine);">Entorno de pruebas</h2></div>
     <div class="card" style="padding:16px; border:1px dashed var(--rose2); background:rgba(217,143,158,0.06);">
@@ -497,13 +468,29 @@
     </div>
   </div>
 
-  <!-- D. SESIÓN -->
-  <div class="section-head"><h2>Sesión</h2></div>
-  <div class="card" style="padding:16px; text-align:center;">
-    <button class="btn btn-line" onclick="handleCloudLogout()" style="font-size:12px; padding:8px 16px; color:var(--wine);" id="cloudLogoutBtn">
+  <!-- 5. NUBE Y COPIAS DE SEGURIDAD -->
+  <div class="section-head" id="settingsCloudHead"><h2>Nube y copias de seguridad</h2></div>
+  <div class="card settings-cloud-card" id="settingsCloudSection" onclick="openCloudDetailsModal()" title="Ver detalles y copias de seguridad">
+    <div class="settings-cloud-summary">
+      <div class="settings-cloud-icon-wrap" id="cloudCardIconWrap">
+        <svg class="icon" viewBox="0 0 24 24" style="width:20px; height:20px;"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/><polyline points="8.5 14.5 11 17 15.5 11.5" stroke="currentColor" stroke-width="1.8" fill="none"/></svg>
+      </div>
+      <div class="settings-cloud-info">
+        <div class="settings-cloud-title" id="cloudCardTitle">Tus datos están seguros</div>
+        <div class="settings-cloud-subtitle" id="cloudCardSubtitle">Todo guardado · Copias activas</div>
+      </div>
+      <div class="settings-cloud-chevron">
+        <svg class="icon" viewBox="0 0 24 24" style="width:18px; height:18px; stroke:currentColor; stroke-width:2;"><path d="M9 18l6-6-6-6"/></svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6. CERRAR SESIÓN & VERSIÓN -->
+  <div class="settings-logout-wrap">
+    <button class="btn btn-line settings-logout-btn" onclick="handleCloudLogout()" id="cloudLogoutBtn">
       Cerrar sesión
     </button>
-    <div style="font-size:11px; color:var(--muted); opacity:0.6; margin-top:14px;">Orbit v1.3.17</div>
+    <div class="settings-version-label">Orbit v1.3.18</div>
   </div>
 </section>
 
@@ -885,6 +872,85 @@
   <button id="confirmDeleteAccountBtn" class="btn btn-main btn-wide" disabled onclick="executeAccountDeletion()" style="margin-top:14px; background:var(--wine); border-color:var(--wine); opacity:0.5; cursor:not-allowed;">Eliminar mi cuenta para siempre</button>
 </div></div>
 
+<!-- Modal Mis Datos (Exportar / Importar copias locales) -->
+<div class="modal" id="myDataModal"><div class="sheet">
+  <button class="modal-close-x" onclick="closeModal('myDataModal')" aria-label="Cerrar"><svg class="icon" viewBox="0 0 24 24" style="width:14px; height:14px; stroke:currentColor; stroke-width:2;"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+  <h3>Mis datos</h3>
+  <p class="prompt-sub">Copias de seguridad independientes en este dispositivo.</p>
+  <div class="data-options-list">
+    <div class="data-option-card" onclick="exportBackup()">
+      <div class="data-option-icon">
+        <svg class="icon" viewBox="0 0 24 24" style="width:18px; height:18px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+      </div>
+      <div class="data-option-text">
+        <strong>Descargar copia</strong>
+        <span>Guarda una copia de Orbit en este dispositivo.</span>
+      </div>
+    </div>
+    <div class="data-option-card" onclick="triggerImportBackup()">
+      <div class="data-option-icon">
+        <svg class="icon" viewBox="0 0 24 24" style="width:18px; height:18px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+      </div>
+      <div class="data-option-text">
+        <strong>Recuperar desde una copia</strong>
+        <span>Recupera una copia guardada anteriormente.</span>
+      </div>
+    </div>
+  </div>
+  <input type="file" id="backupFileInput" accept=".json,application/json" style="display:none" onchange="handleBackupFile(event)">
+</div></div>
+
+<!-- Modal Detalles de Nube y Copias de Seguridad -->
+<div class="modal" id="cloudDetailsModal"><div class="sheet">
+  <button class="modal-close-x" onclick="closeModal('cloudDetailsModal')" aria-label="Cerrar"><svg class="icon" viewBox="0 0 24 24" style="width:14px; height:14px; stroke:currentColor; stroke-width:2;"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+  <h3>Nube y copias de seguridad</h3>
+  <p class="prompt-sub" id="cloudModalEmail"></p>
+  
+  <div class="cloud-status-card">
+    <div class="cloud-status-row">
+      <span class="cloud-status-label">Estado de la cuenta</span>
+      <div class="cloud-status-pill" id="cloudModalStatusBadge">
+        <span class="cloud-status-dot" id="cloudModalStatusDot"></span>
+        <span id="cloudModalStatusText">Sincronizado</span>
+      </div>
+    </div>
+    <div class="cloud-meta-row">
+      <span class="cloud-meta-label">Última sincronización</span>
+      <strong id="cloudModalSyncTime">hace un momento</strong>
+    </div>
+    <div class="cloud-meta-row">
+      <span class="cloud-meta-label">Copias de seguridad</span>
+      <strong id="cloudModalBackupTime">activas</strong>
+    </div>
+    <div id="cloudModalConflictBox" class="cloud-conflict-box" style="display:none;">
+      <div class="cloud-conflict-title">✦ Protección de datos activa</div>
+      <p class="cloud-conflict-desc" id="cloudModalConflictDesc">Se ha pausado la sincronización preventiva para proteger tu información.</p>
+    </div>
+  </div>
+
+  <div class="cloud-actions-list">
+    <button type="button" class="btn btn-line btn-wide cloud-action-btn" onclick="handleCreateSafeBackupNow()">
+      <svg class="icon" viewBox="0 0 24 24" style="width:16px; height:16px; stroke:currentColor;"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+      <span>Crear copia segura ahora</span>
+    </button>
+    <button type="button" class="btn btn-line btn-wide cloud-action-btn" onclick="openCloudHistoryModal()">
+      <svg class="icon" viewBox="0 0 24 24" style="width:16px; height:16px; stroke:currentColor;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      <span>Ver historial y recuperación</span>
+    </button>
+  </div>
+</div></div>
+
+<!-- Modal Historial y Recuperación de Versiones -->
+<div class="modal" id="cloudHistoryModal"><div class="sheet" style="max-height:85vh; display:flex; flex-direction:column;">
+  <button class="modal-close-x" onclick="closeModal('cloudHistoryModal')" aria-label="Cerrar"><svg class="icon" viewBox="0 0 24 24" style="width:14px; height:14px; stroke:currentColor; stroke-width:2;"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+  <h3>Historial y recuperación</h3>
+  <p class="prompt-sub">Consulta o recupera snapshots anteriores de tu cuenta en la nube.</p>
+  <div class="history-limitation-notice">
+    ✦ Las copias históricas recuperan textos, estrellas y progreso. Si una fotografía fue eliminada con posterioridad, podría no estar disponible.
+  </div>
+  <div id="cloudHistoryList" class="cloud-history-list" style="flex:1; overflow-y:auto; margin:10px 0;"></div>
+</div></div>
+
 <div class="update-banner" id="updateBanner">
   <span>Hay una nueva versión de Orbit</span>
   <button onclick="applyAppUpdate()">Actualizar</button>
@@ -893,15 +959,15 @@
 <div class="toast" id="toast"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="js/constellation-utils.js?v=1.3.17"></script>
-  <script src="data/templates.js?v=1.3.17"></script>
-  <script src="data/constellations.js?v=1.3.17"></script>
-  <script src="js/storage.js?v=1.3.17"></script>
-  <script src="js/supabase.js?v=1.3.17"></script>
-  <script src="js/stars.js?v=1.3.17"></script>
-  <script src="js/streak.js?v=1.3.17"></script>
-  <script src="js/journal.js?v=1.3.17"></script>
-  <script src="js/archive.js?v=1.3.17"></script>
-  <script src="js/app.js?v=1.3.17"></script>
+  <script src="js/constellation-utils.js?v=1.3.18"></script>
+  <script src="data/templates.js?v=1.3.18"></script>
+  <script src="data/constellations.js?v=1.3.18"></script>
+  <script src="js/storage.js?v=1.3.18"></script>
+  <script src="js/supabase.js?v=1.3.18"></script>
+  <script src="js/stars.js?v=1.3.18"></script>
+  <script src="js/streak.js?v=1.3.18"></script>
+  <script src="js/journal.js?v=1.3.18"></script>
+  <script src="js/archive.js?v=1.3.18"></script>
+  <script src="js/app.js?v=1.3.18"></script>
 </body>
 </html>
