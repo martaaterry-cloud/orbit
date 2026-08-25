@@ -479,84 +479,10 @@ function renderUniverse(d){
   let regionConsts = constellationDefs.filter(c => c.collection === currentRegion.col);
   regionConsts.sort((a, b) => a.need - b.need);
 
-  let vw = window.innerWidth || document.documentElement.clientWidth || 360;
-  let vh = window.innerHeight || document.documentElement.clientHeight || 640;
-
-  if (typeof constellationStage !== 'undefined' && constellationStage) {
-    constellationStage.style.display = 'block';
-    constellationStage.style.width = '100%';
-    constellationStage.style.height = '100%';
-    constellationStage.style.left = '0';
-    constellationStage.style.top = '0';
-    constellationStage.style.transform = 'none';
-
-    let skyHtml = '';
-    regionConsts.forEach((c) => {
-      let isClaimed = isSkyUnlocked && !!(d.claimed && d.claimed[c.id]);
-      let isNext = isSkyUnlocked && (next && next.id === c.id);
-      let isDiscovered = isSkyUnlocked && (!isClaimed && total >= c.need);
-      
-      let baseSize = c.size || 125;
-      let size = Math.round(Math.max(100, Math.min(vw * 0.38, (vh - 140) * 0.28, baseSize, 160)));
-      
-      let progress = 0;
-      let unlocked = false;
-      let stateClass = '';
-
-      if (!isSkyUnlocked) {
-        unlocked = false;
-        progress = 0.0;
-        stateClass = 'locked sky-locked-layer';
-      } else if (isClaimed) {
-        unlocked = true;
-        progress = 1.0;
-        stateClass = 'claimed illuminated';
-      } else if (isDiscovered) {
-        unlocked = false;
-        progress = 1.0;
-        stateClass = 'discovered';
-      } else if (isNext) {
-        let idx = allAvailable.indexOf(c);
-        let prevNeed = idx > 0 ? allAvailable[idx - 1].need : 0;
-        progress = Math.max(0, Math.min(1, (total - prevNeed) / (c.need - prevNeed)));
-        unlocked = false;
-        stateClass = 'in-progress';
-      } else {
-        unlocked = false;
-        progress = 0.0;
-        stateClass = 'locked';
-      }
-
-      let svgMarkup = constellationSvg(c, unlocked, progress);
-      let clickAttr = isSkyUnlocked ? `onclick="verFichaConstelacion('${c.id}')"` : '';
-      let statusHint = !isSkyUnlocked ? ' (Bloqueada)' : (isClaimed ? ' (Iluminada)' : (isNext ? ' (En curso)' : (isDiscovered ? ' (Descubierta)' : ' (Por descubrir)')));
-      
-      skyHtml += `
-        <div class="sky-constellation-item ${stateClass}" style="left:${c.x || 50}%; top:${c.y || 35}%;" ${clickAttr} title="${esc(c.name)}${statusHint}">
-          <div class="sky-constellation-box" style="width:${size}px; height:${size}px; transform: rotate(${c.rot || 0}deg);">
-            ${svgMarkup}
-          </div>
-          <div class="sky-constellation-name">${esc(c.name)}${isClaimed ? ' ✦' : ''}</div>
-        </div>
-      `;
-    });
-
-    if (!isSkyUnlocked) {
-      skyHtml += `
-        <div class="sky-locked-overlay">
-          <div class="sky-locked-seal">
-            <div class="sky-locked-compass">
-              <svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" style="width:32px; height:32px;"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-            </div>
-            <div class="sky-locked-title">Cielo sellado</div>
-            <p class="sky-locked-desc">Esta región del firmamento aún no ha sido cartografiada.<br>Desbloquéala en el <strong>Observatorio Terrestre</strong>.</p>
-            <button class="btn btn-soft btn-sm" style="font-size:10px; padding:6px 16px; border-radius:99px; margin-top:4px;" onclick="openObservatoryModal(); setObservatoryTab('regiones');">Ir a Exploración</button>
-          </div>
-        </div>
-      `;
-    }
-
-    constellationStage.innerHTML = skyHtml;
+  let stageEl = document.getElementById('constellationStage');
+  if (stageEl) {
+    stageEl.innerHTML = '';
+    stageEl.style.display = 'none';
   }
 
   // Modal de progreso y detalles del universo

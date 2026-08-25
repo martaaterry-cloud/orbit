@@ -14,7 +14,7 @@
 <title>Orbit</title>
 
   <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
-  <link rel="stylesheet" href="css/orbit.css?v=1.3.34">
+  <link rel="stylesheet" href="css/orbit.css?v=1.3.35">
 </head>
 <body>
 <!-- Pantalla de Acceso Inicial Multiusuario -->
@@ -490,7 +490,7 @@
     <button class="btn btn-line settings-logout-btn" onclick="handleCloudLogout()" id="cloudLogoutBtn">
       Cerrar sesión
     </button>
-    <div class="settings-version-label">Orbit v1.3.34</div>
+    <div class="settings-version-label">Orbit v1.3.35</div>
   </div>
 </section>
 
@@ -504,26 +504,9 @@
     </div>
   </div>
 
-  <div class="sky-container" style="position:absolute; inset:0; pointer-events:none; z-index:2;">
-    <!-- Red de coordenadas celestes técnica y discreta -->
-    <div class="cosmic-grid" style="pointer-events:none;">
-      <svg viewBox="0 0 100 100" preserveAspectRatio="none">
-        <circle cx="50" cy="50" r="15" class="grid-line" />
-        <circle cx="50" cy="50" r="32" class="grid-line" />
-        <circle cx="50" cy="50" r="48" class="grid-line" />
-        <line x1="50" y1="0" x2="50" y2="100" class="grid-line" />
-        <line x1="0" y1="50" x2="100" y2="50" class="grid-line" />
-        <line x1="15" y1="15" x2="85" y2="85" class="grid-line dashed" />
-        <line x1="85" y1="15" x2="15" y2="85" class="grid-line dashed" />
-      </svg>
-    </div>
-
-    <!-- Título del cielo activo en la parte superior -->
-    <div class="sky-title-header" id="skyTitleHeader" style="pointer-events:auto;">
-      <span class="sky-title-text" id="skyHeaderTitle">Firmamento · Universo 3D</span>
-    </div>
-
-    <div class="constellation-stage" id="constellationStage" style="display:none;"></div>
+  <!-- Título del firmamento 3D en la parte superior -->
+  <div class="sky-title-header" id="skyTitleHeader" style="position:relative; z-index:10;">
+    <span class="sky-title-text" id="skyHeaderTitle">Firmamento · Universo 3D</span>
   </div>
 
   <!-- Barra de herramientas flotante y minimalista -->
@@ -1033,20 +1016,20 @@
 <div class="toast" id="toast"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="js/vendor/three.min.js?v=1.3.34"></script>
-  <script src="js/vendor/GLTFLoader.js?v=1.3.34"></script>
-  <script src="js/scene-3d-core.js?v=1.3.34"></script>
-  <script src="js/observatory-3d.js?v=1.3.34"></script>
-  <script src="js/universe-3d.js?v=1.3.34"></script>
-  <script src="js/constellation-utils.js?v=1.3.34"></script>
-  <script src="data/templates.js?v=1.3.34"></script>
-  <script src="data/constellations.js?v=1.3.34"></script>
-  <script src="js/storage.js?v=1.3.34"></script>
-  <script src="js/supabase.js?v=1.3.34"></script>
-  <script src="js/stars.js?v=1.3.34"></script>
-  <script src="js/streak.js?v=1.3.34"></script>
-  <script src="js/journal.js?v=1.3.34"></script>
-  <script src="js/archive.js?v=1.3.34"></script>
-  <script src="js/app.js?v=1.3.34"></script>
+  <script src="js/vendor/three.min.js?v=1.3.35"></script>
+  <script src="js/vendor/GLTFLoader.js?v=1.3.35"></script>
+  <script src="js/scene-3d-core.js?v=1.3.35"></script>
+  <script src="js/observatory-3d.js?v=1.3.35"></script>
+  <script src="js/universe-3d.js?v=1.3.35"></script>
+  <script src="js/constellation-utils.js?v=1.3.35"></script>
+  <script src="data/templates.js?v=1.3.35"></script>
+  <script src="data/constellations.js?v=1.3.35"></script>
+  <script src="js/storage.js?v=1.3.35"></script>
+  <script src="js/supabase.js?v=1.3.35"></script>
+  <script src="js/stars.js?v=1.3.35"></script>
+  <script src="js/streak.js?v=1.3.35"></script>
+  <script src="js/journal.js?v=1.3.35"></script>
+  <script src="js/archive.js?v=1.3.35"></script>
+  <script src="js/app.js?v=1.3.35"></script>
 </body>
 </html>
