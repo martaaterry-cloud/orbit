@@ -313,36 +313,7 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
   transform: scale(0.96) !important;
 }
 
-.sky-title-header {
-  position: absolute;
-  top: calc(16px + env(safe-area-inset-top));
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 6px 20px;
-  background: rgba(14, 10, 26, 0.62);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 99px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
-  pointer-events: none;
-  z-index: 15;
-  user-select: none;
-}
 
-.sky-title-text {
-  font-family: Georgia, serif;
-  font-size: 13px;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.92);
-  text-shadow: 0 0 14px rgba(255, 200, 220, 0.55);
-  font-weight: 500;
-  white-space: nowrap;
-}
 
 .sky-locked-overlay {
   position: absolute;
@@ -594,15 +565,17 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
   font-weight: 600;
   letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.85);
-  background: rgba(10, 14, 22, 0.55);
+  color: rgba(255, 255, 255, 0.88);
+  background: rgba(10, 14, 22, 0.65);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 99px;
   padding: 6px 20px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.40);
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+  white-space: nowrap;
+  user-select: none;
 }
 
 .universe-3d-region-badge {

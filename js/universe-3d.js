@@ -31,7 +31,7 @@
       name: 'Primer cielo',
       roman: 'I',
       col: 'norte',
-      pos: { x: -2.3, y: 3.2, z: 0.0 },
+      pos: { x: -1.7, y: 3.2, z: 0.0 },
       seed: 104729,
       type: 'nebula-cool-blue',
       // Azul/blanco frío suave (tonos orgánicos sin saturación excesiva)
@@ -43,7 +43,7 @@
       name: 'Zodiaco',
       roman: 'II',
       col: 'zodiaco',
-      pos: { x: 2.3, y: 3.0, z: -2.0 },
+      pos: { x: 1.7, y: 3.0, z: -2.0 },
       seed: 1299709,
       type: 'nebula-gold-belt',
       // Crema/dorado apagado muy sutil (nada naranja fuerte, estructura alargada)
@@ -55,7 +55,7 @@
       name: 'Cielo de invierno',
       roman: 'III',
       col: 'invierno',
-      pos: { x: -2.3, y: -2.8, z: -3.5 },
+      pos: { x: -1.7, y: -2.8, z: -3.5 },
       seed: 786433,
       type: 'nebula-ice-crystal',
       // Azul hielo cristalino/blanco suave
@@ -67,7 +67,7 @@
       name: 'Espacio profundo',
       roman: 'IV',
       col: 'profundo',
-      pos: { x: 2.3, y: -3.0, z: -6.0 },
+      pos: { x: 1.7, y: -3.0, z: -6.0 },
       seed: 982451653,
       type: 'gravitational-void',
       // Azul-negro/violeta muy oscuro sin magenta fuerte
@@ -548,13 +548,13 @@
       let screenX = (tempProjectVec.x * 0.5 + 0.5) * width;
       let screenY = (-tempProjectVec.y * 0.5 + 0.5) * height;
 
-      // Margen horizontal seguro para que los badges nunca salgan del viewport móvil
-      const marginX = 64;
+      // Margen horizontal de seguridad moderado sin forzar el badge hacia el centro
+      const marginX = 24;
       screenX = Math.max(marginX, Math.min(width - marginX, screenX));
 
-      // Margen vertical seguro (debajo de UNIVERSO y encima de la toolbar inferior)
-      const minTop = 64;
-      const maxTop = height - 76;
+      // Margen vertical de seguridad (debajo de UNIVERSO y encima de la toolbar inferior)
+      const minTop = 56;
+      const maxTop = height - 72;
       screenY = Math.max(minTop, Math.min(maxTop, screenY + (item.isRegion ? 36 : 14)));
 
       item.element.style.display = 'flex';
@@ -580,16 +580,8 @@
     }
     labelsList = [];
 
-    // En vista general (focusedRegionId === null), fijar cámara y desactivar pan/zoom libre
-    if (focusedRegionId === null) {
-      sceneInstance.setPanZoomEnabled(false);
-      sceneInstance.panX = 0;
-      sceneInstance.panY = 0;
-      sceneInstance.zoomZ = 14.0;
-      sceneInstance.updateCamera();
-    } else {
-      sceneInstance.setPanZoomEnabled(true);
-    }
+    // Permitir navegación libre y controlada en el Universo general
+    sceneInstance.setPanZoomEnabled(true);
 
     const d = (typeof load === 'function') ? load() : {};
 
@@ -680,19 +672,19 @@
       containerId: 'universeHeroScene',
       canvasId: 'universeCanvas',
       fallbackId: 'universeFallbackMessage',
-      enablePanZoom: false, // Vista general fija y estable
+      enablePanZoom: true, // Exploración libre de las regiones
       camera: {
         type: 'pan-zoom',
         fov: 45,
-        zoomZ: 14.0,
-        minZoom: 3.5,
-        maxZoom: 28.0,
+        zoomZ: 17.0,
+        minZoom: 8.0,
+        maxZoom: 24.0,
         panX: 0,
         panY: 0,
-        minPanX: -10.0,
-        maxPanX: 10.0,
-        minPanY: -10.0,
-        maxPanY: 10.0
+        minPanX: -4.5,
+        maxPanX: 4.5,
+        minPanY: -5.0,
+        maxPanY: 5.0
       },
       onRender: function() {
         updateLabelsProjection(universeScene);
