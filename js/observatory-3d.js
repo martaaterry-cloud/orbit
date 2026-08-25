@@ -1,147 +1,15 @@
 // ==========================================================================
-// ORBIT · Controlador de Escena 3D Inmersiva para el Observatorio (Three.js)
+// ORBIT · Controlador Específico del Observatorio Terrestre 3D
 // ==========================================================================
 
 (function() {
   'use strict';
 
-  let scene, camera, renderer, modelRoot, animFrameId;
+  let observatoryScene = null;
   let isInitialized = false;
-  let isLoading = false;
-  let isDragging = false;
-  let startX = 0, startY = 0;
 
-  // Parámetros de Cámara Orbital Manual
-  let orbitRadius = 5.2;
-  let orbitAzimuth = 0.45;
-  let orbitElevation = 0.14;
-
-  let cachedGLTF = null;
-
-  // Comprobar soporte de WebGL de forma segura
-  function isWebGLSupported() {
-    try {
-      const canvas = document.createElement('canvas');
-      return Boolean(
-        window.WebGLRenderingContext &&
-        (canvas.getContext('webgl') || canvas.getContext('experimental-webgl'))
-      );
-    } catch (e) {
-      return false;
-    }
-  }
-
-  function updateCameraTransform() {
-    if (!camera) return;
-    camera.position.x = orbitRadius * Math.cos(orbitElevation) * Math.sin(orbitAzimuth);
-    camera.position.y = orbitRadius * Math.sin(orbitElevation);
-    camera.position.z = orbitRadius * Math.cos(orbitElevation) * Math.cos(orbitAzimuth);
-    camera.lookAt(0, 0, 0);
-  }
-
-  function resizeRenderer() {
-    if (!renderer || !camera) return;
-    const container = document.getElementById('observatoryHeroScene');
-    if (!container) return;
-    const width = container.clientWidth || window.innerWidth || 360;
-    const height = container.clientHeight || window.innerHeight || 600;
-
-    camera.aspect = width / height;
-    camera.updateProjectionMatrix();
-    renderer.setSize(width, height, false);
-  }
-
-  function renderLoop() {
-    if (!renderer || !scene || !camera) return;
-
-    renderer.render(scene, camera);
-    animFrameId = requestAnimationFrame(renderLoop);
-  }
-
-  function setupInteraction(container) {
-    if (!container || container._has3DPointerListeners) return;
-    container._has3DPointerListeners = true;
-
-    container.addEventListener('pointerdown', (e) => {
-      // Ignorar si el puntero toca botones o modales
-      if (e.target.closest && (e.target.closest('button') || e.target.closest('.modal') || e.target.closest('.observatory-bottom-dock'))) return;
-      isDragging = true;
-      startX = e.clientX;
-      startY = e.clientY;
-      try { container.setPointerCapture(e.pointerId); } catch (_) {}
-    });
-
-    container.addEventListener('pointermove', (e) => {
-      if (!isDragging) return;
-      const dx = e.clientX - startX;
-      const dy = e.clientY - startY;
-      startX = e.clientX;
-      startY = e.clientY;
-
-      // Arrastre horizontal: orbitar alrededor del eje Y
-      // Arrastre vertical: elevación limitada entre 0.04 rad (~2°) y 0.55 rad (~31°)
-      orbitAzimuth -= dx * 0.008;
-      orbitElevation = Math.max(0.04, Math.min(0.55, orbitElevation + dy * 0.006));
-
-      updateCameraTransform();
-    });
-
-    const endDrag = (e) => {
-      if (!isDragging) return;
-      isDragging = false;
-      try { container.releasePointerCapture(e.pointerId); } catch (_) {}
-    };
-
-    container.addEventListener('pointerup', endDrag);
-    container.addEventListener('pointercancel', endDrag);
-
-    window.addEventListener('resize', resizeRenderer);
-  }
-
-  function initObservatory3D() {
-    const container = document.getElementById('observatoryHeroScene');
-    const canvas = document.getElementById('observatoryCanvas');
-    const fallbackMsg = document.getElementById('observatoryFallbackMessage');
-
-    if (!container || !canvas) return;
-
-    // 1. Validar WebGL y librerías de Three.js
-    if (!isWebGLSupported() || typeof THREE === 'undefined' || typeof THREE.GLTFLoader === 'undefined') {
-      console.warn('[Observatory 3D] WebGL o Three.js no disponible.');
-      if (fallbackMsg) fallbackMsg.style.display = 'flex';
-      if (canvas) canvas.style.display = 'none';
-      return;
-    }
-
-    // 2. Si ya está inicializado, reanudar loop y ajustar tamaño
-    if (isInitialized) {
-      resizeRenderer();
-      if (!animFrameId) {
-        renderLoop();
-      }
-      return;
-    }
-
-    // 3. Crear escena Three.js
-    scene = new THREE.Scene();
-
-    const width = container.clientWidth || window.innerWidth || 360;
-    const height = container.clientHeight || window.innerHeight || 600;
-    camera = new THREE.PerspectiveCamera(42, width / height, 0.1, 1000);
-    updateCameraTransform();
-
-    renderer = new THREE.WebGLRenderer({
-      canvas: canvas,
-      alpha: true,
-      antialias: true,
-      powerPreference: 'high-performance'
-    });
-    renderer.setClearColor(0x000000, 0);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-    renderer.setSize(width, height, false);
-    renderer.outputEncoding = THREE.sRGBEncoding;
-
-    // 4. Terreno 3D bajo el observatorio para dar referencia espacial al orbitar
+  function buildObservatoryEnvironment(sceneInstance) {
+    // 1. Terreno 3D bajo el observatorio
     const groundGroup = new THREE.Group();
 
     // Suelo montañoso principal (plataforma circular con acabado mate noche/roca)
@@ -157,7 +25,7 @@
     groundMesh.position.y = -0.88;
     groundGroup.add(groundMesh);
 
-    // Anillo sutil de contorno del mirador para acentuar el cambio de perspectiva
+    // Anillo sutil de contorno del mirador
     const rimGeo = new THREE.RingGeometry(2.4, 2.55, 32);
     const rimMat = new THREE.MeshBasicMaterial({
       color: 0xfcc2cd,
@@ -170,97 +38,103 @@
     rimMesh.position.y = -0.87;
     groundGroup.add(rimMesh);
 
-    scene.add(groundGroup);
+    sceneInstance.add(groundGroup);
 
-    // 5. Iluminación armónica con la estética nocturna terrestre de Orbit
+    // 2. Iluminación armónica con la estética nocturna terrestre de Orbit
     const ambientLight = new THREE.AmbientLight(0xffffff, 1.35);
-    scene.add(ambientLight);
+    sceneInstance.add(ambientLight);
 
     const hemiLight = new THREE.HemisphereLight(0xffe4ea, 0x180f2d, 1.1);
-    scene.add(hemiLight);
+    sceneInstance.add(hemiLight);
 
     const dirLight = new THREE.DirectionalLight(0xfff5ea, 1.7);
     dirLight.position.set(4, 9, 6);
-    scene.add(dirLight);
+    sceneInstance.add(dirLight);
 
     const rimLight = new THREE.DirectionalLight(0xfcc2cd, 1.3);
     rimLight.position.set(-5, 4, -4);
-    scene.add(rimLight);
-
-    // 6. Cargar modelo GLB (o reusar cache en memoria)
-    if (cachedGLTF) {
-      mountModel(cachedGLTF, fallbackMsg, canvas);
-    } else if (!isLoading) {
-      isLoading = true;
-      const loader = new THREE.GLTFLoader();
-      const modelUrl = 'assets/models/observatory.glb?v=1.3.28';
-
-      loader.load(
-        modelUrl,
-        function(gltf) {
-          isLoading = false;
-          cachedGLTF = gltf;
-          mountModel(gltf, fallbackMsg, canvas);
-        },
-        undefined,
-        function(err) {
-          isLoading = false;
-          console.warn('[Observatory 3D] Error al cargar modelo GLB:', err);
-          if (fallbackMsg) fallbackMsg.style.display = 'flex';
-          if (canvas) canvas.style.display = 'none';
-        }
-      );
-    }
-
-    setupInteraction(container);
-    isInitialized = true;
-    renderLoop();
+    sceneInstance.add(rimLight);
   }
 
-  function mountModel(gltf, fallbackMsg, canvas) {
-    if (!scene) return;
+  function mountObservatoryModel(gltf, bounds, sceneInstance) {
+    const modelRoot = gltf.scene;
 
-    // Clonar o añadir el objeto a la escena
-    modelRoot = gltf.scene;
-
-    // Centrar automáticamente la geometría
-    const box = new THREE.Box3().setFromObject(modelRoot);
-    const center = box.getCenter(new THREE.Vector3());
-    const size = box.getSize(new THREE.Vector3());
-    const maxDim = Math.max(size.x, size.y, size.z);
-
-    if (maxDim > 0) {
-      const targetScale = 1.6 / maxDim;
+    if (bounds.maxDim > 0) {
+      const targetScale = 1.6 / bounds.maxDim;
       modelRoot.scale.setScalar(targetScale);
 
-      modelRoot.position.x = -center.x * targetScale;
-      modelRoot.position.y = (-center.y * targetScale) - 0.15;
-      modelRoot.position.z = -center.z * targetScale;
+      modelRoot.position.x = -bounds.center.x * targetScale;
+      modelRoot.position.y = (-bounds.center.y * targetScale) - 0.15;
+      modelRoot.position.z = -bounds.center.z * targetScale;
     }
 
     const pivotGroup = new THREE.Group();
     pivotGroup.add(modelRoot);
-    scene.add(pivotGroup);
-    modelRoot = pivotGroup;
+    sceneInstance.add(pivotGroup);
+    sceneInstance.invalidate();
+  }
 
-    // Activar canvas y ocultar mensaje fallback
-    if (fallbackMsg) fallbackMsg.style.display = 'none';
-    if (canvas) {
-      canvas.style.display = 'block';
-      canvas.style.opacity = '1';
+  function initObservatory3D() {
+    if (!window.Orbit3D) {
+      console.warn('[Observatory 3D] Motor Orbit3D no disponible.');
+      return;
     }
+
+    // Si ya existe la instancia, reanudarla y ajustar tamaño
+    if (isInitialized && observatoryScene) {
+      observatoryScene.resume();
+      return;
+    }
+
+    // Crear la instancia de escena 3D a través de Orbit3D Core
+    observatoryScene = Orbit3D.createScene({
+      containerId: 'observatoryHeroScene',
+      canvasId: 'observatoryCanvas',
+      fallbackId: 'observatoryFallbackMessage',
+      camera: {
+        type: 'orbital',
+        fov: 42,
+        radius: 5.2,
+        azimuth: 0.45,
+        elevation: 0.14,
+        minElevation: 0.04,
+        maxElevation: 0.55
+      }
+    });
+
+    if (!observatoryScene.scene) return;
+
+    buildObservatoryEnvironment(observatoryScene);
+
+    const modelUrl = 'assets/models/observatory.glb?v=1.3.29';
+    Orbit3D.loadGLB(
+      modelUrl,
+      function(gltf, bounds) {
+        mountObservatoryModel(gltf, bounds, observatoryScene);
+      },
+      function(err) {
+        console.warn('[Observatory 3D] Error cargando modelo:', err);
+      }
+    );
+
+    isInitialized = true;
   }
 
   function pauseObservatory3D() {
-    if (animFrameId) {
-      cancelAnimationFrame(animFrameId);
-      animFrameId = null;
+    if (observatoryScene) {
+      observatoryScene.pause();
+    }
+  }
+
+  function resizeObservatory3D() {
+    if (observatoryScene) {
+      observatoryScene.resize();
     }
   }
 
   // Exportar API global para integración con Orbit
   window.initObservatory3D = initObservatory3D;
   window.pauseObservatory3D = pauseObservatory3D;
-  window.resizeObservatory3D = resizeRenderer;
+  window.resizeObservatory3D = resizeObservatory3D;
 
 })();
