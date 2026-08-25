@@ -172,7 +172,7 @@
     } else if (!isLoading) {
       isLoading = true;
       const loader = new THREE.GLTFLoader();
-      const modelUrl = 'assets/models/observatory.glb?v=1.3.24';
+      const modelUrl = 'assets/models/observatory.glb?v=1.3.25';
 
       loader.load(
         modelUrl,
@@ -206,16 +206,15 @@
     const box = new THREE.Box3().setFromObject(modelRoot);
     const center = box.getCenter(new THREE.Vector3());
     const size = box.getSize(new THREE.Vector3());
-
-    modelRoot.position.x = -center.x;
-    modelRoot.position.y = -center.y - 0.25;
-    modelRoot.position.z = -center.z;
-
-    // Escalar para ocupar el 65–75% de la vista visual central
     const maxDim = Math.max(size.x, size.y, size.z);
+
     if (maxDim > 0) {
       const targetScale = 4.8 / maxDim;
       modelRoot.scale.setScalar(targetScale);
+
+      modelRoot.position.x = -center.x * targetScale;
+      modelRoot.position.y = (-center.y * targetScale) - 0.15;
+      modelRoot.position.z = -center.z * targetScale;
     }
 
     const pivotGroup = new THREE.Group();
