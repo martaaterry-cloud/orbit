@@ -38,8 +38,6 @@ function showPage(id){
     setTimeout(() => {
       if (typeof window.initObservatory3D === 'function') {
         window.initObservatory3D();
-      } else {
-        initObservatory3DController();
       }
       selectObservatoryModule(window.activeObservatoryModuleId || 'telescope');
     }, 60);
@@ -848,107 +846,12 @@ function renderUniverse(d){
       <!-- Canvas Three.js Real para el Modelo 3D -->
       <canvas id="observatoryCanvas" class="observatory-3d-canvas"></canvas>
 
-      <!-- Fallback Vectorial SVG (activo si WebGL falla o mientras carga) -->
-      <div class="observatory-3d-stage" id="observatoryFallbackSvg">
-        <div class="observatory-3d-model">
-          <!-- Haz de luz de observación hacia el cielo -->
-          <div class="observatory-beam"></div>
-          
-          <!-- Modelo Arquitectónico Vectorial 3D del Observatorio -->
-          <svg viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <linearGradient id="domeGrad" x1="20" y1="20" x2="160" y2="140" gradientUnits="userSpaceOnUse">
-                <stop offset="0%" stop-color="#7a5b99"/>
-                <stop offset="35%" stop-color="#41295e"/>
-                <stop offset="75%" stop-color="#231438"/>
-                <stop offset="100%" stop-color="#120920"/>
-              </linearGradient>
-              <linearGradient id="baseGrad" x1="40" y1="90" x2="160" y2="180" gradientUnits="userSpaceOnUse">
-                <stop offset="0%" stop-color="#3d2a54"/>
-                <stop offset="50%" stop-color="#221634"/>
-                <stop offset="100%" stop-color="#120a1d"/>
-              </linearGradient>
-              <linearGradient id="tubeGrad" x1="90" y1="30" x2="165" y2="90" gradientUnits="userSpaceOnUse">
-                <stop offset="0%" stop-color="#f5e1b5"/>
-                <stop offset="25%" stop-color="#cca870"/>
-                <stop offset="70%" stop-color="#543e20"/>
-                <stop offset="100%" stop-color="#23170a"/>
-              </linearGradient>
-              <radialGradient id="lensGlow" cx="155" cy="48" r="18" gradientUnits="userSpaceOnUse">
-                <stop offset="0%" stop-color="#ffffff"/>
-                <stop offset="40%" stop-color="#9bf3ff"/>
-                <stop offset="100%" stop-color="#156488"/>
-              </radialGradient>
-              <linearGradient id="ringGrad" x1="40" y1="100" x2="160" y2="100" gradientUnits="userSpaceOnUse">
-                <stop offset="0%" stop-color="#967aa5"/>
-                <stop offset="50%" stop-color="#553a69"/>
-                <stop offset="100%" stop-color="#1f122c"/>
-              </linearGradient>
-            </defs>
-
-            <!-- Sombra proyectada en la base -->
-            <ellipse cx="100" cy="182" rx="72" ry="12" fill="rgba(0,0,0,0.55)" filter="blur(4px)"/>
-
-            <!-- Base Cilíndrica del Edificio / Estación -->
-            <path d="M48 112 Q100 126 152 112 V162 Q100 178 48 162 Z" fill="url(#baseGrad)" stroke="rgba(255,255,255,0.12)" stroke-width="1.2"/>
-            <!-- Anillos arquitectónicos y zócalo -->
-            <path d="M48 162 Q100 178 152 162 V170 Q100 186 48 170 Z" fill="#180e26" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
-            <path d="M48 135 Q100 148 152 135" stroke="rgba(252,194,205,0.25)" stroke-dasharray="3 3" stroke-width="1"/>
-
-            <!-- Ventana / Portal del Observatorio con luz cálida -->
-            <path d="M90 142 Q100 138 110 142 V165 Q100 170 90 165 Z" fill="#2d1730" stroke="rgba(252,194,205,0.4)" stroke-width="1"/>
-            <circle cx="100" cy="152" r="3.5" fill="#ffd599" filter="drop-shadow(0 0 6px rgba(255,213,153,0.9))"/>
-
-            <!-- Anillo Giratorio de la Cúpula -->
-            <path d="M42 108 Q100 124 158 108 Q100 94 42 108 Z" fill="url(#ringGrad)" stroke="rgba(255,255,255,0.2)" stroke-width="1.2"/>
-
-            <!-- Cúpula Hemisférica del Observatorio -->
-            <path d="M44 108 C44 54 156 54 156 108 Q100 122 44 108 Z" fill="url(#domeGrad)" stroke="rgba(255,255,255,0.25)" stroke-width="1.5"/>
-
-            <!-- Ranura / Compuerta de Observación Abierta -->
-            <path d="M84 56 Q100 52 126 62 L120 114 Q100 110 82 106 Z" fill="#080410" stroke="rgba(252,194,205,0.3)" stroke-width="1.2"/>
-
-            <!-- Montura Ecuatorial / Eje de guiado -->
-            <circle cx="94" cy="92" r="9" fill="#251a36" stroke="rgba(255,255,255,0.3)" stroke-width="1.5"/>
-            <line x1="94" y1="92" x2="72" y2="108" stroke="#cca870" stroke-width="3" stroke-linecap="round"/>
-            <circle cx="70" cy="110" r="5" fill="#44321c" stroke="#cca870" stroke-width="1.2"/>
-
-            <!-- Tubo Óptico del Telescopio Principal -->
-            <g id="telescopeTubeGroup">
-              <polygon points="80,98 92,108 152,56 142,46" fill="url(#tubeGrad)" stroke="rgba(255,255,255,0.4)" stroke-width="1.2"/>
-              <polygon points="140,44 154,58 162,51 148,37" fill="#edd6a4" stroke="#ffffff" stroke-width="1.2"/>
-              <ellipse cx="155" cy="48" rx="6.5" ry="4" transform="rotate(-40 155 48)" fill="url(#lensGlow)" stroke="#ffffff" stroke-width="1"/>
-              <rect x="73" y="96" width="10" height="12" rx="2" transform="rotate(-40 73 96)" fill="#1c1126" stroke="var(--rose2)" stroke-width="1.2"/>
-              <circle cx="75" cy="102" r="1.5" fill="#6df0ff" filter="drop-shadow(0 0 4px #6df0ff)"/>
-            </g>
-
-            <!-- Reflejo curvo de cristal sobre la cúpula -->
-            <path d="M56 94 C56 66 112 62 134 76" stroke="rgba(255,255,255,0.22)" stroke-width="2" stroke-linecap="round" fill="none"/>
-          </svg>
-
-          <!-- Hotspots 3D Interactivos -->
-          <div class="observatory-hotspot" style="top: 32%; left: 74%;" onclick="selectObservatoryModule('telescope')" title="Telescopio Principal" id="hotspot-telescope">
-            <div class="observatory-hotspot-pulse"></div>
-            <div class="observatory-hotspot-core"></div>
-          </div>
-          <div class="observatory-hotspot" style="top: 50%; left: 47%;" onclick="selectObservatoryModule('mount')" title="Montura y Seguimiento" id="hotspot-mount">
-            <div class="observatory-hotspot-pulse"></div>
-            <div class="observatory-hotspot-core"></div>
-          </div>
-          <div class="observatory-hotspot" style="top: 55%; left: 34%;" onclick="selectObservatoryModule('sensors')" title="Sensores y Cámara" id="hotspot-sensors">
-            <div class="observatory-hotspot-pulse"></div>
-            <div class="observatory-hotspot-core"></div>
-          </div>
-          <div class="observatory-hotspot" style="top: 26%; left: 36%;" onclick="selectObservatoryModule('dome')" title="Cúpula y Estación" id="hotspot-dome">
-            <div class="observatory-hotspot-pulse"></div>
-            <div class="observatory-hotspot-core"></div>
-          </div>
-          <div class="observatory-hotspot" style="top: 76%; left: 50%;" onclick="selectObservatoryModule('cartography')" title="Cartografía Celeste" id="hotspot-cartography">
-            <div class="observatory-hotspot-pulse"></div>
-            <div class="observatory-hotspot-core"></div>
-          </div>
-        </div>
+      <!-- Mensaje Fallback si WebGL o el modelo 3D no están disponibles -->
+      <div id="observatoryFallbackMessage" class="observatory-fallback-msg" style="display:none;">
+        <span style="font-size:24px; opacity:0.8;">🔭</span>
+        <p style="margin:0; font-size:12px; color:#b8a9c4;">Vista 3D no disponible</p>
       </div>
+
       <div class="observatory-rotate-hint">↔ Arrastra para explorar en 3D</div>
     </div>
   `;
@@ -985,8 +888,6 @@ function renderUniverse(d){
     setTimeout(() => {
       if (typeof window.initObservatory3D === 'function') {
         window.initObservatory3D();
-      } else {
-        initObservatory3DController();
       }
       selectObservatoryModule(activeMod);
     }, 40);
@@ -1376,11 +1277,6 @@ function renderObservatoryDetailCard(d, moduleId) {
 function selectObservatoryModule(moduleId) {
   window.activeObservatoryModuleId = moduleId;
   
-  // Actualizar hotspots en la escena 3D
-  document.querySelectorAll('.observatory-hotspot').forEach(el => {
-    el.classList.toggle('active', el.id === `hotspot-${moduleId}`);
-  });
-  
   // Actualizar chips de la barra
   document.querySelectorAll('.observatory-module-chip').forEach(el => {
     el.classList.toggle('active', el.getAttribute('data-module') === moduleId);
@@ -1389,60 +1285,6 @@ function selectObservatoryModule(moduleId) {
   // Re-renderizar tarjeta de detalle
   let d = load();
   renderObservatoryDetailCard(d, moduleId);
-}
-
-function initObservatory3DController() {
-  let container = document.getElementById('observatoryHeroScene');
-  let stage = document.getElementById('observatory3DStage');
-  if (!container || !stage) return;
-
-  let isDragging = false;
-  let startX = 0;
-  let startY = 0;
-  let currentRotY = 0;
-  let currentRotX = 0;
-  let targetRotY = 0;
-  let targetRotX = 0;
-
-  function updateTransform() {
-    if (!stage) return;
-    stage.style.transform = `rotateY(${targetRotY}deg) rotateX(${targetRotX}deg)`;
-  }
-
-  container.onpointerdown = (e) => {
-    if (e.target.closest('.observatory-hotspot')) return;
-    isDragging = true;
-    startX = e.clientX;
-    startY = e.clientY;
-    container.setPointerCapture(e.pointerId);
-  };
-
-  container.onpointermove = (e) => {
-    if (!isDragging) {
-      let rect = container.getBoundingClientRect();
-      let normX = (e.clientX - rect.left) / rect.width - 0.5;
-      let normY = (e.clientY - rect.top) / rect.height - 0.5;
-      targetRotY = normX * 22;
-      targetRotX = -normY * 12;
-      updateTransform();
-      return;
-    }
-    let dx = e.clientX - startX;
-    let dy = e.clientY - startY;
-    targetRotY = Math.max(-45, Math.min(45, currentRotY + dx * 0.45));
-    targetRotX = Math.max(-15, Math.min(25, currentRotX - dy * 0.35));
-    updateTransform();
-  };
-
-  container.onpointerup = (e) => {
-    if (!isDragging) return;
-    isDragging = false;
-    currentRotY = targetRotY;
-    currentRotX = targetRotX;
-    try { container.releasePointerCapture(e.pointerId); } catch(_) {}
-  };
-
-  container.onpointercancel = container.onpointerup;
 }
 
 // Aliases para compatibilidad

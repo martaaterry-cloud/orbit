@@ -68,8 +68,6 @@
     container._has3DPointerListeners = true;
 
     container.addEventListener('pointerdown', (e) => {
-      // Si el clic es en un hotspot, no capturar arrastre
-      if (e.target && e.target.closest && e.target.closest('.observatory-hotspot')) return;
       isDragging = true;
       autoRotate = false;
       clearTimeout(idleTimer);
@@ -108,14 +106,14 @@
   function initObservatory3D() {
     const container = document.getElementById('observatoryHeroScene');
     const canvas = document.getElementById('observatoryCanvas');
-    const fallbackSvg = document.getElementById('observatoryFallbackSvg');
+    const fallbackMsg = document.getElementById('observatoryFallbackMessage');
 
     if (!container || !canvas) return;
 
     // 1. Validar WebGL y librerías de Three.js
     if (!isWebGLSupported() || typeof THREE === 'undefined' || typeof THREE.GLTFLoader === 'undefined') {
-      console.warn('[Observatory 3D] WebGL o Three.js no disponible. Usando fallback SVG.');
-      if (fallbackSvg) fallbackSvg.style.display = 'block';
+      console.warn('[Observatory 3D] WebGL o Three.js no disponible.');
+      if (fallbackMsg) fallbackMsg.style.display = 'flex';
       if (canvas) canvas.style.display = 'none';
       return;
     }
@@ -166,24 +164,24 @@
 
     // 5. Cargar modelo GLB (o reusar cache en memoria)
     if (cachedGLTF) {
-      mountModel(cachedGLTF, fallbackSvg, canvas);
+      mountModel(cachedGLTF, fallbackMsg, canvas);
     } else if (!isLoading) {
       isLoading = true;
       const loader = new THREE.GLTFLoader();
-      const modelUrl = 'assets/models/observatory.glb?v=1.3.22';
+      const modelUrl = 'assets/models/observatory.glb?v=1.3.23';
 
       loader.load(
         modelUrl,
         function(gltf) {
           isLoading = false;
           cachedGLTF = gltf;
-          mountModel(gltf, fallbackSvg, canvas);
+          mountModel(gltf, fallbackMsg, canvas);
         },
         undefined,
         function(err) {
           isLoading = false;
           console.warn('[Observatory 3D] Error al cargar modelo GLB:', err);
-          if (fallbackSvg) fallbackSvg.style.display = 'block';
+          if (fallbackMsg) fallbackMsg.style.display = 'flex';
           if (canvas) canvas.style.display = 'none';
         }
       );
@@ -194,7 +192,7 @@
     renderLoop();
   }
 
-  function mountModel(gltf, fallbackSvg, canvas) {
+  function mountModel(gltf, fallbackMsg, canvas) {
     if (!scene) return;
 
     // Clonar o añadir el objeto a la escena
@@ -221,8 +219,8 @@
     scene.add(pivotGroup);
     modelRoot = pivotGroup;
 
-    // Activar canvas y ocultar fallback SVG suavemente
-    if (fallbackSvg) fallbackSvg.style.display = 'none';
+    // Activar canvas y ocultar mensaje fallback
+    if (fallbackMsg) fallbackMsg.style.display = 'none';
     if (canvas) {
       canvas.style.display = 'block';
       canvas.style.opacity = '1';
