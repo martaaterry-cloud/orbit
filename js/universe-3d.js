@@ -227,11 +227,13 @@
 
   function buildConstellationMesh(c, state) {
     const group = new THREE.Group();
+    const regConfig = REGIONS_CONFIG.find(r => r.col === c.collection);
+    const basePos = regConfig ? regConfig.pos : { x: 0, y: 0, z: REGION_DEPTH[c.collection] || 0 };
     const scale = ((c.size || 120) / 120) * 0.018;
 
-    group.position.x = (c.x - 50) * 0.12;
-    group.position.y = -(c.y - 50) * 0.12;
-    group.position.z = REGION_DEPTH[c.collection] !== undefined ? REGION_DEPTH[c.collection] : 0;
+    group.position.x = basePos.x + (c.x - 50) * 0.075;
+    group.position.y = basePos.y - (c.y - 50) * 0.075;
+    group.position.z = basePos.z;
     group.rotation.z = -THREE.MathUtils.degToRad(c.rot || 0);
 
     const stars = c.stars || [];
@@ -563,6 +565,48 @@
     });
   }
 
+  let animFrameId = null;
+
+  function animateCameraTransition(targetPanX, targetPanY, targetZoomZ, durationMs, onComplete) {
+    if (!universeScene) return;
+    if (animFrameId) {
+      cancelAnimationFrame(animFrameId);
+      animFrameId = null;
+    }
+
+    const startPanX = universeScene.panX;
+    const startPanY = universeScene.panY;
+    const startZoomZ = universeScene.zoomZ;
+    const startTime = performance.now();
+
+    function easeInOutCubic(t) {
+      return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+    }
+
+    function step(now) {
+      const elapsed = now - startTime;
+      const progress = Math.min(1, elapsed / durationMs);
+      const ease = easeInOutCubic(progress);
+
+      universeScene.panX = startPanX + (targetPanX - startPanX) * ease;
+      universeScene.panY = startPanY + (targetPanY - startPanY) * ease;
+      universeScene.zoomZ = startZoomZ + (targetZoomZ - startZoomZ) * ease;
+
+      universeScene.updateCamera();
+      updateLabelsProjection(universeScene);
+      universeScene.invalidate();
+
+      if (progress < 1) {
+        animFrameId = requestAnimationFrame(step);
+      } else {
+        animFrameId = null;
+        if (typeof onComplete === 'function') onComplete();
+      }
+    }
+
+    animFrameId = requestAnimationFrame(step);
+  }
+
   function renderUniverseScene(sceneInstance) {
     if (!sceneInstance) return;
 
@@ -580,45 +624,83 @@
     }
     labelsList = [];
 
-    // Permitir navegación libre y controlada en el Universo general
+    const d = (typeof load === 'function') ? load() : {};
+    const activeRegion = focusedRegionId ? REGIONS_CONFIG.find(r => r.id === focusedRegionId) : null;
+
+    // Actualizar cabecera y botón de regreso
+    const titleEl = document.getElementById('skyHeaderTitle');
+    const exitBtn = document.getElementById('universeExitFocusBtn');
+    if (activeRegion) {
+      if (titleEl) titleEl.textContent = `${activeRegion.name.toUpperCase()} · ${activeRegion.roman}`;
+      if (exitBtn) exitBtn.style.display = 'inline-flex';
+    } else {
+      if (titleEl) titleEl.textContent = 'UNIVERSO';
+      if (exitBtn) exitBtn.style.display = 'none';
+    }
+
+    // Ajustar límites de navegación según estado (vista general o foco)
+    if (activeRegion) {
+      sceneInstance.minPanX = activeRegion.pos.x - 3.5;
+      sceneInstance.maxPanX = activeRegion.pos.x + 3.5;
+      sceneInstance.minPanY = activeRegion.pos.y - 3.5;
+      sceneInstance.maxPanY = activeRegion.pos.y + 3.5;
+      sceneInstance.minZoom = Math.max(3.0, activeRegion.pos.z + 3.5);
+      sceneInstance.maxZoom = activeRegion.pos.z + 18.0;
+    } else {
+      sceneInstance.minPanX = -4.5;
+      sceneInstance.maxPanX = 4.5;
+      sceneInstance.minPanY = -5.0;
+      sceneInstance.maxPanY = 5.0;
+      sceneInstance.minZoom = 8.0;
+      sceneInstance.maxZoom = 24.0;
+    }
     sceneInstance.setPanZoomEnabled(true);
 
-    const d = (typeof load === 'function') ? load() : {};
-
-    // 1. Renderizar Grandes Formaciones Cósmicas 3D de las 4 Regiones
+    // 1. Renderizar Formaciones Cósmicas 3D de las Regiones
     regionsGroup = new THREE.Group();
-    REGIONS_CONFIG.forEach(reg => {
-      const isUnlocked = (d.unlockedRegions && d.unlockedRegions.includes(reg.id)) || reg.id === 'cielo-1';
-      const { group, hitMesh, worldPos } = buildRegionMesh(reg, isUnlocked);
+
+    if (focusedRegionId === null) {
+      // En vista general: mostrar las 4 regiones, registrar sus hitboxes y mostrar sus badges
+      REGIONS_CONFIG.forEach(reg => {
+        const isUnlocked = (d.unlockedRegions && d.unlockedRegions.includes(reg.id)) || reg.id === 'cielo-1';
+        const { group, hitMesh, worldPos } = buildRegionMesh(reg, isUnlocked);
+        regionsGroup.add(group);
+        sceneInstance.registerInteractiveObject(hitMesh);
+
+        // Label discreto HTML proyectado de la región
+        if (labelsContainer) {
+          const badgeEl = document.createElement('div');
+          badgeEl.className = `universe-3d-region-badge ${isUnlocked ? 'unlocked' : 'locked'}`;
+
+          const lockSvg = `<svg class="icon" viewBox="0 0 24 24" style="width:11px; height:11px; stroke:currentColor; stroke-width:2; vertical-align:-1px; margin-right:3px;"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`;
+
+          badgeEl.innerHTML = `${!isUnlocked ? lockSvg : ''}${reg.name} · ${reg.roman}`;
+          labelsContainer.appendChild(badgeEl);
+
+          labelsList.push({
+            id: `region-${reg.id}`,
+            worldPos: worldPos.clone(),
+            element: badgeEl,
+            isRegion: true
+          });
+        }
+      });
+    } else if (activeRegion) {
+      // En vista enfocada: mantener la nebulosa de la región como fondo tenue sin hitboxes ni badges de región
+      const isUnlocked = (d.unlockedRegions && d.unlockedRegions.includes(activeRegion.id)) || activeRegion.id === 'cielo-1';
+      const { group } = buildRegionMesh(activeRegion, isUnlocked);
       regionsGroup.add(group);
-      sceneInstance.registerInteractiveObject(hitMesh);
-
-      // Label discreto HTML proyectado de la región (debajo de la formación)
-      if (labelsContainer) {
-        const badgeEl = document.createElement('div');
-        badgeEl.className = `universe-3d-region-badge ${isUnlocked ? 'unlocked' : 'locked'}`;
-
-        const lockSvg = `<svg class="icon" viewBox="0 0 24 24" style="width:11px; height:11px; stroke:currentColor; stroke-width:2; vertical-align:-1px; margin-right:3px;"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`;
-
-        badgeEl.innerHTML = `${!isUnlocked ? lockSvg : ''}${reg.name} · ${reg.roman}`;
-        labelsContainer.appendChild(badgeEl);
-
-        labelsList.push({
-          id: `region-${reg.id}`,
-          worldPos: worldPos.clone(),
-          element: badgeEl,
-          isRegion: true
-        });
-      }
-    });
+    }
     sceneInstance.add(regionsGroup);
 
-    // 2. En vista general (focusedRegionId === null), las constelaciones se mantienen ocultas
+    // 2. Constelaciones: Mostrar únicamente las de la región activa cuando focusedRegionId !== null
     if (typeof constellationDefs !== 'undefined') {
       constellationsGroup = new THREE.Group();
 
-      if (focusedRegionId !== null) {
-        constellationDefs.forEach(c => {
+      if (focusedRegionId !== null && activeRegion) {
+        const regionConsts = constellationDefs.filter(c => c.collection === activeRegion.col);
+
+        regionConsts.forEach(c => {
           const state = getConstellationState(c, d);
           const { group, hitMesh, worldPos } = buildConstellationMesh(c, state);
           constellationsGroup.add(group);
@@ -732,13 +814,46 @@
     }
   }
 
-  // Preparación para futura fase de enfoque y viaje de cámara a una región
+  // Entrada e inmersión real en una región desbloqueada
   function focusRegion(regionId) {
     const reg = REGIONS_CONFIG.find(r => r.id === regionId);
     if (!reg || !universeScene) return;
-    if (typeof verFichaRegion === 'function') {
-      verFichaRegion(regionId);
+
+    const d = (typeof load === 'function') ? load() : {};
+    const isUnlocked = (d.unlockedRegions && d.unlockedRegions.includes(reg.id)) || reg.id === 'cielo-1';
+
+    if (!isUnlocked) {
+      if (typeof verFichaRegion === 'function') {
+        verFichaRegion(regionId);
+      }
+      return;
     }
+
+    focusedRegionId = reg.id;
+    window.focusedRegionId = reg.id;
+    if (typeof currentSkyId !== 'undefined') {
+      currentSkyId = reg.id;
+    }
+
+    renderUniverseScene(universeScene);
+
+    const targetPanX = reg.pos.x;
+    const targetPanY = reg.pos.y;
+    const targetZoomZ = Math.max(4.5, reg.pos.z + 7.5);
+
+    animateCameraTransition(targetPanX, targetPanY, targetZoomZ, 700);
+  }
+
+  // Retorno suave a la vista general del mapa del Universo
+  function exitRegionFocus() {
+    if (!universeScene) return;
+
+    focusedRegionId = null;
+    window.focusedRegionId = null;
+
+    renderUniverseScene(universeScene);
+
+    animateCameraTransition(0, 0, 17.0, 700);
   }
 
   // Exportar API global para integración con Orbit
@@ -747,6 +862,7 @@
   window.resizeUniverse3D = resizeUniverse3D;
   window.refreshUniverse3D = refreshUniverse3D;
   window.focusRegion = focusRegion;
+  window.exitRegionFocus = exitRegionFocus;
 
 })();
 

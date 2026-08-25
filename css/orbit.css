@@ -544,6 +544,38 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
   z-index: 10;
 }
 
+.universe-exit-focus-btn {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(14, 18, 28, 0.70);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 99px;
+  color: rgba(255, 255, 255, 0.90);
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  padding: 5px 12px;
+  cursor: pointer;
+  pointer-events: auto;
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
+  user-select: none;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.40);
+}
+
+.universe-exit-focus-btn:active {
+  transform: translateY(-50%) scale(0.95);
+  background: rgba(30, 36, 52, 0.90);
+  border-color: rgba(255, 255, 255, 0.30);
+}
+
 .sky-title-header {
   position: absolute;
   top: calc(16px + env(safe-area-inset-top));

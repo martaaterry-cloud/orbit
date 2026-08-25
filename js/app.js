@@ -416,16 +416,19 @@ function renderUniverse(d){
   if(typeof universeWallet!=='undefined'&&universeWallet) universeWallet.textContent=wallet.toFixed(1).replace('.',',');
   if(typeof universeLifetime!=='undefined'&&universeLifetime) universeLifetime.textContent=total.toFixed(1).replace('.',',');
   
-  let currentRegion = skyRegionsList.find(r => r.id === currentSkyId) || skyRegionsList[0];
+  let currentRegion = skyRegionsList.find(r => r.id === (window.focusedRegionId || currentSkyId)) || skyRegionsList[0];
   let isSkyUnlocked = (d.unlockedRegions && d.unlockedRegions.includes(currentRegion.id)) || (currentRegion.id === 'cielo-1');
 
-  // Update top active sky title (UNIVERSO en vista general)
+  // Update top active sky title & exit focus button (UNIVERSO en vista general)
   let titleEl = document.getElementById('skyHeaderTitle');
+  let exitBtn = document.getElementById('universeExitFocusBtn');
   if(titleEl) {
     if (window.focusedRegionId) {
-      titleEl.innerHTML = isSkyUnlocked ? `${esc(currentRegion.name)} · ${esc(currentRegion.roman)}` : `<span style="display:inline-flex; align-items:center; gap:5px;">${esc(currentRegion.name)} · ${esc(currentRegion.roman)} <svg class="icon" viewBox="0 0 24 24" style="width:13px; height:13px; stroke:currentColor;"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>`;
+      titleEl.innerHTML = isSkyUnlocked ? `${esc(currentRegion.name.toUpperCase())} · ${esc(currentRegion.roman)}` : `<span style="display:inline-flex; align-items:center; gap:5px;">${esc(currentRegion.name.toUpperCase())} · ${esc(currentRegion.roman)} <svg class="icon" viewBox="0 0 24 24" style="width:13px; height:13px; stroke:currentColor;"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>`;
+      if (exitBtn) exitBtn.style.display = 'inline-flex';
     } else {
       titleEl.textContent = 'UNIVERSO';
+      if (exitBtn) exitBtn.style.display = 'none';
     }
   }
 
@@ -1063,7 +1066,7 @@ function verFichaRegion(regionId){
   if (actionsEl) {
     if (isUnlocked) {
       actionsEl.innerHTML = `
-        <button type="button" class="btn btn-main btn-wide" onclick="closeModal('universeRegionModal'); if(typeof toast==='function') toast('Sector cartografiado: usa pan y zoom para explorar');">
+        <button type="button" class="btn btn-main btn-wide" onclick="closeModal('universeRegionModal'); if(typeof window.focusRegion==='function'){ window.focusRegion('${esc(reg.id)}'); }">
           Explorar región
         </button>
       `;
