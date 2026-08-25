@@ -29,6 +29,8 @@ function showPage(id){
   let nav=document.getElementById('nav-'+id);if(nav)nav.classList.add('active');
   let bottomNav=document.querySelector('.bottom');
   if(bottomNav){bottomNav.style.display=(id==='universe'||id==='settings'||id==='observatory')?'none':'grid'}
+  let headerEl=document.querySelector('header');
+  if(headerEl){headerEl.style.display=(id==='universe'||id==='settings'||id==='observatory')?'none':'flex'}
   if(id !== 'settings' && id !== 'universe' && id !== 'observatory') lastActivePage = id;
   currentActivePage = id;
   window.scrollTo({top:0,behavior:'smooth'});
@@ -836,28 +838,6 @@ function renderUniverse(d){
   let currentLvl = d.observatoryLevel !== undefined ? d.observatoryLevel : (d.shipLevel || 0);
   let nextLvl = observatoryLevels.find(l => l.level === currentLvl + 1);
 
-  // Escena 3D Hero Protagonista del Observatorio Terrestre
-  let observatoryHeroHtml = `
-    <div class="observatory-hero-container" id="observatoryHeroScene">
-      <div class="observatory-sky-backdrop"></div>
-      <div class="observatory-nebula-glow"></div>
-      <div class="observatory-mountains"></div>
-      
-      <!-- Canvas Three.js Real para el Modelo 3D -->
-      <canvas id="observatoryCanvas" class="observatory-3d-canvas"></canvas>
-
-      <!-- Mensaje Fallback si WebGL o el modelo 3D no están disponibles -->
-      <div id="observatoryFallbackMessage" class="observatory-fallback-msg" style="display:none;">
-        <span style="font-size:24px; opacity:0.8;">🔭</span>
-        <p style="margin:0; font-size:12px; color:#b8a9c4;">Vista 3D no disponible</p>
-      </div>
-
-      <div class="observatory-rotate-hint">↔ Arrastra para explorar en 3D</div>
-    </div>
-  `;
-  let obsLevelEl = document.getElementById('observatoryLevelStatus') || document.getElementById('shipLevelStatus');
-  if (obsLevelEl) obsLevelEl.innerHTML = observatoryHeroHtml;
-
   // Inspector de Componentes Modulares del Observatorio
   let activeMod = window.activeObservatoryModuleId || 'telescope';
   let chipsHtml = `
@@ -1287,14 +1267,23 @@ function selectObservatoryModule(moduleId) {
   renderObservatoryDetailCard(d, moduleId);
 }
 
-// Aliases para compatibilidad
-function setShipTab(tab){ setObservatoryTab(tab === 'nave' ? 'observatorio' : tab); }
-function upgradeShip(level, cost){ upgradeObservatory(level, cost); }
-function openShipModal(){ openObservatoryModal(); }
+// Controles del Observatorio
+function openObservatoryUpgradesSheet(){
+  openModal('observatoryUpgradesModal');
+}
+
+function openObservatoryRegionsSheet(){
+  openModal('observatoryRegionsModal');
+}
 
 function openObservatoryModal(){
   showPage('observatory');
 }
+
+// Aliases para compatibilidad
+function setShipTab(tab){ setObservatoryTab(tab === 'nave' ? 'observatorio' : tab); }
+function upgradeShip(level, cost){ upgradeObservatory(level, cost); }
+function openShipModal(){ openObservatoryModal(); }
 
 function unlockRegion(id, cost){
   let d = load();

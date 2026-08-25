@@ -1,5 +1,5 @@
 // Service Worker de Orbit - Estrategia Network-First para HTML y Cache con invalidación de versión
-const CACHE_VERSION = 'orbit-v1.3.23';
+const CACHE_VERSION = 'orbit-v1.3.24';
 const STATIC_ASSETS = [
   './',
   './index.html',
@@ -7,21 +7,21 @@ const STATIC_ASSETS = [
   './apple-touch-icon.png',
   './icon-192.png',
   './icon-512.png',
-  './css/orbit.css?v=1.3.23',
-  './js/vendor/three.min.js?v=1.3.23',
-  './js/vendor/GLTFLoader.js?v=1.3.23',
-  './js/observatory-3d.js?v=1.3.23',
-  './assets/models/observatory.glb?v=1.3.23',
-  './js/constellation-utils.js?v=1.3.23',
-  './data/templates.js?v=1.3.23',
-  './data/constellations.js?v=1.3.23',
-  './js/storage.js?v=1.3.23',
-  './js/supabase.js?v=1.3.23',
-  './js/stars.js?v=1.3.23',
-  './js/streak.js?v=1.3.23',
-  './js/journal.js?v=1.3.23',
-  './js/archive.js?v=1.3.23',
-  './js/app.js?v=1.3.23'
+  './css/orbit.css?v=1.3.24',
+  './js/vendor/three.min.js?v=1.3.24',
+  './js/vendor/GLTFLoader.js?v=1.3.24',
+  './js/observatory-3d.js?v=1.3.24',
+  './assets/models/observatory.glb?v=1.3.24',
+  './js/constellation-utils.js?v=1.3.24',
+  './data/templates.js?v=1.3.24',
+  './data/constellations.js?v=1.3.24',
+  './js/storage.js?v=1.3.24',
+  './js/supabase.js?v=1.3.24',
+  './js/stars.js?v=1.3.24',
+  './js/streak.js?v=1.3.24',
+  './js/journal.js?v=1.3.24',
+  './js/archive.js?v=1.3.24',
+  './js/app.js?v=1.3.24'
 ];
 
 

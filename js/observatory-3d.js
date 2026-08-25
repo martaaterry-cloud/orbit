@@ -1,5 +1,5 @@
 // ==========================================================================
-// ORBIT · Controlador de Escena 3D Real para el Observatorio (Three.js)
+// ORBIT · Controlador de Escena 3D Inmersiva para el Observatorio (Three.js)
 // ==========================================================================
 
 (function() {
@@ -11,9 +11,9 @@
   let isDragging = false;
   let startX = 0, startY = 0;
   let targetRotY = 0.45;
-  let targetRotX = 0.15;
+  let targetRotX = 0.12;
   let currentRotY = 0.45;
-  let currentRotX = 0.15;
+  let currentRotX = 0.12;
   let autoRotate = true;
   let idleTimer = null;
   let cachedGLTF = null;
@@ -35,8 +35,8 @@
     if (!renderer || !camera) return;
     const container = document.getElementById('observatoryHeroScene');
     if (!container) return;
-    const width = container.clientWidth || 300;
-    const height = container.clientHeight || 275;
+    const width = container.clientWidth || window.innerWidth || 360;
+    const height = container.clientHeight || window.innerHeight || 600;
 
     camera.aspect = width / height;
     camera.updateProjectionMatrix();
@@ -47,7 +47,7 @@
     if (!renderer || !scene || !camera) return;
 
     if (autoRotate && !isDragging) {
-      targetRotY += 0.003;
+      targetRotY += 0.0025;
     }
 
     // Interpolación suave (lerp)
@@ -68,6 +68,8 @@
     container._has3DPointerListeners = true;
 
     container.addEventListener('pointerdown', (e) => {
+      // Ignorar si el puntero toca botones o modales
+      if (e.target.closest && (e.target.closest('button') || e.target.closest('.modal') || e.target.closest('.observatory-bottom-dock'))) return;
       isDragging = true;
       autoRotate = false;
       clearTimeout(idleTimer);
@@ -84,7 +86,7 @@
       startY = e.clientY;
 
       targetRotY += dx * 0.012;
-      targetRotX = Math.max(-0.35, Math.min(0.55, targetRotX + dy * 0.008));
+      targetRotX = Math.max(-0.30, Math.min(0.50, targetRotX + dy * 0.008));
     });
 
     const endDrag = (e) => {
@@ -101,6 +103,8 @@
 
     container.addEventListener('pointerup', endDrag);
     container.addEventListener('pointercancel', endDrag);
+
+    window.addEventListener('resize', resizeRenderer);
   }
 
   function initObservatory3D() {
@@ -130,10 +134,10 @@
     // 3. Crear escena Three.js
     scene = new THREE.Scene();
 
-    const width = container.clientWidth || 300;
-    const height = container.clientHeight || 275;
-    camera = new THREE.PerspectiveCamera(40, width / height, 0.1, 1000);
-    camera.position.set(0, 0.5, 6.5);
+    const width = container.clientWidth || window.innerWidth || 360;
+    const height = container.clientHeight || window.innerHeight || 600;
+    camera = new THREE.PerspectiveCamera(42, width / height, 0.1, 1000);
+    camera.position.set(0, 0.45, 5.0);
     camera.lookAt(0, 0, 0);
 
     renderer = new THREE.WebGLRenderer({
@@ -147,19 +151,19 @@
     renderer.setSize(width, height, false);
     renderer.outputEncoding = THREE.sRGBEncoding;
 
-    // 4. Iluminación armónica con la estética cósmica de Orbit
-    const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
+    // 4. Iluminación armónica con la estética nocturna terrestre de Orbit
+    const ambientLight = new THREE.AmbientLight(0xffffff, 1.35);
     scene.add(ambientLight);
 
-    const hemiLight = new THREE.HemisphereLight(0xffe4ea, 0x1f1435, 0.9);
+    const hemiLight = new THREE.HemisphereLight(0xffe4ea, 0x180f2d, 1.1);
     scene.add(hemiLight);
 
-    const dirLight = new THREE.DirectionalLight(0xfff6ea, 1.6);
-    dirLight.position.set(4, 8, 5);
+    const dirLight = new THREE.DirectionalLight(0xfff5ea, 1.7);
+    dirLight.position.set(4, 9, 6);
     scene.add(dirLight);
 
-    const rimLight = new THREE.DirectionalLight(0xfcc2cd, 1.1);
-    rimLight.position.set(-5, 3, -4);
+    const rimLight = new THREE.DirectionalLight(0xfcc2cd, 1.3);
+    rimLight.position.set(-5, 4, -4);
     scene.add(rimLight);
 
     // 5. Cargar modelo GLB (o reusar cache en memoria)
@@ -168,7 +172,7 @@
     } else if (!isLoading) {
       isLoading = true;
       const loader = new THREE.GLTFLoader();
-      const modelUrl = 'assets/models/observatory.glb?v=1.3.23';
+      const modelUrl = 'assets/models/observatory.glb?v=1.3.24';
 
       loader.load(
         modelUrl,
@@ -204,13 +208,13 @@
     const size = box.getSize(new THREE.Vector3());
 
     modelRoot.position.x = -center.x;
-    modelRoot.position.y = -center.y - 0.15;
+    modelRoot.position.y = -center.y - 0.25;
     modelRoot.position.z = -center.z;
 
-    // Escalar uniformemente para encajar en el viewport del hero
+    // Escalar para ocupar el 65–75% de la vista visual central
     const maxDim = Math.max(size.x, size.y, size.z);
     if (maxDim > 0) {
-      const targetScale = 3.6 / maxDim;
+      const targetScale = 4.8 / maxDim;
       modelRoot.scale.setScalar(targetScale);
     }
 
