@@ -10,12 +10,12 @@
   let isLoading = false;
   let isDragging = false;
   let startX = 0, startY = 0;
-  let targetRotY = 0.45;
-  let targetRotX = 0.12;
-  let currentRotY = 0.45;
-  let currentRotX = 0.12;
-  let autoRotate = true;
-  let idleTimer = null;
+
+  // Parámetros de Cámara Orbital Manual
+  let orbitRadius = 5.0;
+  let orbitAzimuth = 0.45;
+  let orbitElevation = 0.12;
+
   let cachedGLTF = null;
 
   // Comprobar soporte de WebGL de forma segura
@@ -29,6 +29,14 @@
     } catch (e) {
       return false;
     }
+  }
+
+  function updateCameraTransform() {
+    if (!camera) return;
+    camera.position.x = orbitRadius * Math.cos(orbitElevation) * Math.sin(orbitAzimuth);
+    camera.position.y = orbitRadius * Math.sin(orbitElevation);
+    camera.position.z = orbitRadius * Math.cos(orbitElevation) * Math.cos(orbitAzimuth);
+    camera.lookAt(0, 0, 0);
   }
 
   function resizeRenderer() {
@@ -46,19 +54,6 @@
   function renderLoop() {
     if (!renderer || !scene || !camera) return;
 
-    if (autoRotate && !isDragging) {
-      targetRotY += 0.0025;
-    }
-
-    // Interpolación suave (lerp)
-    currentRotY += (targetRotY - currentRotY) * 0.08;
-    currentRotX += (targetRotX - currentRotX) * 0.08;
-
-    if (modelRoot) {
-      modelRoot.rotation.y = currentRotY;
-      modelRoot.rotation.x = currentRotX;
-    }
-
     renderer.render(scene, camera);
     animFrameId = requestAnimationFrame(renderLoop);
   }
@@ -71,8 +66,6 @@
       // Ignorar si el puntero toca botones o modales
       if (e.target.closest && (e.target.closest('button') || e.target.closest('.modal') || e.target.closest('.observatory-bottom-dock'))) return;
       isDragging = true;
-      autoRotate = false;
-      clearTimeout(idleTimer);
       startX = e.clientX;
       startY = e.clientY;
       try { container.setPointerCapture(e.pointerId); } catch (_) {}
@@ -85,20 +78,18 @@
       startX = e.clientX;
       startY = e.clientY;
 
-      targetRotY += dx * 0.012;
-      targetRotX = Math.max(-0.30, Math.min(0.50, targetRotX + dy * 0.008));
+      // Arrastre horizontal: orbitar alrededor del eje Y
+      // Arrastre vertical: elevación limitada entre 0.04 rad (~2°) y 0.55 rad (~31°)
+      orbitAzimuth -= dx * 0.008;
+      orbitElevation = Math.max(0.04, Math.min(0.55, orbitElevation + dy * 0.006));
+
+      updateCameraTransform();
     });
 
     const endDrag = (e) => {
       if (!isDragging) return;
       isDragging = false;
       try { container.releasePointerCapture(e.pointerId); } catch (_) {}
-      
-      // Reactivar rotación automática tras 3.5s de inactividad
-      clearTimeout(idleTimer);
-      idleTimer = setTimeout(() => {
-        autoRotate = true;
-      }, 3500);
     };
 
     container.addEventListener('pointerup', endDrag);
@@ -137,8 +128,7 @@
     const width = container.clientWidth || window.innerWidth || 360;
     const height = container.clientHeight || window.innerHeight || 600;
     camera = new THREE.PerspectiveCamera(42, width / height, 0.1, 1000);
-    camera.position.set(0, 0.45, 5.0);
-    camera.lookAt(0, 0, 0);
+    updateCameraTransform();
 
     renderer = new THREE.WebGLRenderer({
       canvas: canvas,
@@ -172,7 +162,7 @@
     } else if (!isLoading) {
       isLoading = true;
       const loader = new THREE.GLTFLoader();
-      const modelUrl = 'assets/models/observatory.glb?v=1.3.26';
+      const modelUrl = 'assets/models/observatory.glb?v=1.3.27';
 
       loader.load(
         modelUrl,
@@ -209,7 +199,7 @@
     const maxDim = Math.max(size.x, size.y, size.z);
 
     if (maxDim > 0) {
-      const targetScale = 2.8 / maxDim;
+      const targetScale = 2.2 / maxDim;
       modelRoot.scale.setScalar(targetScale);
 
       modelRoot.position.x = -center.x * targetScale;
