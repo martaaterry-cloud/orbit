@@ -538,21 +538,42 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
   inset: 0;
   width: 100vw;
   height: 100vh;
+  height: 100dvh;
   background: #030508;
   overflow: hidden;
   user-select: none;
   z-index: 10;
 }
 
-.universe-exit-focus-btn {
+.sky-title-header {
   position: absolute;
-  left: 16px;
-  top: 50%;
-  transform: translateY(-50%);
+  top: calc(12px + env(safe-area-inset-top));
+  left: 0;
+  right: 0;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  pointer-events: none;
+  z-index: 20;
+}
+
+.sky-title-top-row {
+  width: 100%;
+  display: flex;
+  justify-content: flex-start;
+  min-height: 0;
+  pointer-events: none;
+}
+
+.universe-exit-focus-btn {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: rgba(14, 18, 28, 0.70);
+  background: rgba(14, 18, 28, 0.75);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid rgba(255, 255, 255, 0.16);
@@ -571,24 +592,16 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
 }
 
 .universe-exit-focus-btn:active {
-  transform: translateY(-50%) scale(0.95);
+  transform: scale(0.95);
   background: rgba(30, 36, 52, 0.90);
   border-color: rgba(255, 255, 255, 0.30);
 }
 
-.sky-title-header {
-  position: absolute;
-  top: calc(16px + env(safe-area-inset-top));
-  left: 0;
-  right: 0;
-  width: 100%;
-  box-sizing: border-box;
-  padding: 0 16px;
+.sky-title-main-row {
   display: flex;
   justify-content: center;
   align-items: center;
   pointer-events: none;
-  z-index: 20;
 }
 
 .sky-title-text {
@@ -645,7 +658,7 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
 
 .sky-toolbar {
   position: absolute;
-  bottom: calc(16px + env(safe-area-inset-bottom));
+  bottom: max(16px, calc(env(safe-area-inset-bottom) + 12px));
   left: 50%;
   transform: translateX(-50%);
   display: flex;

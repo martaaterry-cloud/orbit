@@ -259,14 +259,14 @@
       const starGeo = new THREE.BufferGeometry();
       starGeo.setAttribute('position', new THREE.Float32BufferAttribute(starPositions, 3));
 
-      let starColor = 0x4a5468;
-      let starSize = 0.32;
-      let starOpacity = 0.35;
+      let starColor = 0x3d4856;
+      let starSize = 0.28;
+      let starOpacity = 0.22;
 
       if (state.status === 'claimed') {
         starColor = 0xffffff;
         starSize = 0.58;
-        starOpacity = 0.95;
+        starOpacity = 0.98;
       } else if (state.status === 'discovered') {
         starColor = 0xffebd6;
         starSize = 0.50;
@@ -292,7 +292,16 @@
     const edges = c.edges || [];
     const linePositions = [];
 
-    edges.forEach(([a, b]) => {
+    // Progresión real de las aristas según el estado
+    let activeEdges = [];
+    if (state.status === 'claimed' || state.status === 'discovered') {
+      activeEdges = edges;
+    } else if (state.status === 'in-progress') {
+      const visibleEdgeCount = Math.floor((state.progress || 0) * edges.length);
+      activeEdges = edges.slice(0, visibleEdgeCount);
+    } // Para 'locked', activeEdges permanece vacío ([]), 0 aristas visibles
+
+    activeEdges.forEach(([a, b]) => {
       let pA = starCoordsById.get(a);
       let pB = starCoordsById.get(b);
 
@@ -308,18 +317,18 @@
       const lineGeo = new THREE.BufferGeometry();
       lineGeo.setAttribute('position', new THREE.Float32BufferAttribute(linePositions, 3));
 
-      let lineColor = 0x222a36;
-      let lineOpacity = 0.12;
+      let lineColor = 0xded4c2;
+      let lineOpacity = 0.35;
 
       if (state.status === 'claimed') {
         lineColor = 0xffffff;
-        lineOpacity = 0.65;
+        lineOpacity = 0.70;
       } else if (state.status === 'discovered') {
         lineColor = 0xffe2c4;
-        lineOpacity = 0.45;
+        lineOpacity = 0.50;
       } else if (state.status === 'in-progress') {
         lineColor = 0xded4c2;
-        lineOpacity = 0.30;
+        lineOpacity = 0.35;
       }
 
       const lineMat = new THREE.LineBasicMaterial({
@@ -554,10 +563,11 @@
       const marginX = 24;
       screenX = Math.max(marginX, Math.min(width - marginX, screenX));
 
-      // Margen vertical de seguridad (debajo de UNIVERSO y encima de la toolbar inferior)
-      const minTop = 56;
+      // Margen vertical de seguridad (debajo de cabecera y encima de toolbar)
+      const minTop = 70;
       const maxTop = height - 72;
-      screenY = Math.max(minTop, Math.min(maxTop, screenY + (item.isRegion ? 36 : 14)));
+      const offsetTop = item.isRegion ? 36 : 16;
+      screenY = Math.max(minTop, Math.min(maxTop, screenY + offsetTop));
 
       item.element.style.display = 'flex';
       item.element.style.left = `${Math.round(screenX)}px`;
@@ -685,12 +695,8 @@
           });
         }
       });
-    } else if (activeRegion) {
-      // En vista enfocada: mantener la nebulosa de la región como fondo tenue sin hitboxes ni badges de región
-      const isUnlocked = (d.unlockedRegions && d.unlockedRegions.includes(activeRegion.id)) || activeRegion.id === 'cielo-1';
-      const { group } = buildRegionMesh(activeRegion, isUnlocked);
-      regionsGroup.add(group);
     }
+    // En vista enfocada, regionsGroup queda completamente limpio para no ensuciar las constelaciones
     sceneInstance.add(regionsGroup);
 
     // 2. Constelaciones: Mostrar únicamente las de la región activa cuando focusedRegionId !== null
