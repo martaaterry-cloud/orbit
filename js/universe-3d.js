@@ -120,14 +120,21 @@
     // 1. Puntos de estrellas locales
     const stars = c.stars || [];
     const starPositions = [];
-    const starCoordsMap = [];
+    const starCoordsById = new Map();
+    const starCoordsByIndex = [];
 
-    stars.forEach(s => {
+    stars.forEach((s, idx) => {
       const lx = (s.x - 50) * scale;
       const ly = -(s.y - 50) * scale;
       const lz = 0;
       starPositions.push(lx, ly, lz);
-      starCoordsMap.push([lx, ly, lz]);
+      const coord = [lx, ly, lz];
+      starCoordsByIndex.push(coord);
+      if (s.id) {
+        starCoordsById.set(s.id, coord);
+      }
+      starCoordsById.set(idx, coord);
+      starCoordsById.set(String(idx), coord);
     });
 
     if (starPositions.length > 0) {
@@ -166,9 +173,13 @@
     const edges = c.edges || [];
     const linePositions = [];
 
-    edges.forEach(([idxA, idxB]) => {
-      const pA = starCoordsMap[idxA];
-      const pB = starCoordsMap[idxB];
+    edges.forEach(([a, b]) => {
+      let pA = starCoordsById.get(a);
+      let pB = starCoordsById.get(b);
+
+      if (!pA && typeof a === 'number') pA = starCoordsByIndex[a];
+      if (!pB && typeof b === 'number') pB = starCoordsByIndex[b];
+
       if (pA && pB) {
         linePositions.push(pA[0], pA[1], pA[2], pB[0], pB[1], pB[2]);
       }
