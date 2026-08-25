@@ -2481,6 +2481,127 @@ async function executeRestoreCloudHistory(historyId, metaSummary){
   toast('Restaurando versión…');
   await restoreFromCloudHistory(historyId);
 }
+
+function openCloudConflictModal() {
+  openModal('cloudConflictModal');
+  renderCloudConflictModal();
+}
+
+function renderCloudConflictModal() {
+  const container = document.getElementById('cloudConflictComparison');
+  if (!container) return;
+
+  const conflict = typeof getCurrentSyncConflict === 'function' ? getCurrentSyncConflict() : null;
+  if (!conflict) {
+    container.innerHTML = '<div style="text-align:center; padding:16px; font-size:12px; color:var(--muted);">No hay información de diferencias disponible en este momento.</div>';
+    return;
+  }
+
+  const localM = conflict.localMetrics || {};
+  const cloudM = conflict.cloudMetrics || {};
+
+  // Formateo de fechas comprensibles
+  let localTimeStr = 'Este dispositivo';
+  if (conflict.localUpdatedAt) {
+    try {
+      const dt = new Date(conflict.localUpdatedAt);
+      localTimeStr = dt.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' }) + ' · ' + dt.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+    } catch(e){}
+  }
+
+  let cloudTimeStr = 'Desconocido';
+  if (conflict.cloudUpdatedAt) {
+    try {
+      const dt = new Date(conflict.cloudUpdatedAt);
+      cloudTimeStr = dt.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' }) + ' · ' + dt.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+    } catch(e){}
+  }
+
+  // Evaluación no vinculante de volumen / completitud
+  const localScore = (localM.goodThingsCount || 0) * 2 + (localM.journalCount || 0) * 2 + (localM.checkinsCount || 0) + (localM.lifetimeStars || 0);
+  const cloudScore = (cloudM.goodThingsCount || 0) * 2 + (cloudM.journalCount || 0) * 2 + (cloudM.checkinsCount || 0) + (cloudM.lifetimeStars || 0);
+
+  const localMore = localScore > (cloudScore + 1.5);
+  const cloudMore = cloudScore > (localScore + 1.5);
+
+  // Lista de métricas a comparar
+  const metricsList = [
+    { label: 'Recuerdos', local: localM.goodThingsCount || 0, cloud: cloudM.goodThingsCount || 0 },
+    { label: 'Diario', local: localM.journalCount || 0, cloud: cloudM.journalCount || 0 },
+    { label: 'Check-ins', local: localM.checkinsCount || 0, cloud: cloudM.checkinsCount || 0 },
+    { label: 'Impulsos', local: localM.urgesCount || 0, cloud: cloudM.urgesCount || 0, showIfZero: false },
+    { label: 'Tropiezos', local: localM.slipsCount || 0, cloud: cloudM.slipsCount || 0, showIfZero: false },
+    { label: 'Estrellas totales', local: Number(localM.lifetimeStars || 0).toFixed(1).replace('.', ','), cloud: Number(cloudM.lifetimeStars || 0).toFixed(1).replace('.', ',') },
+    { label: 'Hitos de racha', local: localM.milestonesCount || 0, cloud: cloudM.milestonesCount || 0 },
+    { label: 'Regiones desbloqueadas', local: localM.unlockedRegionsCount || 1, cloud: cloudM.unlockedRegionsCount || 1 }
+  ];
+
+  const rowsHtml = metricsList
+    .filter(m => m.showIfZero !== false || (m.local > 0 || m.cloud > 0))
+    .map(m => `
+      <tr>
+        <td>${esc(m.label)}</td>
+        <td><strong>${esc(String(m.local))}</strong></td>
+        <td><strong>${esc(String(m.cloud))}</strong></td>
+      </tr>
+    `).join('');
+
+  container.innerHTML = `
+    <div class="conflict-table-card">
+      <table class="conflict-comparison-table">
+        <thead>
+          <tr>
+            <th>Concepto</th>
+            <th>
+              <div class="conflict-header-label">
+                <span>Este dispositivo</span>
+                ${localMore ? '<span class="conflict-more-info-tag">✦ Más contenido</span>' : ''}
+              </div>
+            </th>
+            <th>
+              <div class="conflict-header-label">
+                <span>Nube</span>
+                ${cloudMore ? '<span class="conflict-more-info-tag">✦ Más contenido</span>' : ''}
+              </div>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rowsHtml}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="conflict-timestamps-box">
+      <div class="conflict-time-row">
+        <span class="conflict-time-label">Último cambio en este dispositivo:</span>
+        <span class="conflict-time-val">${esc(localTimeStr)}</span>
+      </div>
+      <div class="conflict-time-row">
+        <span class="conflict-time-label">Último cambio en la nube:</span>
+        <span class="conflict-time-val">${esc(cloudTimeStr)}</span>
+      </div>
+    </div>
+  `;
+}
+
+async function handleResolveConflictCloud() {
+  const ok = confirm('¿Deseas adoptar la versión guardada en la NUBE?\n\nLos datos de este dispositivo se sustituirán por la copia de la nube. Orbit guardará previamente una copia de seguridad en este dispositivo.');
+  if (!ok) return;
+
+  if (typeof resolveConflictUsingCloud !== 'function') return;
+  toast('Aplicando versión de la nube…');
+  await resolveConflictUsingCloud();
+}
+
+async function handleResolveConflictLocal() {
+  const ok = confirm('⚠️ ¿Deseas conservar la versión de ESTE DISPOSITIVO y actualizar la nube?\n\nEsta acción sobrescribirá la copia en la nube con los datos que ves ahora en pantalla. Se crearán copias de seguridad previas tanto en la nube como en local.');
+  if (!ok) return;
+
+  if (typeof resolveConflictUsingLocal !== 'function') return;
+  toast('Actualizando nube con este dispositivo…');
+  await resolveConflictUsingLocal();
+}
 function clearActiveFormInputs() {
   const ids = [
     'slipNote', 'needToday', 'forMeToday', 'gratitude1', 'gratitude2', 'gratitude3',

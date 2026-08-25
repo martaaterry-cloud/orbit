@@ -72,10 +72,15 @@ let foregroundSyncTimer = null;
 let isSyncing = false;
 let pendingSync = false;
 let hasConflict = false;
+let currentSyncConflict = null;
 let lastCloudSyncSuccessTime = null;
 let lastCloudBackupTime = null;
 let syncProtectionReason = '';
 let currentSyncState = 'synced';
+
+function getCurrentSyncConflict() {
+  return currentSyncConflict;
+}
 
 if (typeof window !== 'undefined') {
   window.isApplyingCloudState = false;
@@ -915,6 +920,19 @@ function safeApplyCloudState(cloudData, cloudTimer, cloudUpdatedAt, userId, opti
       console.warn('[SYNC GUARD] Reducción sospechosa detectada de NUBE a LOCAL. Bloqueando descarga automática.', reductionCheck.reasons);
       hasConflict = true;
       syncProtectionReason = reductionCheck.reasons.join(' ');
+      currentSyncConflict = {
+        type: 'suspicious_reduction_cloud_to_local',
+        reason: syncProtectionReason,
+        localData: currentLocalData,
+        localTimer: currentLocalTimer,
+        localUpdatedAt: localStorage.getItem(localUpKey) || null,
+        cloudData: cloudData,
+        cloudTimer: cloudTimer,
+        cloudUpdatedAt: cloudUpdatedAt,
+        localMetrics: typeof getOrbitStateMetrics === 'function' ? getOrbitStateMetrics(currentLocalData) : {},
+        cloudMetrics: typeof getOrbitStateMetrics === 'function' ? getOrbitStateMetrics(cloudData) : {},
+        detectedAt: Date.now()
+      };
       updateSyncStatus('conflict', 'Cambios pendientes de revisar');
       return {
         ok: false,
@@ -944,6 +962,7 @@ function safeApplyCloudState(cloudData, cloudTimer, cloudUpdatedAt, userId, opti
     }
     localStorage.setItem(unsyncKey, 'false');
     hasConflict = false;
+    currentSyncConflict = null;
     syncProtectionReason = '';
     lastCloudSyncSuccessTime = Date.now();
 
@@ -1009,12 +1028,20 @@ async function autoSyncOnInit(session) {
     }
 
     const v9Key = typeof getUserStorageKey === 'function' ? getUserStorageKey('orbitV9', uid) : `orbitV9:${uid}`;
+    const timerKey = typeof getUserStorageKey === 'function' ? getUserStorageKey('orbitTimer', uid) : `orbitTimer:${uid}`;
+    const localUpKey = typeof getUserStorageKey === 'function' ? getUserStorageKey('orbitLocalUpdatedAt', uid) : `orbitLocalUpdatedAt:${uid}`;
     const cloudUpKey = typeof getUserStorageKey === 'function' ? getUserStorageKey('orbitLastCloudUpdatedAt', uid) : `orbitLastCloudUpdatedAt:${uid}`;
     const unsyncKey = typeof getUserStorageKey === 'function' ? getUserStorageKey('orbitHasUnsyncedChanges', uid) : `orbitHasUnsyncedChanges:${uid}`;
 
     let localData = null;
     try { localData = JSON.parse(localStorage.getItem(v9Key)); } catch (e) {}
     if (!localData && typeof load === 'function') localData = load(uid);
+
+    let localTimer = null;
+    try {
+      const rawTimer = localStorage.getItem(timerKey);
+      if (rawTimer) localTimer = JSON.parse(rawTimer);
+    } catch (e) {}
 
     const isLocalVirgin = typeof isOrbitStateVirginOrEmpty === 'function'
       ? isOrbitStateVirginOrEmpty(localData)
@@ -1048,6 +1075,7 @@ async function autoSyncOnInit(session) {
     if (isLocalVirgin && !hasRealCloudData) {
       localStorage.setItem(unsyncKey, 'false');
       hasConflict = false;
+      currentSyncConflict = null;
       syncProtectionReason = '';
       updateSyncStatus('synced');
       return { ok: true, status: 'synced_virgin' };
@@ -1065,6 +1093,19 @@ async function autoSyncOnInit(session) {
     if (isCloudNewer && hasUnsynced && !isLocalVirgin) {
       hasConflict = true;
       syncProtectionReason = 'La versión en la nube contiene cambios remotos y tienes cambios locales sin sincronizar.';
+      currentSyncConflict = {
+        type: 'remote_newer_with_local_unsynced',
+        reason: syncProtectionReason,
+        localData: localData,
+        localTimer: localTimer,
+        localUpdatedAt: localStorage.getItem(localUpKey) || null,
+        cloudData: cloudRow.orbit_data,
+        cloudTimer: cloudRow.orbit_timer,
+        cloudUpdatedAt: cloudUpdatedAt,
+        localMetrics: typeof getOrbitStateMetrics === 'function' ? getOrbitStateMetrics(localData) : {},
+        cloudMetrics: typeof getOrbitStateMetrics === 'function' ? getOrbitStateMetrics(cloudRow.orbit_data) : {},
+        detectedAt: Date.now()
+      };
       updateSyncStatus('conflict', 'Cambios pendientes de revisar');
       return { ok: false, status: 'conflict', reason: 'remote_newer_with_local_unsynced' };
     }
@@ -1087,6 +1128,7 @@ async function autoSyncOnInit(session) {
     localStorage.setItem(cloudUpKey, cloudUpdatedAt);
     localStorage.setItem(unsyncKey, 'false');
     hasConflict = false;
+    currentSyncConflict = null;
     syncProtectionReason = '';
     lastCloudSyncSuccessTime = Date.now();
     updateSyncStatus('synced');
@@ -1208,6 +1250,19 @@ async function performAutoUpload() {
         console.warn('[SYNC GUARD] Reducción sospechosa detectada de LOCAL a NUBE. Bloqueando subida automática.', reductionCheck.reasons);
         hasConflict = true;
         syncProtectionReason = reductionCheck.reasons.join(' ');
+        currentSyncConflict = {
+          type: 'suspicious_reduction_local_to_cloud',
+          reason: syncProtectionReason,
+          localData: orbitData,
+          localTimer: orbitTimer,
+          localUpdatedAt: localStorage.getItem(localUpKey) || null,
+          cloudData: cloudCheck.orbit_data,
+          cloudTimer: cloudCheck.orbit_timer,
+          cloudUpdatedAt: cloudCheck.updated_at,
+          localMetrics: typeof getOrbitStateMetrics === 'function' ? getOrbitStateMetrics(orbitData) : {},
+          cloudMetrics: typeof getOrbitStateMetrics === 'function' ? getOrbitStateMetrics(cloudCheck.orbit_data) : {},
+          detectedAt: Date.now()
+        };
         isSyncing = false;
         updateSyncStatus('conflict', 'Cambios pendientes de revisar');
         return {
@@ -1229,6 +1284,19 @@ async function performAutoUpload() {
       if (lastKnownCloudTime > 0 && cloudTime > (lastKnownCloudTime + 1000) && hasUnsynced && !isLocalVirgin) {
         hasConflict = true;
         syncProtectionReason = 'La versión en la nube ha sido actualizada remotamente y tienes cambios locales pendientes.';
+        currentSyncConflict = {
+          type: 'remote_newer_with_local_unsynced',
+          reason: syncProtectionReason,
+          localData: orbitData,
+          localTimer: orbitTimer,
+          localUpdatedAt: localStorage.getItem(localUpKey) || null,
+          cloudData: cloudCheck.orbit_data,
+          cloudTimer: cloudCheck.orbit_timer,
+          cloudUpdatedAt: cloudCheck.updated_at,
+          localMetrics: typeof getOrbitStateMetrics === 'function' ? getOrbitStateMetrics(orbitData) : {},
+          cloudMetrics: typeof getOrbitStateMetrics === 'function' ? getOrbitStateMetrics(cloudCheck.orbit_data) : {},
+          detectedAt: Date.now()
+        };
         isSyncing = false;
         updateSyncStatus('conflict', 'Cambios pendientes de revisar');
         return {
@@ -1441,6 +1509,186 @@ async function restoreFromCloudHistory(historyId) {
     if (typeof toast === 'function') toast('Error inesperado al restaurar');
     return { ok: false, error: err.message };
   }
+}
+
+// Resolver conflicto adoptando conscientemente la versión de la NUBE
+async function resolveConflictUsingCloud() {
+  const sb = getSupabase();
+  if (!sb || (typeof navigator !== 'undefined' && !navigator.onLine)) {
+    if (typeof toast === 'function') toast('Se requiere conexión a Internet');
+    return { ok: false, error: 'offline' };
+  }
+
+  const validSession = await ensureValidSession();
+  if (!validSession || !validSession.user) {
+    if (typeof toast === 'function') toast('Inicia sesión en la nube primero');
+    return { ok: false, error: 'no_session' };
+  }
+
+  const uid = validSession.user.id;
+  const v9Key = typeof getUserStorageKey === 'function' ? getUserStorageKey('orbitV9', uid) : `orbitV9:${uid}`;
+  const timerKey = typeof getUserStorageKey === 'function' ? getUserStorageKey('orbitTimer', uid) : `orbitTimer:${uid}`;
+  const cloudUpKey = typeof getUserStorageKey === 'function' ? getUserStorageKey('orbitLastCloudUpdatedAt', uid) : `orbitLastCloudUpdatedAt:${uid}`;
+  const unsyncKey = typeof getUserStorageKey === 'function' ? getUserStorageKey('orbitHasUnsyncedChanges', uid) : `orbitHasUnsyncedChanges:${uid}`;
+
+  let cloudData = currentSyncConflict?.cloudData;
+  let cloudTimer = currentSyncConflict?.cloudTimer;
+  let cloudUpdatedAt = currentSyncConflict?.cloudUpdatedAt;
+
+  // Si por alguna razón no tenemos los datos en memoria, consultarlos frescos de Supabase
+  if (!cloudData) {
+    const { data: cloudRow, error: fetchErr } = await sb
+      .from('orbit_state')
+      .select('orbit_data, orbit_timer, updated_at')
+      .eq('user_id', uid)
+      .maybeSingle();
+
+    if (fetchErr || !cloudRow || !cloudRow.orbit_data) {
+      if (typeof toast === 'function') toast('No se pudo obtener la versión de la nube');
+      return { ok: false, error: 'cloud_data_not_found' };
+    }
+    cloudData = cloudRow.orbit_data;
+    cloudTimer = cloudRow.orbit_timer;
+    cloudUpdatedAt = cloudRow.updated_at;
+  }
+
+  // 1. Snapshot server-side preventivo de la nube antes de cualquier cambio
+  try {
+    await sb.rpc('create_manual_state_snapshot', { p_label: 'pre_resolve_cloud' });
+  } catch (e) {}
+
+  // 2. Aplicar la versión de la nube en local con { forceRestore: true }
+  // Esto creará un backup local pre-sync de los datos que estaban en este dispositivo
+  const applyRes = safeApplyCloudState(cloudData, cloudTimer, cloudUpdatedAt, uid, { forceRestore: true });
+  if (!applyRes || !applyRes.ok) {
+    if (typeof toast === 'function') toast('Error al aplicar la versión de la nube');
+    return applyRes;
+  }
+
+  // 3. Limpiar conflicto y sincronizar estado
+  hasConflict = false;
+  currentSyncConflict = null;
+  syncProtectionReason = '';
+  localStorage.setItem(unsyncKey, 'false');
+  if (cloudUpdatedAt) localStorage.setItem(cloudUpKey, cloudUpdatedAt);
+
+  lastCloudSyncSuccessTime = Date.now();
+  updateSyncStatus('synced');
+  if (typeof toast === 'function') toast('✦ Versión de la nube aplicada correctamente');
+
+  if (typeof closeModal === 'function') {
+    closeModal('cloudConflictModal');
+    closeModal('cloudDetailsModal');
+  }
+
+  return { ok: true, status: 'resolved_using_cloud' };
+}
+
+// Resolver conflicto conservando conscientemente este DISPOSITIVO
+async function resolveConflictUsingLocal() {
+  const sb = getSupabase();
+  if (!sb || (typeof navigator !== 'undefined' && !navigator.onLine)) {
+    if (typeof toast === 'function') toast('Se requiere conexión a Internet');
+    return { ok: false, error: 'offline' };
+  }
+
+  const validSession = await ensureValidSession();
+  if (!validSession || !validSession.user) {
+    if (typeof toast === 'function') toast('Inicia sesión en la nube primero');
+    return { ok: false, error: 'no_session' };
+  }
+
+  const uid = validSession.user.id;
+  const v9Key = typeof getUserStorageKey === 'function' ? getUserStorageKey('orbitV9', uid) : `orbitV9:${uid}`;
+  const timerKey = typeof getUserStorageKey === 'function' ? getUserStorageKey('orbitTimer', uid) : `orbitTimer:${uid}`;
+  const localUpKey = typeof getUserStorageKey === 'function' ? getUserStorageKey('orbitLocalUpdatedAt', uid) : `orbitLocalUpdatedAt:${uid}`;
+  const cloudUpKey = typeof getUserStorageKey === 'function' ? getUserStorageKey('orbitLastCloudUpdatedAt', uid) : `orbitLastCloudUpdatedAt:${uid}`;
+  const unsyncKey = typeof getUserStorageKey === 'function' ? getUserStorageKey('orbitHasUnsyncedChanges', uid) : `orbitHasUnsyncedChanges:${uid}`;
+
+  let localData = currentSyncConflict?.localData;
+  if (!localData) {
+    try { localData = JSON.parse(localStorage.getItem(v9Key)); } catch (e) {}
+    if (!localData && typeof load === 'function') localData = load(uid);
+  }
+
+  let localTimer = currentSyncConflict?.localTimer;
+  if (!localTimer) {
+    try {
+      const raw = localStorage.getItem(timerKey);
+      if (raw) localTimer = JSON.parse(raw);
+    } catch (e) {}
+  }
+
+  if (!localData) {
+    if (typeof toast === 'function') toast('No se encontraron datos en este dispositivo');
+    return { ok: false, error: 'local_data_empty' };
+  }
+
+  // 1. Guardar copia previa server-side de la nube antes de sobreescribirla
+  try {
+    await sb.rpc('create_manual_state_snapshot', { p_label: 'pre_resolve_local' });
+  } catch (e) {}
+
+  // 2. Backup local de seguridad
+  createPreSyncBackup(uid, 'conflict_resolve_local', localData, localTimer);
+
+  // 3. Subir el estado local a la nube (forzando actualización consciente)
+  const nowIso = new Date().toISOString();
+  localStorage.setItem(localUpKey, nowIso);
+
+  const payload = {
+    user_id: uid,
+    orbit_data: localData,
+    orbit_timer: localTimer,
+    updated_at: nowIso
+  };
+
+  updateSyncStatus('saving');
+
+  let { data: upsertData, error: upsertErr } = await sb
+    .from('orbit_state')
+    .upsert(payload, { onConflict: 'user_id' })
+    .select('updated_at')
+    .maybeSingle();
+
+  if (upsertErr && isSessionExpiredError(upsertErr)) {
+    const refreshed = await ensureValidSession();
+    if (refreshed) {
+      const retryRes = await sb
+        .from('orbit_state')
+        .upsert(payload, { onConflict: 'user_id' })
+        .select('updated_at')
+        .maybeSingle();
+      upsertData = retryRes.data;
+      upsertErr = retryRes.error;
+    }
+  }
+
+  if (upsertErr) {
+    console.error('[RESOLVE_LOCAL] Error al actualizar nube con estado local:', upsertErr);
+    updateSyncStatus('error');
+    if (typeof toast === 'function') toast('Error al guardar en la nube. Tus datos locales siguen protegidos.');
+    return { ok: false, status: 'error', error: upsertErr.message };
+  }
+
+  // 4. Confirmación exitosa en Supabase: Limpiar conflicto
+  const confirmedTime = upsertData?.updated_at || nowIso;
+  localStorage.setItem(cloudUpKey, confirmedTime);
+  localStorage.setItem(unsyncKey, 'false');
+  hasConflict = false;
+  currentSyncConflict = null;
+  syncProtectionReason = '';
+  lastCloudSyncSuccessTime = Date.now();
+  updateSyncStatus('synced');
+  if (typeof toast === 'function') toast('✦ Nube actualizada con los datos de este dispositivo');
+
+  if (typeof closeModal === 'function') {
+    closeModal('cloudConflictModal');
+    closeModal('cloudDetailsModal');
+  }
+
+  if (typeof render === 'function') render();
+  return { ok: true, status: 'resolved_using_local', updated_at: confirmedTime };
 }
 
 function handleForegroundTrigger() {
