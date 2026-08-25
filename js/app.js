@@ -21,6 +21,9 @@ function showPage(id){
   if (currentActivePage === 'observatory' && id !== 'observatory') {
     if (typeof window.pauseObservatory3D === 'function') window.pauseObservatory3D();
   }
+  if (currentActivePage === 'universe' && id !== 'universe') {
+    if (typeof window.pauseUniverse3D === 'function') window.pauseUniverse3D();
+  }
 
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.bottom button').forEach(b=>b.classList.remove('active'));
@@ -37,11 +40,19 @@ function showPage(id){
   render();
 
   if (id === 'observatory') {
+    if (typeof window.pauseUniverse3D === 'function') window.pauseUniverse3D();
     setTimeout(() => {
       if (typeof window.initObservatory3D === 'function') {
         window.initObservatory3D();
       }
       selectObservatoryModule(window.activeObservatoryModuleId || 'telescope');
+    }, 60);
+  } else if (id === 'universe') {
+    if (typeof window.pauseObservatory3D === 'function') window.pauseObservatory3D();
+    setTimeout(() => {
+      if (typeof window.initUniverse3D === 'function') {
+        window.initUniverse3D();
+      }
     }, 60);
   }
 }
@@ -440,6 +451,9 @@ function navigateSky(dir){
 }
 
 function renderUniverse(d){
+  if (typeof window.refreshUniverse3D === 'function') {
+    window.refreshUniverse3D();
+  }
   initSkySwipe();
   let total=Number(d.lifetimeStars||0),wallet=Number(d.wallet||0);
   if(typeof universeWallet!=='undefined'&&universeWallet) universeWallet.textContent=wallet.toFixed(1).replace('.',',');
