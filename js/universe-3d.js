@@ -109,7 +109,7 @@
 
   function buildConstellationMesh(c, state) {
     const group = new THREE.Group();
-    const scale = (c.size || 120) * 0.0075;
+    const scale = ((c.size || 120) / 120) * 0.018;
 
     // Posición espacial 3D
     group.position.x = (c.x - 50) * 0.12;
@@ -213,7 +213,7 @@
     }
 
     // 3. Hitbox invisible esférica para raycast interactivo
-    const hitRadius = Math.max(0.45, scale * 52);
+    const hitRadius = Math.max(0.65, scale * 45);
     const hitGeo = new THREE.SphereGeometry(hitRadius, 8, 8);
     const hitMat = new THREE.MeshBasicMaterial({ visible: false });
     const hitMesh = new THREE.Mesh(hitGeo, hitMat);
@@ -267,13 +267,13 @@
       camera: {
         type: 'pan-zoom',
         fov: 45,
-        zoomZ: 10.5,
+        zoomZ: 14.0,
         minZoom: 3.5,
-        maxZoom: 22.0,
-        minPanX: -8.5,
-        maxPanX: 8.5,
-        minPanY: -8.5,
-        maxPanY: 8.5
+        maxZoom: 28.0,
+        minPanX: -10.0,
+        maxPanX: 10.0,
+        minPanY: -10.0,
+        maxPanY: 10.0
       },
       onObjectClick: function(hit) {
         const constId = hit.object && hit.object.userData ? hit.object.userData.constellationId : null;
