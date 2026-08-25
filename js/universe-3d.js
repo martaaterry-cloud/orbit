@@ -8,6 +8,10 @@
   let universeScene = null;
   let isInitialized = false;
   let constellationsGroup = null;
+  let starTexture = null;
+  let labelsList = [];
+  let labelsContainer = null;
+  const tempProjectVec = new THREE.Vector3();
 
   // Profundidad determinista por región/colección
   const REGION_DEPTH = {
@@ -16,6 +20,30 @@
     'invierno': -4.5,  // Cielo de Invierno
     'profundo': -7.0   // Espacio Profundo
   };
+
+  // Textura circular procedural en memoria (círculo suave con centro brillante)
+  function getStarTexture() {
+    if (!starTexture && typeof document !== 'undefined') {
+      const canvas = document.createElement('canvas');
+      canvas.width = 64;
+      canvas.height = 64;
+      const ctx = canvas.getContext('2d');
+
+      const grad = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+      grad.addColorStop(0, 'rgba(255, 255, 255, 1)');
+      grad.addColorStop(0.25, 'rgba(255, 255, 255, 0.9)');
+      grad.addColorStop(0.55, 'rgba(255, 255, 255, 0.35)');
+      grad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(32, 32, 32, 0, Math.PI * 2);
+      ctx.fill();
+
+      starTexture = new THREE.CanvasTexture(canvas);
+    }
+    return starTexture;
+  }
 
   function buildCosmicBackground(sceneInstance) {
     const bgGroup = new THREE.Group();
@@ -29,7 +57,7 @@
     const skyMesh = new THREE.Mesh(skyGeo, skyMat);
     bgGroup.add(skyMesh);
 
-    // 2. Campo estelar tenue de fondo
+    // 2. Campo estelar tenue de fondo con estrellas circulares
     const starCount = 750;
     const positions = new Float32Array(starCount * 3);
     const colors = new Float32Array(starCount * 3);
@@ -61,10 +89,12 @@
     starGeo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
 
     const starMat = new THREE.PointsMaterial({
-      size: 0.8,
+      size: 0.42,
+      map: getStarTexture(),
       vertexColors: true,
       transparent: true,
-      opacity: 0.65
+      depthWrite: false,
+      opacity: 0.60
     });
     const bgStars = new THREE.Points(starGeo, starMat);
     bgGroup.add(bgStars);
@@ -117,7 +147,7 @@
     group.position.z = REGION_DEPTH[c.collection] !== undefined ? REGION_DEPTH[c.collection] : 0;
     group.rotation.z = -THREE.MathUtils.degToRad(c.rot || 0);
 
-    // 1. Puntos de estrellas locales
+    // 1. Puntos de estrellas circulares locales
     const stars = c.stars || [];
     const starPositions = [];
     const starCoordsById = new Map();
@@ -141,35 +171,37 @@
       const starGeo = new THREE.BufferGeometry();
       starGeo.setAttribute('position', new THREE.Float32BufferAttribute(starPositions, 3));
 
-      let starColor = 0x555d6b;
-      let starSize = 0.9;
+      let starColor = 0x4a5468;
+      let starSize = 0.32;
       let starOpacity = 0.35;
 
       if (state.status === 'claimed') {
         starColor = 0xffffff;
-        starSize = 1.4;
-        starOpacity = 1.0;
+        starSize = 0.58;
+        starOpacity = 0.95;
       } else if (state.status === 'discovered') {
         starColor = 0xffebd6;
-        starSize = 1.25;
-        starOpacity = 0.92;
+        starSize = 0.50;
+        starOpacity = 0.88;
       } else if (state.status === 'in-progress') {
         starColor = 0xf4eee4;
-        starSize = 1.1;
-        starOpacity = 0.80;
+        starSize = 0.44;
+        starOpacity = 0.78;
       }
 
       const starMat = new THREE.PointsMaterial({
         color: starColor,
         size: starSize,
+        map: getStarTexture(),
         transparent: true,
+        depthWrite: false,
         opacity: starOpacity
       });
       const starPoints = new THREE.Points(starGeo, starMat);
       group.add(starPoints);
     }
 
-    // 2. Aristas conectoras (LineSegments)
+    // 2. Aristas conectoras finas (LineSegments)
     const edges = c.edges || [];
     const linePositions = [];
 
@@ -189,18 +221,18 @@
       const lineGeo = new THREE.BufferGeometry();
       lineGeo.setAttribute('position', new THREE.Float32BufferAttribute(linePositions, 3));
 
-      let lineColor = 0x2e3440;
-      let lineOpacity = 0.15;
+      let lineColor = 0x222a36;
+      let lineOpacity = 0.12;
 
       if (state.status === 'claimed') {
         lineColor = 0xffffff;
-        lineOpacity = 0.85;
+        lineOpacity = 0.65;
       } else if (state.status === 'discovered') {
         lineColor = 0xffe2c4;
-        lineOpacity = 0.65;
+        lineOpacity = 0.45;
       } else if (state.status === 'in-progress') {
         lineColor = 0xded4c2;
-        lineOpacity = 0.40;
+        lineOpacity = 0.30;
       }
 
       const lineMat = new THREE.LineBasicMaterial({
@@ -220,7 +252,32 @@
     hitMesh.userData = { constellationId: c.id, name: c.name };
     group.add(hitMesh);
 
-    return { group, hitMesh };
+    return { group, hitMesh, worldPos: group.position };
+  }
+
+  function updateLabelsProjection(sceneInstance) {
+    if (!sceneInstance || !sceneInstance.camera || !labelsContainer || labelsList.length === 0) return;
+    const camera = sceneInstance.camera;
+    const width = sceneInstance.container.clientWidth || window.innerWidth || 360;
+    const height = sceneInstance.container.clientHeight || window.innerHeight || 600;
+
+    labelsList.forEach(item => {
+      tempProjectVec.copy(item.worldPos);
+      tempProjectVec.project(camera);
+
+      // Si el punto queda detrás de la cámara o muy fuera de los bordes visibles
+      if (tempProjectVec.z > 1.0 || tempProjectVec.x < -1.15 || tempProjectVec.x > 1.15 || tempProjectVec.y < -1.15 || tempProjectVec.y > 1.15) {
+        item.element.style.display = 'none';
+        return;
+      }
+
+      const screenX = (tempProjectVec.x * 0.5 + 0.5) * width;
+      const screenY = (-tempProjectVec.y * 0.5 + 0.5) * height;
+
+      item.element.style.display = 'block';
+      item.element.style.left = `${Math.round(screenX)}px`;
+      item.element.style.top = `${Math.round(screenY + 14)}px`;
+    });
   }
 
   function renderConstellations(sceneInstance) {
@@ -232,17 +289,47 @@
       sceneInstance.clearInteractiveObjects();
     }
 
+    labelsContainer = document.getElementById('universeLabelsLayer');
+    if (labelsContainer) {
+      labelsContainer.innerHTML = '';
+    }
+    labelsList = [];
+
     constellationsGroup = new THREE.Group();
     const d = (typeof load === 'function') ? load() : {};
 
     constellationDefs.forEach(c => {
       const state = getConstellationState(c, d);
-      const { group, hitMesh } = buildConstellationMesh(c, state);
+      const { group, hitMesh, worldPos } = buildConstellationMesh(c, state);
       constellationsGroup.add(group);
       sceneInstance.registerInteractiveObject(hitMesh);
+
+      // Crear label proyectado solo para constelaciones no bloqueadas
+      if (state.status !== 'locked' && labelsContainer) {
+        const labelEl = document.createElement('div');
+        labelEl.className = `universe-3d-label label-status-${state.status}`;
+        labelEl.style.position = 'absolute';
+        labelEl.style.transform = 'translate(-50%, -50%)';
+        labelEl.style.pointerEvents = 'none';
+        labelEl.style.fontSize = '10px';
+        labelEl.style.fontWeight = '500';
+        labelEl.style.letterSpacing = '0.04em';
+        labelEl.style.whiteSpace = 'nowrap';
+        labelEl.style.color = state.status === 'claimed' ? 'rgba(255, 255, 255, 0.95)' : (state.status === 'discovered' ? 'rgba(255, 235, 214, 0.85)' : 'rgba(230, 220, 205, 0.70)');
+        labelEl.style.textShadow = '0 1px 3px rgba(0,0,0,0.85)';
+        labelEl.textContent = `${c.name}${state.status === 'claimed' ? ' ✦' : ''}`;
+        labelsContainer.appendChild(labelEl);
+
+        labelsList.push({
+          id: c.id,
+          worldPos: worldPos.clone(),
+          element: labelEl
+        });
+      }
     });
 
     sceneInstance.add(constellationsGroup);
+    updateLabelsProjection(sceneInstance);
     sceneInstance.invalidate();
   }
 
@@ -275,6 +362,9 @@
         minPanY: -10.0,
         maxPanY: 10.0
       },
+      onRender: function() {
+        updateLabelsProjection(universeScene);
+      },
       onObjectClick: function(hit) {
         const constId = hit.object && hit.object.userData ? hit.object.userData.constellationId : null;
         if (constId && typeof verFichaConstelacion === 'function') {
@@ -300,6 +390,7 @@
   function resizeUniverse3D() {
     if (universeScene) {
       universeScene.resize();
+      updateLabelsProjection(universeScene);
     }
   }
 
