@@ -24,55 +24,55 @@
     'profundo': -6.0   // Espacio Profundo
   };
 
-  // Coordenadas espaciales deterministas para los centros de las 4 grandes regiones
+  // Coordenadas espaciales deterministas encuadradas para móvil (disposición 2x2 armónica)
   const REGIONS_CONFIG = [
     {
       id: 'cielo-1',
       name: 'Primer cielo',
       roman: 'I',
       col: 'norte',
-      pos: { x: -4.4, y: 3.2, z: 0.0 },
+      pos: { x: -2.3, y: 3.2, z: 0.0 },
       seed: 104729,
       type: 'nebula-cool-blue',
-      // Azul/blanco frío suave
-      colorUnlocked: [0x8ab4f8, 0xd0e2ff, 0xffffff],
-      colorLocked: [0x1a2230, 0x141822]
+      // Azul/blanco frío suave (tonos orgánicos sin saturación excesiva)
+      colorUnlocked: [0x5078be, 0x8ab4e8, 0xcce0fa],
+      colorLocked: [0x161e2b, 0x111620]
     },
     {
       id: 'zodiaco',
       name: 'Zodiaco',
       roman: 'II',
       col: 'zodiaco',
-      pos: { x: 4.6, y: 2.8, z: -2.0 },
+      pos: { x: 2.3, y: 3.0, z: -2.0 },
       seed: 1299709,
       type: 'nebula-gold-belt',
-      // Crema/dorado apagado muy sutil (nada naranja fuerte, estructura algo alargada)
-      colorUnlocked: [0xecd8a5, 0xf7ebd2, 0xfff8e8],
-      colorLocked: [0x222129, 0x181820]
+      // Crema/dorado apagado muy sutil (nada naranja fuerte, estructura alargada)
+      colorUnlocked: [0x8c7850, 0xc8b482, 0xf0e0ba],
+      colorLocked: [0x201e26, 0x16151c]
     },
     {
       id: 'orion',
       name: 'Cielo de invierno',
       roman: 'III',
       col: 'invierno',
-      pos: { x: -4.6, y: -3.4, z: -3.5 },
+      pos: { x: -2.3, y: -2.8, z: -3.5 },
       seed: 786433,
       type: 'nebula-ice-crystal',
-      // Azul hielo/blanco
-      colorUnlocked: [0xaae4ec, 0xd6f7fa, 0xffffff],
-      colorLocked: [0x18242c, 0x131c23]
+      // Azul hielo cristalino/blanco suave
+      colorUnlocked: [0x4a8094, 0x7ec0d4, 0xc2ecf8],
+      colorLocked: [0x141f26, 0x0f171d]
     },
     {
       id: 'profundo',
       name: 'Espacio profundo',
       roman: 'IV',
       col: 'profundo',
-      pos: { x: 4.8, y: -3.6, z: -6.0 },
+      pos: { x: 2.3, y: -3.0, z: -6.0 },
       seed: 982451653,
       type: 'gravitational-void',
       // Azul-negro/violeta muy oscuro sin magenta fuerte
-      colorUnlocked: [0x2d2448, 0x1d1b32, 0x443a68],
-      colorLocked: [0x14121c, 0x0e0d14]
+      colorUnlocked: [0x221a38, 0x161426, 0x362c54],
+      colorLocked: [0x100e16, 0x0a090e]
     }
   ];
 
@@ -120,9 +120,9 @@
 
       const grad = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
       grad.addColorStop(0, 'rgba(255, 255, 255, 1)');
-      grad.addColorStop(0.20, 'rgba(255, 255, 255, 0.70)');
-      grad.addColorStop(0.48, 'rgba(255, 255, 255, 0.22)');
-      grad.addColorStop(0.78, 'rgba(255, 255, 255, 0.05)');
+      grad.addColorStop(0.20, 'rgba(255, 255, 255, 0.65)');
+      grad.addColorStop(0.48, 'rgba(255, 255, 255, 0.20)');
+      grad.addColorStop(0.78, 'rgba(255, 255, 255, 0.04)');
       grad.addColorStop(1, 'rgba(255, 255, 255, 0)');
 
       ctx.fillStyle = grad;
@@ -179,12 +179,12 @@
     starGeo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
 
     const starMat = new THREE.PointsMaterial({
-      size: 0.42,
+      size: 0.40,
       map: getStarTexture(),
       vertexColors: true,
       transparent: true,
       depthWrite: false,
-      opacity: 0.60
+      opacity: 0.55
     });
     const bgStars = new THREE.Points(starGeo, starMat);
     bgGroup.add(bgStars);
@@ -339,7 +339,7 @@
     return { group, hitMesh, worldPos: group.position };
   }
 
-  // 4 Grandes Formaciones Cósmicas Procedurales y Orgánicas para Regiones del Universo
+  // 4 Grandes Formaciones Cósmicas Procedurales y Orgánicas (Calibradas sin quemados)
   function buildRegionMesh(regConfig, isUnlocked) {
     const group = new THREE.Group();
     group.position.set(regConfig.pos.x, regConfig.pos.y, regConfig.pos.z);
@@ -350,30 +350,28 @@
       const haloTex = getNebulaTexture();
       const starTex = getStarTexture();
 
-      // 1. Halo difuso violeta/azul-negro
+      // 1. Halo difuso violeta/azul-negro (NormalBlending suave)
       const haloMat = new THREE.SpriteMaterial({
         map: haloTex,
         color: isUnlocked ? regConfig.colorUnlocked[0] : regConfig.colorLocked[0],
         transparent: true,
-        opacity: isUnlocked ? 0.40 : 0.08,
-        depthWrite: false,
-        blending: THREE.AdditiveBlending
+        opacity: isUnlocked ? 0.32 : 0.08,
+        depthWrite: false
       });
       const haloSprite = new THREE.Sprite(haloMat);
-      haloSprite.scale.set(4.4, 4.4, 1);
+      haloSprite.scale.set(3.8, 3.8, 1);
       group.add(haloSprite);
 
-      // 2. Halo interno lente gravitacional
+      // 2. Halo interno tenue de lente gravitacional
       const lensMat = new THREE.SpriteMaterial({
         map: haloTex,
         color: isUnlocked ? regConfig.colorUnlocked[2] : regConfig.colorLocked[1],
         transparent: true,
-        opacity: isUnlocked ? 0.25 : 0.05,
-        depthWrite: false,
-        blending: THREE.AdditiveBlending
+        opacity: isUnlocked ? 0.20 : 0.05,
+        depthWrite: false
       });
       const lensSprite = new THREE.Sprite(lensMat);
-      lensSprite.scale.set(2.8, 2.8, 1);
+      lensSprite.scale.set(2.4, 2.4, 1);
       group.add(lensSprite);
 
       // 3. Núcleo oscuro profundo
@@ -384,7 +382,7 @@
       const cGrad = cCtx.createRadialGradient(32, 32, 0, 32, 32, 32);
       cGrad.addColorStop(0, 'rgba(2, 3, 7, 0.98)');
       cGrad.addColorStop(0.65, 'rgba(3, 4, 10, 0.92)');
-      cGrad.addColorStop(0.85, 'rgba(5, 7, 15, 0.55)');
+      cGrad.addColorStop(0.85, 'rgba(5, 7, 15, 0.50)');
       cGrad.addColorStop(1, 'rgba(6, 8, 18, 0)');
       cCtx.fillStyle = cGrad;
       cCtx.beginPath();
@@ -395,22 +393,22 @@
       const coreMat = new THREE.SpriteMaterial({
         map: coreTex,
         transparent: true,
-        opacity: 0.96,
+        opacity: 0.95,
         depthWrite: false
       });
       const coreSprite = new THREE.Sprite(coreMat);
-      coreSprite.scale.set(2.1, 2.1, 1);
+      coreSprite.scale.set(1.9, 1.9, 1);
       group.add(coreSprite);
 
       // 4. Disco tenue de partículas orbitales
-      const starCount = isUnlocked ? 50 : 16;
+      const starCount = isUnlocked ? 45 : 15;
       const starPos = new Float32Array(starCount * 3);
       for (let i = 0; i < starCount; i++) {
         const angle = rng() * Math.PI * 2;
-        const rad = 1.1 + rng() * 1.6;
+        const rad = 0.9 + rng() * 1.4;
         const x = Math.cos(angle) * rad;
         const y = Math.sin(angle) * (rad * 0.45);
-        const z = (rng() - 0.5) * 0.4;
+        const z = (rng() - 0.5) * 0.35;
         starPos[i * 3] = x;
         starPos[i * 3 + 1] = y;
         starPos[i * 3 + 2] = z;
@@ -418,11 +416,11 @@
       const starGeo = new THREE.BufferGeometry();
       starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
       const starMat = new THREE.PointsMaterial({
-        size: 0.32,
+        size: 0.28,
         map: starTex,
         color: isUnlocked ? 0x8a7fb8 : 0x2e2c3d,
         transparent: true,
-        opacity: isUnlocked ? 0.65 : 0.20,
+        opacity: isUnlocked ? 0.55 : 0.18,
         depthWrite: false
       });
       group.add(new THREE.Points(starGeo, starMat));
@@ -432,44 +430,42 @@
       const nebTex = getNebulaTexture();
       const starTex = getStarTexture();
 
-      const cloudCount = isUnlocked ? 15 : 6;
+      const cloudCount = isUnlocked ? 12 : 5;
       const palette = isUnlocked ? regConfig.colorUnlocked : regConfig.colorLocked;
 
-      // 1. Sprites volumétricos suaves
+      // 1. Sprites volumétricos suaves con NormalBlending para evitar quemar luz
       for (let i = 0; i < cloudCount; i++) {
-        const col = palette[Math.floor(rng() * palette.length)];
-        const op = isUnlocked ? (0.07 + rng() * 0.09) : (0.02 + rng() * 0.03);
+        const col = palette[Math.floor(rng() * (palette.length - 1))];
+        const op = isUnlocked ? (0.07 + rng() * 0.08) : (0.02 + rng() * 0.03);
 
         const sMat = new THREE.SpriteMaterial({
           map: nebTex,
           color: col,
           transparent: true,
           opacity: op,
-          depthWrite: false,
-          blending: THREE.AdditiveBlending
+          depthWrite: false
         });
         const sprite = new THREE.Sprite(sMat);
 
         let ox, oy, oz, scaleX, scaleY;
         if (regConfig.type === 'nebula-gold-belt') {
           // Estructura alargada para Zodiaco
-          const t = (rng() - 0.5) * 5.0;
-          const normalOffset = (rng() - 0.5) * 1.6;
-          // Inclinación ~ -20°
+          const t = (rng() - 0.5) * 4.2;
+          const normalOffset = (rng() - 0.5) * 1.4;
           ox = t * 0.94 - normalOffset * 0.34;
           oy = t * 0.34 + normalOffset * 0.94;
-          oz = (rng() - 0.5) * 0.8;
-          scaleX = 2.6 + rng() * 1.8;
-          scaleY = 2.0 + rng() * 1.4;
+          oz = (rng() - 0.5) * 0.6;
+          scaleX = 2.2 + rng() * 1.4;
+          scaleY = 1.8 + rng() * 1.1;
         } else {
-          // Distribución radial / orgánica
+          // Distribución radial / orgánica calibrada a 20-30% de pantalla
           const angle = rng() * Math.PI * 2;
-          const rad = rng() * 1.7;
+          const rad = rng() * 1.35;
           ox = Math.cos(angle) * rad;
           oy = Math.sin(angle) * rad;
-          oz = (rng() - 0.5) * 0.7;
-          scaleX = 3.0 + rng() * 1.8;
-          scaleY = 3.0 + rng() * 1.8;
+          oz = (rng() - 0.5) * 0.5;
+          scaleX = 2.4 + rng() * 1.3;
+          scaleY = 2.4 + rng() * 1.3;
         }
 
         sprite.position.set(ox, oy, oz);
@@ -477,36 +473,35 @@
         group.add(sprite);
       }
 
-      // 2. Núcleo difuso suave
+      // 2. Núcleo difuso suave (suave y atmosférico)
       const coreMat = new THREE.SpriteMaterial({
         map: nebTex,
         color: palette[palette.length - 1],
         transparent: true,
-        opacity: isUnlocked ? 0.24 : 0.05,
-        depthWrite: false,
-        blending: THREE.AdditiveBlending
+        opacity: isUnlocked ? 0.15 : 0.04,
+        depthWrite: false
       });
       const coreSprite = new THREE.Sprite(coreMat);
-      coreSprite.scale.set(2.8, 2.8, 1);
+      coreSprite.scale.set(2.4, 2.4, 1);
       group.add(coreSprite);
 
       // 3. Cúmulo de partículas estelares tenues dentro de la nebulosa
-      const starCount = isUnlocked ? 60 : 18;
+      const starCount = isUnlocked ? 48 : 16;
       const starPos = new Float32Array(starCount * 3);
       for (let i = 0; i < starCount; i++) {
         let sx, sy, sz;
         if (regConfig.type === 'nebula-gold-belt') {
-          const t = (rng() - 0.5) * 5.2;
-          const normalOffset = (rng() - 0.5) * 1.8;
+          const t = (rng() - 0.5) * 4.4;
+          const normalOffset = (rng() - 0.5) * 1.5;
           sx = t * 0.94 - normalOffset * 0.34;
           sy = t * 0.34 + normalOffset * 0.94;
-          sz = (rng() - 0.5) * 0.9;
+          sz = (rng() - 0.5) * 0.7;
         } else {
           const angle = rng() * Math.PI * 2;
-          const rad = rng() * 2.3;
+          const rad = rng() * 1.7;
           sx = Math.cos(angle) * rad;
           sy = Math.sin(angle) * rad;
-          sz = (rng() - 0.5) * 0.8;
+          sz = (rng() - 0.5) * 0.6;
         }
         starPos[i * 3] = sx;
         starPos[i * 3 + 1] = sy;
@@ -515,18 +510,18 @@
       const starGeo = new THREE.BufferGeometry();
       starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
       const starMat = new THREE.PointsMaterial({
-        size: 0.34,
+        size: 0.30,
         map: starTex,
         color: isUnlocked ? 0xffffff : 0x3d4856,
         transparent: true,
-        opacity: isUnlocked ? 0.72 : 0.22,
+        opacity: isUnlocked ? 0.58 : 0.18,
         depthWrite: false
       });
       group.add(new THREE.Points(starGeo, starMat));
     }
 
-    // Hitbox invisible de gran tamaño para clic/tap reactivo
-    const hitGeo = new THREE.SphereGeometry(3.4, 8, 8);
+    // Hitbox invisible para clic/tap reactivo bien delimitado
+    const hitGeo = new THREE.SphereGeometry(2.5, 8, 8);
     const hitMat = new THREE.MeshBasicMaterial({ visible: false });
     const hitMesh = new THREE.Mesh(hitGeo, hitMat);
     hitMesh.userData = { type: 'region', regionId: regConfig.id, name: regConfig.name, isUnlocked };
@@ -545,18 +540,26 @@
       tempProjectVec.copy(item.worldPos);
       tempProjectVec.project(camera);
 
-      if (tempProjectVec.z > 1.0 || tempProjectVec.x < -1.25 || tempProjectVec.x > 1.25 || tempProjectVec.y < -1.25 || tempProjectVec.y > 1.25) {
+      if (tempProjectVec.z > 1.0) {
         item.element.style.display = 'none';
         return;
       }
 
-      const screenX = (tempProjectVec.x * 0.5 + 0.5) * width;
-      const screenY = (-tempProjectVec.y * 0.5 + 0.5) * height;
+      let screenX = (tempProjectVec.x * 0.5 + 0.5) * width;
+      let screenY = (-tempProjectVec.y * 0.5 + 0.5) * height;
 
-      item.element.style.display = 'block';
+      // Margen horizontal seguro para que los badges nunca salgan del viewport móvil
+      const marginX = 64;
+      screenX = Math.max(marginX, Math.min(width - marginX, screenX));
+
+      // Margen vertical seguro (debajo de UNIVERSO y encima de la toolbar inferior)
+      const minTop = 64;
+      const maxTop = height - 76;
+      screenY = Math.max(minTop, Math.min(maxTop, screenY + (item.isRegion ? 36 : 14)));
+
+      item.element.style.display = 'flex';
       item.element.style.left = `${Math.round(screenX)}px`;
-      // Colocado debajo de la gran formación sin taparla
-      item.element.style.top = `${Math.round(screenY + (item.isRegion ? 46 : 14))}px`;
+      item.element.style.top = `${Math.round(screenY)}px`;
     });
   }
 
@@ -576,6 +579,17 @@
       labelsContainer.innerHTML = '';
     }
     labelsList = [];
+
+    // En vista general (focusedRegionId === null), fijar cámara y desactivar pan/zoom libre
+    if (focusedRegionId === null) {
+      sceneInstance.setPanZoomEnabled(false);
+      sceneInstance.panX = 0;
+      sceneInstance.panY = 0;
+      sceneInstance.zoomZ = 14.0;
+      sceneInstance.updateCamera();
+    } else {
+      sceneInstance.setPanZoomEnabled(true);
+    }
 
     const d = (typeof load === 'function') ? load() : {};
 
@@ -666,12 +680,15 @@
       containerId: 'universeHeroScene',
       canvasId: 'universeCanvas',
       fallbackId: 'universeFallbackMessage',
+      enablePanZoom: false, // Vista general fija y estable
       camera: {
         type: 'pan-zoom',
         fov: 45,
         zoomZ: 14.0,
         minZoom: 3.5,
         maxZoom: 28.0,
+        panX: 0,
+        panY: 0,
         minPanX: -10.0,
         maxPanX: 10.0,
         minPanY: -10.0,

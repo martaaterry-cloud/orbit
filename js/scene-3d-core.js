@@ -169,6 +169,7 @@
       this.maxPanX = camOpt.maxPanX !== undefined ? camOpt.maxPanX : 8.0;
       this.minPanY = camOpt.minPanY !== undefined ? camOpt.minPanY : -8.0;
       this.maxPanY = camOpt.maxPanY !== undefined ? camOpt.maxPanY : 8.0;
+      this.enablePanZoom = options.enablePanZoom !== undefined ? options.enablePanZoom : true;
 
       // Scheduler reactivo y control de puntero
       this.isFrameRequested = false;
@@ -191,6 +192,10 @@
       this._onResize = null;
 
       this._init();
+    }
+
+    setPanZoomEnabled(enabled) {
+      this.enablePanZoom = Boolean(enabled);
     }
 
     _mountCanvas() {
@@ -298,6 +303,7 @@
         this.activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
 
         if (this.activePointers.size === 2 && this.cameraType === 'pan-zoom') {
+          if (!this.enablePanZoom) return;
           // Pinch zoom en móvil
           const pts = Array.from(this.activePointers.values());
           const currentDist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
@@ -323,6 +329,7 @@
           this.updateCamera();
           this.invalidate();
         } else if (this.cameraType === 'pan-zoom') {
+          if (!this.enablePanZoom) return;
           const panFactor = this.zoomZ * 0.0016;
           this.panX = Math.max(this.minPanX, Math.min(this.maxPanX, this.panX - dx * panFactor));
           this.panY = Math.max(this.minPanY, Math.min(this.maxPanY, this.panY + dy * panFactor));
@@ -349,6 +356,7 @@
       this._onWheel = (e) => {
         if (this.cameraType === 'pan-zoom') {
           e.preventDefault();
+          if (!this.enablePanZoom) return;
           const zoomDelta = e.deltaY * 0.012;
           this.zoomZ = Math.max(this.minZoom, Math.min(this.maxZoom, this.zoomZ + zoomDelta));
           this.updateCamera();

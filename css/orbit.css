@@ -578,6 +578,9 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
   top: calc(16px + env(safe-area-inset-top));
   left: 0;
   right: 0;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0 16px;
   display: flex;
   justify-content: center;
   align-items: center;
