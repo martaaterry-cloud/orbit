@@ -32,9 +32,11 @@
   function getOrCreateSharedRenderer(canvas) {
     if (!isWebGLSupported() || typeof THREE === 'undefined') return null;
 
-    if (!sharedRenderer && canvas) {
+    if (!sharedRenderer) {
+      const renderCanvas = canvas || document.createElement('canvas');
+      renderCanvas.className = 'orbit-3d-shared-canvas';
       sharedRenderer = new THREE.WebGLRenderer({
-        canvas: canvas,
+        canvas: renderCanvas,
         alpha: true,
         antialias: true,
         powerPreference: 'high-performance'
@@ -191,8 +193,36 @@
       this._init();
     }
 
+    _mountCanvas() {
+      if (!this.renderer || !this.renderer.domElement || !this.container) return;
+      const domCanvas = this.renderer.domElement;
+
+      if (domCanvas.parentElement !== this.container) {
+        if (domCanvas.parentElement) {
+          domCanvas.parentElement.removeChild(domCanvas);
+        }
+        if (this.container.firstChild) {
+          this.container.insertBefore(domCanvas, this.container.firstChild);
+        } else {
+          this.container.appendChild(domCanvas);
+        }
+      }
+
+      if (this.canvas && this.canvas !== domCanvas) {
+        this.canvas.style.display = 'none';
+      }
+
+      domCanvas.style.position = 'absolute';
+      domCanvas.style.inset = '0';
+      domCanvas.style.width = '100%';
+      domCanvas.style.height = '100%';
+      domCanvas.style.display = 'block';
+      domCanvas.style.opacity = '1';
+      domCanvas.style.touchAction = 'none';
+    }
+
     _init() {
-      if (!this.container || !this.canvas) return;
+      if (!this.container) return;
 
       if (!isWebGLSupported() || typeof THREE === 'undefined') {
         console.warn('[Orbit3D] WebGL o Three.js no disponible.');
@@ -212,6 +242,7 @@
       // Usar el WebGLRenderer único compartido
       this.renderer = getOrCreateSharedRenderer(this.canvas);
       if (this.renderer) {
+        this._mountCanvas();
         this.renderer.setSize(width, height, false);
       }
 
@@ -222,10 +253,6 @@
       currentActiveScene = this;
 
       if (this.fallback) this.fallback.style.display = 'none';
-      if (this.canvas) {
-        this.canvas.style.display = 'block';
-        this.canvas.style.opacity = '1';
-      }
 
       this.invalidate();
     }
@@ -440,12 +467,12 @@
     }
 
     resume() {
-      if (this.isPaused) {
-        this.isPaused = false;
-        currentActiveScene = this;
-        this.resize();
-        this.invalidate();
-      }
+      this.isPaused = false;
+      currentActiveScene = this;
+      this._mountCanvas();
+      if (this.fallback) this.fallback.style.display = 'none';
+      this.resize();
+      this.invalidate();
     }
 
     dispose() {

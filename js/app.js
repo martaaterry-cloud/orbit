@@ -419,10 +419,14 @@ function renderUniverse(d){
   let currentRegion = skyRegionsList.find(r => r.id === currentSkyId) || skyRegionsList[0];
   let isSkyUnlocked = (d.unlockedRegions && d.unlockedRegions.includes(currentRegion.id)) || (currentRegion.id === 'cielo-1');
 
-  // Update top active sky title
+  // Update top active sky title (UNIVERSO en vista general)
   let titleEl = document.getElementById('skyHeaderTitle');
   if(titleEl) {
-    titleEl.innerHTML = isSkyUnlocked ? `${esc(currentRegion.name)} · ${esc(currentRegion.roman)}` : `<span style="display:inline-flex; align-items:center; gap:5px;">${esc(currentRegion.name)} · ${esc(currentRegion.roman)} <svg class="icon" viewBox="0 0 24 24" style="width:13px; height:13px; stroke:currentColor;"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>`;
+    if (window.focusedRegionId) {
+      titleEl.innerHTML = isSkyUnlocked ? `${esc(currentRegion.name)} · ${esc(currentRegion.roman)}` : `<span style="display:inline-flex; align-items:center; gap:5px;">${esc(currentRegion.name)} · ${esc(currentRegion.roman)} <svg class="icon" viewBox="0 0 24 24" style="width:13px; height:13px; stroke:currentColor;"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>`;
+    } else {
+      titleEl.textContent = 'UNIVERSO';
+    }
   }
 
   // Determine overall in-progress constellation across unlocked regions
