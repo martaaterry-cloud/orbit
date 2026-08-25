@@ -36,7 +36,7 @@
     const container = document.getElementById('observatoryHeroScene');
     if (!container) return;
     const width = container.clientWidth || 300;
-    const height = container.clientHeight || 225;
+    const height = container.clientHeight || 275;
 
     camera.aspect = width / height;
     camera.updateProjectionMatrix();
@@ -133,7 +133,7 @@
     scene = new THREE.Scene();
 
     const width = container.clientWidth || 300;
-    const height = container.clientHeight || 225;
+    const height = container.clientHeight || 275;
     camera = new THREE.PerspectiveCamera(40, width / height, 0.1, 1000);
     camera.position.set(0, 0.5, 6.5);
     camera.lookAt(0, 0, 0);
@@ -170,7 +170,7 @@
     } else if (!isLoading) {
       isLoading = true;
       const loader = new THREE.GLTFLoader();
-      const modelUrl = 'assets/models/observatory.glb?v=1.3.21';
+      const modelUrl = 'assets/models/observatory.glb?v=1.3.22';
 
       loader.load(
         modelUrl,

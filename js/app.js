@@ -14,18 +14,36 @@ refresh:`<svg class="icon" viewBox="0 0 24 24"><path d="M21.5 2v6h-6M2.5 22v-6h6
 };
 
 
+let currentActivePage = 'today';
 let lastActivePage = 'today';
 
 function showPage(id){
+  if (currentActivePage === 'observatory' && id !== 'observatory') {
+    if (typeof window.pauseObservatory3D === 'function') window.pauseObservatory3D();
+  }
+
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.bottom button').forEach(b=>b.classList.remove('active'));
   let targetEl=document.getElementById(id);
   if(targetEl)targetEl.classList.add('active');
   let nav=document.getElementById('nav-'+id);if(nav)nav.classList.add('active');
   let bottomNav=document.querySelector('.bottom');
-  if(bottomNav){bottomNav.style.display=(id==='universe'||id==='settings')?'none':'grid'}
-  if(id !== 'settings' && id !== 'universe') lastActivePage = id;
-  window.scrollTo({top:0,behavior:'smooth'});render()
+  if(bottomNav){bottomNav.style.display=(id==='universe'||id==='settings'||id==='observatory')?'none':'grid'}
+  if(id !== 'settings' && id !== 'universe' && id !== 'observatory') lastActivePage = id;
+  currentActivePage = id;
+  window.scrollTo({top:0,behavior:'smooth'});
+  render();
+
+  if (id === 'observatory') {
+    setTimeout(() => {
+      if (typeof window.initObservatory3D === 'function') {
+        window.initObservatory3D();
+      } else {
+        initObservatory3DController();
+      }
+      selectObservatoryModule(window.activeObservatoryModuleId || 'telescope');
+    }, 60);
+  }
 }
 
 function closeSettings(){
@@ -962,15 +980,17 @@ function renderUniverse(d){
     renderObservatoryDetailCard(d, activeMod);
   }
 
-  // Inicializar interacción 3D
-  setTimeout(() => {
-    if (typeof window.initObservatory3D === 'function') {
-      window.initObservatory3D();
-    } else {
-      initObservatory3DController();
-    }
-    selectObservatoryModule(activeMod);
-  }, 40);
+  // Inicializar interacción 3D si la página del observatorio está visible
+  if (currentActivePage === 'observatory') {
+    setTimeout(() => {
+      if (typeof window.initObservatory3D === 'function') {
+        window.initObservatory3D();
+      } else {
+        initObservatory3DController();
+      }
+      selectObservatoryModule(activeMod);
+    }, 40);
+  }
 
   // Render Regions
   let regHtml = '';
@@ -1431,18 +1451,7 @@ function upgradeShip(level, cost){ upgradeObservatory(level, cost); }
 function openShipModal(){ openObservatoryModal(); }
 
 function openObservatoryModal(){
-  let modal = document.getElementById('observatoryModal') || document.getElementById('shipModal');
-  if(modal) {
-    modal.classList.add('show');
-    setTimeout(() => {
-      if (typeof window.initObservatory3D === 'function') {
-        window.initObservatory3D();
-      } else {
-        initObservatory3DController();
-      }
-      selectObservatoryModule(window.activeObservatoryModuleId || 'telescope');
-    }, 60);
-  }
+  showPage('observatory');
 }
 
 function unlockRegion(id, cost){

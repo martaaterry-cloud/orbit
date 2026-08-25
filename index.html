@@ -14,7 +14,7 @@
 <title>Orbit</title>
 
   <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
-  <link rel="stylesheet" href="css/orbit.css?v=1.3.21">
+  <link rel="stylesheet" href="css/orbit.css?v=1.3.22">
 </head>
 <body>
 <!-- Pantalla de Acceso Inicial Multiusuario -->
@@ -490,7 +490,7 @@
     <button class="btn btn-line settings-logout-btn" onclick="handleCloudLogout()" id="cloudLogoutBtn">
       Cerrar sesión
     </button>
-    <div class="settings-version-label">Orbit v1.3.21</div>
+    <div class="settings-version-label">Orbit v1.3.22</div>
   </div>
 </section>
 
@@ -534,9 +534,41 @@
     <button class="tool-btn" onclick="openShopModal()" title="Tienda de Recompensas">
       <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7H4v13a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2zM16 7A4 4 0 0 0 8 7"/></svg>
     </button>
-    <button class="tool-btn" onclick="openObservatoryModal()" title="Observatorio Terrestre">
+    <button class="tool-btn" onclick="showPage('observatory')" title="Observatorio Terrestre">
       <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a7 7 0 0 0-7 7v3h14v-3a7 7 0 0 0-7-7z"/><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/><path d="M12 3v10"/><path d="M8 17h8"/><circle cx="12" cy="8" r="1.5"/></svg>
     </button>
+  </div>
+</section>
+
+<!-- Sección Observatorio Terrestre (Pantalla Completa) -->
+<section id="observatory" class="page observatory-page">
+  <div class="observatory-nav-header">
+    <button class="observatory-back-btn" onclick="showPage('universe')" title="Volver al Universo">
+      <svg class="icon" viewBox="0 0 24 24" style="width:18px; height:18px; stroke:currentColor;"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      <span>Universo</span>
+    </button>
+    <div class="observatory-header-title">Observatorio Terrestre</div>
+    <div style="width:75px;"></div>
+  </div>
+
+  <!-- Escena 3D Hero Protagonista Grande -->
+  <div id="observatoryLevelStatus"></div>
+
+  <!-- Selector Integrado de Pestañas -->
+  <div class="observatory-tabs">
+    <button class="active" id="btnTabObservatorio" onclick="setObservatoryTab('observatorio')">Mi Estación</button>
+    <button id="btnTabRegiones" onclick="setObservatoryTab('regiones')">Regiones del Cielo</button>
+  </div>
+
+  <!-- Sección Principal: Componentes e Inspector -->
+  <div id="observatorySecMain">
+    <div id="observatoryComponents"></div>
+  </div>
+
+  <!-- Sección Secundaria: Regiones del Cielo -->
+  <div id="observatorySecRegiones" style="display:none">
+    <p class="observatory-subtext">Desbloquea regiones del firmamento para ampliar tus descubrimientos estelares.</p>
+    <div id="skyRegions" style="margin-top:10px"></div>
   </div>
 </section>
 
@@ -726,29 +758,7 @@
   </div>
 </div></div>
 
-<!-- Modal del Observatorio Terrestre -->
-<div class="modal" id="observatoryModal"><div class="sheet">
-  <button class="modal-close-x" onclick="closeModal('observatoryModal')" aria-label="Cerrar"><svg class="icon" viewBox="0 0 24 24" style="width:14px; height:14px; stroke:currentColor; stroke-width:2;"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
-  <h3>Observatorio Terrestre</h3>
-  <p class="prompt-sub" style="margin-bottom:12px;">Estación de observación y cartografía celeste</p>
-  
-  <div class="tabs" style="margin-top: 10px; margin-bottom: 15px; display: flex; gap: 7px;">
-    <button class="active" id="btnTabObservatorio" onclick="setObservatoryTab('observatorio')">Mi Observatorio</button>
-    <button id="btnTabRegiones" onclick="setObservatoryTab('regiones')">Regiones del Cielo</button>
-  </div>
 
-  <!-- Sección Mi Observatorio -->
-  <div id="observatorySecMain">
-    <div id="observatoryLevelStatus"></div>
-    <div id="observatoryComponents" style="margin-top:16px"></div>
-  </div>
-
-  <!-- Sección Regiones del Cielo -->
-  <div id="observatorySecRegiones" style="display:none">
-    <p class="prompt-sub" style="margin-bottom:12px;">Desbloquea regiones del firmamento para ampliar tus descubrimientos estelares.</p>
-    <div id="skyRegions" style="margin-top:10px"></div>
-  </div>
-</div></div>
 
 <!-- Modal del Libro de Constelaciones -->
 <div class="modal" id="constellationBookModal"><div class="sheet">
@@ -985,18 +995,18 @@
 <div class="toast" id="toast"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="js/vendor/three.min.js?v=1.3.21"></script>
-  <script src="js/vendor/GLTFLoader.js?v=1.3.21"></script>
-  <script src="js/observatory-3d.js?v=1.3.21"></script>
-  <script src="js/constellation-utils.js?v=1.3.21"></script>
-  <script src="data/templates.js?v=1.3.21"></script>
-  <script src="data/constellations.js?v=1.3.21"></script>
-  <script src="js/storage.js?v=1.3.21"></script>
-  <script src="js/supabase.js?v=1.3.21"></script>
-  <script src="js/stars.js?v=1.3.21"></script>
-  <script src="js/streak.js?v=1.3.21"></script>
-  <script src="js/journal.js?v=1.3.21"></script>
-  <script src="js/archive.js?v=1.3.21"></script>
-  <script src="js/app.js?v=1.3.21"></script>
+  <script src="js/vendor/three.min.js?v=1.3.22"></script>
+  <script src="js/vendor/GLTFLoader.js?v=1.3.22"></script>
+  <script src="js/observatory-3d.js?v=1.3.22"></script>
+  <script src="js/constellation-utils.js?v=1.3.22"></script>
+  <script src="data/templates.js?v=1.3.22"></script>
+  <script src="data/constellations.js?v=1.3.22"></script>
+  <script src="js/storage.js?v=1.3.22"></script>
+  <script src="js/supabase.js?v=1.3.22"></script>
+  <script src="js/stars.js?v=1.3.22"></script>
+  <script src="js/streak.js?v=1.3.22"></script>
+  <script src="js/journal.js?v=1.3.22"></script>
+  <script src="js/archive.js?v=1.3.22"></script>
+  <script src="js/app.js?v=1.3.22"></script>
 </body>
 </html>
