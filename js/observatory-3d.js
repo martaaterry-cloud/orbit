@@ -9,10 +9,82 @@
   let isInitialized = false;
 
   function buildObservatoryEnvironment(sceneInstance) {
-    // 1. Terreno 3D bajo el observatorio
-    const groundGroup = new THREE.Group();
+    const envGroup = new THREE.Group();
 
-    // Suelo montañoso principal (plataforma circular con acabado mate noche/roca)
+    // 1. Cúpula Celeste Nocturna Invertida 3D
+    const skyGeo = new THREE.SphereGeometry(180, 24, 16);
+    const skyMat = new THREE.MeshBasicMaterial({
+      color: 0x070410,
+      side: THREE.BackSide
+    });
+    const skyMesh = new THREE.Mesh(skyGeo, skyMat);
+    envGroup.add(skyMesh);
+
+    // 2. Campo Estelar 3D (THREE.Points)
+    const starCount = 900;
+    const positions = new Float32Array(starCount * 3);
+    const colors = new Float32Array(starCount * 3);
+
+    const starPalettes = [
+      new THREE.Color(0xffffff), // Blanco estelar
+      new THREE.Color(0xfff3e8), // Crema cálido
+      new THREE.Color(0xfcd5ce), // Rosa nebulosa
+      new THREE.Color(0xd8e4ff), // Azul celeste
+      new THREE.Color(0xffe8b4)  // Dorado tenue
+    ];
+
+    for (let i = 0; i < starCount; i++) {
+      const phi = Math.acos(1 - 2 * Math.random());
+      const theta = Math.random() * Math.PI * 2;
+      const r = 150 + Math.random() * 25;
+
+      positions[i * 3] = r * Math.sin(phi) * Math.cos(theta);
+      positions[i * 3 + 1] = Math.max(-8, r * Math.cos(phi));
+      positions[i * 3 + 2] = r * Math.sin(phi) * Math.sin(theta);
+
+      const col = starPalettes[Math.floor(Math.random() * starPalettes.length)];
+      colors[i * 3] = col.r;
+      colors[i * 3 + 1] = col.g;
+      colors[i * 3 + 2] = col.b;
+    }
+
+    const starGeo = new THREE.BufferGeometry();
+    starGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    starGeo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+    const starMat = new THREE.PointsMaterial({
+      size: 1.3,
+      vertexColors: true,
+      transparent: true,
+      opacity: 0.88
+    });
+    const starPoints = new THREE.Points(starGeo, starMat);
+    envGroup.add(starPoints);
+
+    // 3. Resplandor Crepuscular y Silueta de Horizonte Lejano 3D
+    const glowGeo = new THREE.CylinderGeometry(85, 90, 26, 32, 1, true);
+    const glowMat = new THREE.MeshBasicMaterial({
+      color: 0x3d1a38,
+      side: THREE.BackSide,
+      transparent: true,
+      opacity: 0.35
+    });
+    const glowMesh = new THREE.Mesh(glowGeo, glowMat);
+    glowMesh.position.y = 3.0;
+    envGroup.add(glowMesh);
+
+    const horizonGeo = new THREE.CylinderGeometry(70, 75, 18, 48, 1, true);
+    const horizonMat = new THREE.MeshBasicMaterial({
+      color: 0x0a0516,
+      side: THREE.BackSide,
+      transparent: true,
+      opacity: 0.95
+    });
+    const horizonMesh = new THREE.Mesh(horizonGeo, horizonMat);
+    horizonMesh.position.y = -1.5;
+    envGroup.add(horizonMesh);
+
+    // 4. Terreno 3D bajo el observatorio (Cumbre de la montaña)
     const groundGeo = new THREE.CircleGeometry(16, 32);
     const groundMat = new THREE.MeshStandardMaterial({
       color: 0x130c22,
@@ -23,7 +95,7 @@
     const groundMesh = new THREE.Mesh(groundGeo, groundMat);
     groundMesh.rotation.x = -Math.PI / 2;
     groundMesh.position.y = -0.88;
-    groundGroup.add(groundMesh);
+    envGroup.add(groundMesh);
 
     // Anillo sutil de contorno del mirador
     const rimGeo = new THREE.RingGeometry(2.4, 2.55, 32);
@@ -36,11 +108,11 @@
     const rimMesh = new THREE.Mesh(rimGeo, rimMat);
     rimMesh.rotation.x = -Math.PI / 2;
     rimMesh.position.y = -0.87;
-    groundGroup.add(rimMesh);
+    envGroup.add(rimMesh);
 
-    sceneInstance.add(groundGroup);
+    sceneInstance.add(envGroup);
 
-    // 2. Iluminación armónica con la estética nocturna terrestre de Orbit
+    // 5. Iluminación armónica con la estética nocturna terrestre de Orbit
     const ambientLight = new THREE.AmbientLight(0xffffff, 1.35);
     sceneInstance.add(ambientLight);
 
@@ -106,7 +178,7 @@
 
     buildObservatoryEnvironment(observatoryScene);
 
-    const modelUrl = 'assets/models/observatory.glb?v=1.3.30';
+    const modelUrl = 'assets/models/observatory.glb?v=1.3.31';
     Orbit3D.loadGLB(
       modelUrl,
       function(gltf, bounds) {
