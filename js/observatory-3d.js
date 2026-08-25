@@ -12,9 +12,9 @@
   let startX = 0, startY = 0;
 
   // Parámetros de Cámara Orbital Manual
-  let orbitRadius = 5.0;
+  let orbitRadius = 5.2;
   let orbitAzimuth = 0.45;
-  let orbitElevation = 0.12;
+  let orbitElevation = 0.14;
 
   let cachedGLTF = null;
 
@@ -141,7 +141,38 @@
     renderer.setSize(width, height, false);
     renderer.outputEncoding = THREE.sRGBEncoding;
 
-    // 4. Iluminación armónica con la estética nocturna terrestre de Orbit
+    // 4. Terreno 3D bajo el observatorio para dar referencia espacial al orbitar
+    const groundGroup = new THREE.Group();
+
+    // Suelo montañoso principal (plataforma circular con acabado mate noche/roca)
+    const groundGeo = new THREE.CircleGeometry(16, 32);
+    const groundMat = new THREE.MeshStandardMaterial({
+      color: 0x130c22,
+      roughness: 0.94,
+      metalness: 0.06,
+      flatShading: true
+    });
+    const groundMesh = new THREE.Mesh(groundGeo, groundMat);
+    groundMesh.rotation.x = -Math.PI / 2;
+    groundMesh.position.y = -0.88;
+    groundGroup.add(groundMesh);
+
+    // Anillo sutil de contorno del mirador para acentuar el cambio de perspectiva
+    const rimGeo = new THREE.RingGeometry(2.4, 2.55, 32);
+    const rimMat = new THREE.MeshBasicMaterial({
+      color: 0xfcc2cd,
+      opacity: 0.20,
+      transparent: true,
+      side: THREE.DoubleSide
+    });
+    const rimMesh = new THREE.Mesh(rimGeo, rimMat);
+    rimMesh.rotation.x = -Math.PI / 2;
+    rimMesh.position.y = -0.87;
+    groundGroup.add(rimMesh);
+
+    scene.add(groundGroup);
+
+    // 5. Iluminación armónica con la estética nocturna terrestre de Orbit
     const ambientLight = new THREE.AmbientLight(0xffffff, 1.35);
     scene.add(ambientLight);
 
@@ -156,13 +187,13 @@
     rimLight.position.set(-5, 4, -4);
     scene.add(rimLight);
 
-    // 5. Cargar modelo GLB (o reusar cache en memoria)
+    // 6. Cargar modelo GLB (o reusar cache en memoria)
     if (cachedGLTF) {
       mountModel(cachedGLTF, fallbackMsg, canvas);
     } else if (!isLoading) {
       isLoading = true;
       const loader = new THREE.GLTFLoader();
-      const modelUrl = 'assets/models/observatory.glb?v=1.3.27';
+      const modelUrl = 'assets/models/observatory.glb?v=1.3.28';
 
       loader.load(
         modelUrl,
@@ -199,7 +230,7 @@
     const maxDim = Math.max(size.x, size.y, size.z);
 
     if (maxDim > 0) {
-      const targetScale = 2.2 / maxDim;
+      const targetScale = 1.6 / maxDim;
       modelRoot.scale.setScalar(targetScale);
 
       modelRoot.position.x = -center.x * targetScale;
