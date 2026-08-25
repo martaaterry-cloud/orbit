@@ -11,26 +11,25 @@
   function buildObservatoryEnvironment(sceneInstance) {
     const envGroup = new THREE.Group();
 
-    // 1. Cúpula Celeste Nocturna Invertida 3D
+    // 1. Cúpula Celeste Nocturna Invertida 3D (Azul-negro profundo muy oscuro)
     const skyGeo = new THREE.SphereGeometry(180, 24, 16);
     const skyMat = new THREE.MeshBasicMaterial({
-      color: 0x070410,
+      color: 0x05070d,
       side: THREE.BackSide
     });
     const skyMesh = new THREE.Mesh(skyGeo, skyMat);
     envGroup.add(skyMesh);
 
-    // 2. Campo Estelar 3D (THREE.Points)
-    const starCount = 900;
+    // 2. Campo Estelar 3D Discreto (Predominio blanco y crema tenue)
+    const starCount = 850;
     const positions = new Float32Array(starCount * 3);
     const colors = new Float32Array(starCount * 3);
 
     const starPalettes = [
-      new THREE.Color(0xffffff), // Blanco estelar
-      new THREE.Color(0xfff3e8), // Crema cálido
-      new THREE.Color(0xfcd5ce), // Rosa nebulosa
-      new THREE.Color(0xd8e4ff), // Azul celeste
-      new THREE.Color(0xffe8b4)  // Dorado tenue
+      new THREE.Color(0xffffff), // Blanco puro
+      new THREE.Color(0xf6f8fa), // Blanco estelar suave
+      new THREE.Color(0xfff8ee), // Crema muy tenue
+      new THREE.Color(0xdde8f5)  // Azul frío muy sutil
     ];
 
     for (let i = 0; i < starCount; i++) {
@@ -39,7 +38,7 @@
       const r = 150 + Math.random() * 25;
 
       positions[i * 3] = r * Math.sin(phi) * Math.cos(theta);
-      positions[i * 3 + 1] = Math.max(-8, r * Math.cos(phi));
+      positions[i * 3 + 1] = Math.max(-6, r * Math.cos(phi));
       positions[i * 3 + 2] = r * Math.sin(phi) * Math.sin(theta);
 
       const col = starPalettes[Math.floor(Math.random() * starPalettes.length)];
@@ -53,43 +52,64 @@
     starGeo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
 
     const starMat = new THREE.PointsMaterial({
-      size: 1.3,
+      size: 0.85,
       vertexColors: true,
       transparent: true,
-      opacity: 0.88
+      opacity: 0.78
     });
     const starPoints = new THREE.Points(starGeo, starMat);
     envGroup.add(starPoints);
 
-    // 3. Resplandor Crepuscular y Silueta de Horizonte Lejano 3D
-    const glowGeo = new THREE.CylinderGeometry(85, 90, 26, 32, 1, true);
-    const glowMat = new THREE.MeshBasicMaterial({
-      color: 0x3d1a38,
-      side: THREE.BackSide,
-      transparent: true,
-      opacity: 0.35
-    });
-    const glowMesh = new THREE.Mesh(glowGeo, glowMat);
-    glowMesh.position.y = 3.0;
-    envGroup.add(glowMesh);
+    // 3. Relieve Montañoso Distante Low-Poly (Siluetas terrestres lejanas)
+    const mountainSegments = 48;
+    const mountainPositions = [];
+    const mountainIndices = [];
+    const baseRadius = 85;
+    const baseY = -2.8;
 
-    const horizonGeo = new THREE.CylinderGeometry(70, 75, 18, 48, 1, true);
-    const horizonMat = new THREE.MeshBasicMaterial({
-      color: 0x0a0516,
-      side: THREE.BackSide,
-      transparent: true,
-      opacity: 0.95
-    });
-    const horizonMesh = new THREE.Mesh(horizonGeo, horizonMat);
-    horizonMesh.position.y = -1.5;
-    envGroup.add(horizonMesh);
+    for (let i = 0; i <= mountainSegments; i++) {
+      const theta = (i / mountainSegments) * Math.PI * 2;
+      const sin = Math.sin(theta);
+      const cos = Math.cos(theta);
 
-    // 4. Terreno 3D bajo el observatorio (Cumbre de la montaña)
+      // Variación orgánica de cumbre montañosa
+      const ridge = Math.sin(theta * 3) * 0.7 + Math.cos(theta * 7) * 0.5 + Math.sin(theta * 11) * 0.3;
+      const topY = -0.6 + Math.max(0, ridge) * 1.6;
+
+      // Base inferior
+      mountainPositions.push(baseRadius * sin, baseY, baseRadius * cos);
+      // Cumbre superior
+      mountainPositions.push((baseRadius - 2) * sin, topY, (baseRadius - 2) * cos);
+    }
+
+    for (let i = 0; i < mountainSegments; i++) {
+      const i0 = i * 2;
+      const i1 = i * 2 + 1;
+      const i2 = (i + 1) * 2;
+      const i3 = (i + 1) * 2 + 1;
+
+      mountainIndices.push(i0, i2, i1);
+      mountainIndices.push(i1, i2, i3);
+    }
+
+    const mountainGeo = new THREE.BufferGeometry();
+    mountainGeo.setAttribute('position', new THREE.Float32BufferAttribute(mountainPositions, 3));
+    mountainGeo.setIndex(mountainIndices);
+    mountainGeo.computeVertexNormals();
+
+    const mountainMat = new THREE.MeshBasicMaterial({
+      color: 0x06080e,
+      side: THREE.BackSide
+    });
+    const mountainMesh = new THREE.Mesh(mountainGeo, mountainMat);
+    envGroup.add(mountainMesh);
+
+    // 4. Terreno 3D bajo el observatorio (Cumbre de roca y pizarra neutra oscura)
     const groundGeo = new THREE.CircleGeometry(16, 32);
     const groundMat = new THREE.MeshStandardMaterial({
-      color: 0x130c22,
-      roughness: 0.94,
-      metalness: 0.06,
+      color: 0x14161a,
+      roughness: 0.95,
+      metalness: 0.05,
       flatShading: true
     });
     const groundMesh = new THREE.Mesh(groundGeo, groundMat);
@@ -97,33 +117,20 @@
     groundMesh.position.y = -0.88;
     envGroup.add(groundMesh);
 
-    // Anillo sutil de contorno del mirador
-    const rimGeo = new THREE.RingGeometry(2.4, 2.55, 32);
-    const rimMat = new THREE.MeshBasicMaterial({
-      color: 0xfcc2cd,
-      opacity: 0.20,
-      transparent: true,
-      side: THREE.DoubleSide
-    });
-    const rimMesh = new THREE.Mesh(rimGeo, rimMat);
-    rimMesh.rotation.x = -Math.PI / 2;
-    rimMesh.position.y = -0.87;
-    envGroup.add(rimMesh);
-
     sceneInstance.add(envGroup);
 
-    // 5. Iluminación armónica con la estética nocturna terrestre de Orbit
-    const ambientLight = new THREE.AmbientLight(0xffffff, 1.35);
+    // 5. Iluminación Natural Nocturna (Neutro/Frío sin dominantes rosas)
+    const ambientLight = new THREE.AmbientLight(0xdde5f0, 0.95);
     sceneInstance.add(ambientLight);
 
-    const hemiLight = new THREE.HemisphereLight(0xffe4ea, 0x180f2d, 1.1);
+    const hemiLight = new THREE.HemisphereLight(0x607898, 0x14161a, 0.85);
     sceneInstance.add(hemiLight);
 
-    const dirLight = new THREE.DirectionalLight(0xfff5ea, 1.7);
+    const dirLight = new THREE.DirectionalLight(0xe8f0f8, 1.45);
     dirLight.position.set(4, 9, 6);
     sceneInstance.add(dirLight);
 
-    const rimLight = new THREE.DirectionalLight(0xfcc2cd, 1.3);
+    const rimLight = new THREE.DirectionalLight(0x8ca4c0, 0.75);
     rimLight.position.set(-5, 4, -4);
     sceneInstance.add(rimLight);
   }
@@ -178,7 +185,7 @@
 
     buildObservatoryEnvironment(observatoryScene);
 
-    const modelUrl = 'assets/models/observatory.glb?v=1.3.31';
+    const modelUrl = 'assets/models/observatory.glb?v=1.3.32';
     Orbit3D.loadGLB(
       modelUrl,
       function(gltf, bounds) {
