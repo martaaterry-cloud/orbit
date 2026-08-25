@@ -172,7 +172,7 @@
     } else if (!isLoading) {
       isLoading = true;
       const loader = new THREE.GLTFLoader();
-      const modelUrl = 'assets/models/observatory.glb?v=1.3.25';
+      const modelUrl = 'assets/models/observatory.glb?v=1.3.26';
 
       loader.load(
         modelUrl,
@@ -209,7 +209,7 @@
     const maxDim = Math.max(size.x, size.y, size.z);
 
     if (maxDim > 0) {
-      const targetScale = 4.8 / maxDim;
+      const targetScale = 2.8 / maxDim;
       modelRoot.scale.setScalar(targetScale);
 
       modelRoot.position.x = -center.x * targetScale;

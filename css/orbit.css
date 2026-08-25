@@ -1102,6 +1102,74 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
   pointer-events: none;
 }
 
+/* ==========================================================================
+   BOTTOM SHEETS DEL OBSERVATORIO (Modales Oscuros Translúcidos)
+   ========================================================================== */
+.observatory-sheet-modal {
+  align-items: flex-end !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  background: rgba(4, 2, 10, 0.45) !important;
+}
+
+.observatory-sheet-modal .observatory-sheet {
+  width: 100% !important;
+  max-width: min(540px, 100vw) !important;
+  max-height: 60vh !important;
+  max-height: 60dvh !important;
+  border-radius: 24px 24px 0 0 !important;
+  margin: 0 auto !important;
+  background: linear-gradient(180deg, rgba(20, 13, 36, 0.92) 0%, rgba(10, 6, 20, 0.96) 100%) !important;
+  backdrop-filter: blur(28px) !important;
+  -webkit-backdrop-filter: blur(28px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-bottom: none !important;
+  box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.6) !important;
+  padding: 20px 18px calc(24px + env(safe-area-inset-bottom)) !important;
+  color: #f7f4eb !important;
+  box-sizing: border-box !important;
+  animation: observatorySheetSlideUp 0.28s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+@keyframes observatorySheetSlideUp {
+  0% { transform: translateY(100%); }
+  100% { transform: translateY(0); }
+}
+
+.observatory-sheet-title {
+  font-family: var(--serif, Georgia, serif) !important;
+  font-size: 19px !important;
+  font-weight: 600 !important;
+  color: #ffffff !important;
+  margin: 0 0 4px !important;
+  padding-right: 36px !important;
+}
+
+.observatory-sheet-sub {
+  font-size: 12px !important;
+  color: #b8a9c4 !important;
+  margin: 0 0 14px !important;
+  line-height: 1.4 !important;
+}
+
+.observatory-sheet-close {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #eeddf0 !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+}
+
+.observatory-sheet-close:hover {
+  background: rgba(255, 255, 255, 0.18) !important;
+  color: #fff !important;
+  border-color: rgba(252, 194, 205, 0.35) !important;
+}
+
+.observatory-sheet .card {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: 1px solid rgba(255, 255, 255, 0.09) !important;
+  color: #f7f4eb !important;
+}
+
 /* Selector de componentes modulares y tarjeta activa */
 .observatory-modules-strip {
   display: flex;

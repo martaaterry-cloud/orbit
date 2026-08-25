@@ -14,7 +14,7 @@
 <title>Orbit</title>
 
   <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
-  <link rel="stylesheet" href="css/orbit.css?v=1.3.25">
+  <link rel="stylesheet" href="css/orbit.css?v=1.3.26">
 </head>
 <body>
 <!-- Pantalla de Acceso Inicial Multiusuario -->
@@ -490,7 +490,7 @@
     <button class="btn btn-line settings-logout-btn" onclick="handleCloudLogout()" id="cloudLogoutBtn">
       Cerrar sesión
     </button>
-    <div class="settings-version-label">Orbit v1.3.25</div>
+    <div class="settings-version-label">Orbit v1.3.26</div>
   </div>
 </section>
 
@@ -586,26 +586,26 @@
 </section>
 
 <!-- Bottom Sheet: Mejoras de la Estación / Inspector de Módulos -->
-<div class="modal" id="observatoryUpgradesModal">
-  <div class="sheet" style="max-height:80vh; overflow-y:auto;">
-    <button class="modal-close-x" onclick="closeModal('observatoryUpgradesModal')" aria-label="Cerrar">
+<div class="modal observatory-sheet-modal" id="observatoryUpgradesModal">
+  <div class="sheet observatory-sheet">
+    <button class="modal-close-x observatory-sheet-close" onclick="closeModal('observatoryUpgradesModal')" aria-label="Cerrar">
       <svg class="icon" viewBox="0 0 24 24" style="width:14px; height:14px; stroke:currentColor; stroke-width:2;"><path d="M18 6L6 18M6 6l12 12"/></svg>
     </button>
-    <h3 style="margin-bottom:4px;">Mejoras de la Estación</h3>
-    <p class="prompt-sub" style="margin-bottom:14px;">Optimiza tu instrumental astronómico y eleva el rango del observatorio</p>
+    <h3 class="observatory-sheet-title">Mejoras de la Estación</h3>
+    <p class="observatory-sheet-sub">Optimiza tu instrumental astronómico y eleva el rango del observatorio</p>
     
     <div id="observatoryComponents"></div>
   </div>
 </div>
 
 <!-- Bottom Sheet: Regiones del Cielo -->
-<div class="modal" id="observatoryRegionsModal">
-  <div class="sheet" style="max-height:80vh; overflow-y:auto;">
-    <button class="modal-close-x" onclick="closeModal('observatoryRegionsModal')" aria-label="Cerrar">
+<div class="modal observatory-sheet-modal" id="observatoryRegionsModal">
+  <div class="sheet observatory-sheet">
+    <button class="modal-close-x observatory-sheet-close" onclick="closeModal('observatoryRegionsModal')" aria-label="Cerrar">
       <svg class="icon" viewBox="0 0 24 24" style="width:14px; height:14px; stroke:currentColor; stroke-width:2;"><path d="M18 6L6 18M6 6l12 12"/></svg>
     </button>
-    <h3 style="margin-bottom:4px;">Regiones del Firmamento</h3>
-    <p class="prompt-sub" style="margin-bottom:14px;">Desbloquea sectores celestes para ampliar tus descubrimientos</p>
+    <h3 class="observatory-sheet-title">Regiones del Firmamento</h3>
+    <p class="observatory-sheet-sub">Desbloquea sectores celestes para ampliar tus descubrimientos</p>
     
     <div id="skyRegions" style="margin-top:10px"></div>
   </div>
@@ -1034,18 +1034,18 @@
 <div class="toast" id="toast"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="js/vendor/three.min.js?v=1.3.25"></script>
-  <script src="js/vendor/GLTFLoader.js?v=1.3.25"></script>
-  <script src="js/observatory-3d.js?v=1.3.25"></script>
-  <script src="js/constellation-utils.js?v=1.3.25"></script>
-  <script src="data/templates.js?v=1.3.25"></script>
-  <script src="data/constellations.js?v=1.3.25"></script>
-  <script src="js/storage.js?v=1.3.25"></script>
-  <script src="js/supabase.js?v=1.3.25"></script>
-  <script src="js/stars.js?v=1.3.25"></script>
-  <script src="js/streak.js?v=1.3.25"></script>
-  <script src="js/journal.js?v=1.3.25"></script>
-  <script src="js/archive.js?v=1.3.25"></script>
-  <script src="js/app.js?v=1.3.25"></script>
+  <script src="js/vendor/three.min.js?v=1.3.26"></script>
+  <script src="js/vendor/GLTFLoader.js?v=1.3.26"></script>
+  <script src="js/observatory-3d.js?v=1.3.26"></script>
+  <script src="js/constellation-utils.js?v=1.3.26"></script>
+  <script src="data/templates.js?v=1.3.26"></script>
+  <script src="data/constellations.js?v=1.3.26"></script>
+  <script src="js/storage.js?v=1.3.26"></script>
+  <script src="js/supabase.js?v=1.3.26"></script>
+  <script src="js/stars.js?v=1.3.26"></script>
+  <script src="js/streak.js?v=1.3.26"></script>
+  <script src="js/journal.js?v=1.3.26"></script>
+  <script src="js/archive.js?v=1.3.26"></script>
+  <script src="js/app.js?v=1.3.26"></script>
 </body>
 </html>
