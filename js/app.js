@@ -47,7 +47,16 @@ function addReward(){let n=rewardName.value.trim(),c=+rewardCost.value;if(!n||!c
 function deleteReward(id){let d=load();d.rewards=d.rewards.filter(r=>r.id!==id);save(d);toast('Premio eliminado');render()}
 function redeem(id){let d=load(),r=d.rewards.find(x=>x.id===id);if(r&&Number(d.wallet||0)>=r.cost){d.wallet=Number(d.wallet||0)-r.cost;d.bank=d.wallet;save(d);toast(`✦ Premio canjeado: ${r.name}`);render()}}
 function openModal(id){let el=document.getElementById(id);if(el){el.classList.add('show');el.classList.add('active');}}
-function closeModal(id){let el=document.getElementById(id);if(el){el.classList.remove('show');el.classList.remove('active');}}
+function closeModal(id){
+  let el=document.getElementById(id);
+  if(el){
+    el.classList.remove('show');
+    el.classList.remove('active');
+    if(id === 'observatoryModal' && typeof window.pauseObservatory3D === 'function'){
+      window.pauseObservatory3D();
+    }
+  }
+}
 function closeTopModal(){let openModals=document.querySelectorAll('.modal.show, .ceremony-modal.active');if(openModals.length>0){let top=openModals[openModals.length-1];top.classList.remove('show');top.classList.remove('active');}}
 function toast(msg){let t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(window.toastTimeout);window.toastTimeout=setTimeout(()=>t.classList.remove('show'),1900)}
 
@@ -818,7 +827,11 @@ function renderUniverse(d){
       <div class="observatory-nebula-glow"></div>
       <div class="observatory-mountains"></div>
       
-      <div class="observatory-3d-stage" id="observatory3DStage">
+      <!-- Canvas Three.js Real para el Modelo 3D -->
+      <canvas id="observatoryCanvas" class="observatory-3d-canvas"></canvas>
+
+      <!-- Fallback Vectorial SVG (activo si WebGL falla o mientras carga) -->
+      <div class="observatory-3d-stage" id="observatoryFallbackSvg">
         <div class="observatory-3d-model">
           <!-- Haz de luz de observación hacia el cielo -->
           <div class="observatory-beam"></div>
@@ -951,7 +964,11 @@ function renderUniverse(d){
 
   // Inicializar interacción 3D
   setTimeout(() => {
-    initObservatory3DController();
+    if (typeof window.initObservatory3D === 'function') {
+      window.initObservatory3D();
+    } else {
+      initObservatory3DController();
+    }
     selectObservatoryModule(activeMod);
   }, 40);
 
@@ -1418,7 +1435,11 @@ function openObservatoryModal(){
   if(modal) {
     modal.classList.add('show');
     setTimeout(() => {
-      initObservatory3DController();
+      if (typeof window.initObservatory3D === 'function') {
+        window.initObservatory3D();
+      } else {
+        initObservatory3DController();
+      }
       selectObservatoryModule(window.activeObservatoryModuleId || 'telescope');
     }, 60);
   }
