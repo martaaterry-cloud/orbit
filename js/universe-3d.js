@@ -582,7 +582,7 @@
       // Margen vertical de seguridad (debajo de cabecera y encima de toolbar)
       const minTop = 64;
       const maxTop = height - 76;
-      const offsetTop = item.isRegion ? 32 : 14;
+      const offsetTop = item.isRegion ? 32 : (item.id === 'cassiopeia' ? 24 : 16);
       screenY = Math.max(minTop, Math.min(maxTop, screenY + offsetTop));
 
       item.element.style.display = 'flex';

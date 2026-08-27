@@ -125,8 +125,8 @@ testCases.forEach((targetId) => {
       console.error(`    ✖ Casiopea debe tener exactamente 5 estrellas y 4 aristas`);
       totalErrors++;
     }
-    if (c.rot === 35) {
-      console.error(`    ✖ Casiopea conserva la rotación vertical defectuosa rot: 35`);
+    if (c.rot !== -45) {
+      console.error(`    ✖ Casiopea esperaba rot: -45 para orientación diagonal, obtuvo rot: ${c.rot}`);
       totalErrors++;
     }
   }
@@ -139,7 +139,29 @@ testCases.forEach((targetId) => {
   }
 });
 
-// 4. Resumen final
+// 4. Prueba explícita del caso real de usuario para Casiopea (11.3 estrellas)
+console.log('\n🎯 Verificación de Caso Real de Usuario: Casiopea con 11.3 estrellas:');
+const casiopeaDef = constellationDefs.find(x => x.id === 'cassiopeia');
+const prevNeed = 8;
+const need = 15;
+const lifetimeStars = 11.3;
+const localProgress = (lifetimeStars - prevNeed) / (need - prevNeed); // ≈ 0.47142857
+
+const realCaseRes = ConstellationUtils.computeConstellationProgress(casiopeaDef, localProgress);
+console.log(`  • Estrellas acumuladas : ${lifetimeStars} ★`);
+console.log(`  • Tramo                : [${prevNeed} ★ -> ${need} ★]`);
+console.log(`  • Progreso local       : ${(localProgress * 100).toFixed(2)}% (${localProgress.toFixed(6)})`);
+console.log(`  • Aristas activas      : ${realCaseRes.activeEdgeCount} de ${casiopeaDef.edges.length}`);
+console.log(`  • Estrellas activas    : ${realCaseRes.activeNodeIndices.size} de ${casiopeaDef.stars.length}`);
+
+if (realCaseRes.activeEdgeCount !== 2) {
+  console.error(`  ❌ ERROR: Casiopea con 11.3 ★ debía dar exactamente 2 de 4 aristas, pero dio ${realCaseRes.activeEdgeCount}`);
+  totalErrors++;
+} else {
+  console.log(`  ✅ CORRECTO: Casiopea muestra exactamente 2 de 4 aristas (Math.round(0.4714 * 4) = 2)`);
+}
+
+// 5. Resumen final
 console.log('\n=========================================================');
 if (totalErrors === 0) {
   console.log(`🎉 VALIDACIÓN EXITOSA: 0 errores, ${totalWarnings} advertencias.`);

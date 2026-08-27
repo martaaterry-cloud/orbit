@@ -377,7 +377,7 @@
       activeEdgeCount = 0;
       p = 0.0;
     } else {
-      activeEdgeCount = Math.min(E, Math.floor(p * E));
+      activeEdgeCount = Math.max(0, Math.min(E, Math.round(p * E)));
     }
 
     const activeEdges = edges.slice(0, activeEdgeCount);
