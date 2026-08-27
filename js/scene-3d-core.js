@@ -44,6 +44,8 @@
       sharedRenderer.setClearColor(0x000000, 0);
       sharedRenderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
       sharedRenderer.outputEncoding = THREE.sRGBEncoding;
+      sharedRenderer.toneMapping = THREE.ACESFilmicToneMapping;
+      sharedRenderer.toneMappingExposure = 1.0;
     }
     return sharedRenderer;
   }

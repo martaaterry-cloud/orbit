@@ -119,24 +119,39 @@
 
     sceneInstance.add(envGroup);
 
-    // 5. Iluminación Natural Nocturna (Neutro/Frío sin dominantes rosas)
-    const ambientLight = new THREE.AmbientLight(0xdde5f0, 0.95);
+    // 5. Iluminación Natural Nocturna PBR (Luz lunar fría y contrastada sin sobreexposición)
+    const ambientLight = new THREE.AmbientLight(0x0e1524, 0.35);
     sceneInstance.add(ambientLight);
 
-    const hemiLight = new THREE.HemisphereLight(0x607898, 0x14161a, 0.85);
+    const hemiLight = new THREE.HemisphereLight(0x1e2b40, 0x080a10, 0.30);
     sceneInstance.add(hemiLight);
 
-    const dirLight = new THREE.DirectionalLight(0xe8f0f8, 1.45);
-    dirLight.position.set(4, 9, 6);
+    const dirLight = new THREE.DirectionalLight(0xd8e6f8, 1.30);
+    dirLight.position.set(5.0, 7.5, 4.5);
     sceneInstance.add(dirLight);
 
-    const rimLight = new THREE.DirectionalLight(0x8ca4c0, 0.75);
-    rimLight.position.set(-5, 4, -4);
+    const rimLight = new THREE.DirectionalLight(0x445c7e, 0.45);
+    rimLight.position.set(-6.0, 3.5, -5.0);
     sceneInstance.add(rimLight);
   }
 
   function mountObservatoryModel(gltf, bounds, sceneInstance) {
     const modelRoot = gltf.scene;
+
+    // Preservar y asegurar espacios de color PBR originales en cada malla
+    modelRoot.traverse(function(child) {
+      if (child.isMesh && child.material) {
+        const materials = Array.isArray(child.material) ? child.material : [child.material];
+        materials.forEach(function(mat) {
+          if (mat.map) mat.map.encoding = THREE.sRGBEncoding;
+          if (mat.emissiveMap) mat.emissiveMap.encoding = THREE.sRGBEncoding;
+          if (mat.roughnessMap) mat.roughnessMap.encoding = THREE.LinearEncoding;
+          if (mat.metalnessMap) mat.metalnessMap.encoding = THREE.LinearEncoding;
+          if (mat.normalMap) mat.normalMap.encoding = THREE.LinearEncoding;
+          mat.needsUpdate = true;
+        });
+      }
+    });
 
     if (bounds.maxDim > 0) {
       const targetScale = 1.6 / bounds.maxDim;
@@ -185,7 +200,7 @@
 
     buildObservatoryEnvironment(observatoryScene);
 
-    const modelUrl = 'assets/models/observatory.glb?v=1.3.47';
+    const modelUrl = 'assets/models/observatory.glb?v=1.3.48';
     Orbit3D.loadGLB(
       modelUrl,
       function(gltf, bounds) {
