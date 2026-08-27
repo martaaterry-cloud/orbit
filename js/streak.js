@@ -44,9 +44,9 @@ function accrue(){
              expiresAt:expiry,
              maxExtraStars:3.0,
              extraStarsGenerated:0.0,
-             scope:['impulso','racha']
+             scope:['journal','goodThing','impulso','impulso-timer']
            });
-           toast('✦ ¡Noche de Constancia activada! (x1.5 por el tiempo restante)');
+           toast('✦ ¡Noche de Constancia activada! (x1.5 durante 24 h)');
          }
        }
      }
@@ -79,7 +79,7 @@ function sharedMilestoneInfo(d){
  let idx=n?m.indexOf(n):m.length;
  if(idx>0)prev=m[idx-1].ms;
  let pct=n?Math.max(0,Math.min(100,(elapsed-prev)/(next-prev)*100)):100;
- return {text:n?`Próximo hito: ${n.label} · +${String(n.pts).replace('.',',')} pts`:'Has superado los 7 días',pct}
+ return {text:n?`Próximo hito: ${n.label} · +${String(n.pts).replace('.',',')} pts`:'Hito de 7 días conseguido',pct}
 }
 
 function openUrge(id){
@@ -380,10 +380,14 @@ function surviveUrge(){
  render();
 }
 
-document.addEventListener('visibilitychange',()=>{if(!document.hidden)syncUrgeTimer()});
-window.addEventListener('pageshow',()=>syncUrgeTimer());
-window.addEventListener('focus',()=>syncUrgeTimer());
-syncUrgeTimer();
+if(typeof document !== 'undefined'){
+ document.addEventListener('visibilitychange',()=>{if(!document.hidden)syncUrgeTimer()});
+}
+if(typeof window !== 'undefined'){
+ window.addEventListener('pageshow',()=>syncUrgeTimer());
+ window.addEventListener('focus',()=>syncUrgeTimer());
+ syncUrgeTimer();
+}
 
 function slip(id){
  slipGoalId.value=id;

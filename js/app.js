@@ -1346,8 +1346,8 @@ function saveReflectionAnswer(){
     ts: Date.now()
   };
   save(d);
-  let got = awardDailyAction('journal', 0.1, 0.5, 'Reflexión: ' + p[0], 'reflection-' + k);
-  toast(got ? 'Reflexión guardada · +0,1' : 'Reflexión guardada');
+  let boost = awardDailyAction('journal', 0.1, 0.5, 'Reflexión: ' + p[0], 'reflection-' + k);
+  toast(boost && boost.grantAmount ? formatRewardToast('Reflexión guardada', boost) : 'Reflexión guardada');
   closeModal('reflectionModal');
   render();
 }
@@ -1705,7 +1705,7 @@ function buyStellarWindow(){
     expiresAt:Date.now()+2*HOUR,
     maxExtraStars:2.0,
     extraStarsGenerated:0.0,
-    scope:['impulso','racha']
+    scope:['journal','goodThing','impulso','impulso-timer']
   });
   save(d);
   toast('✦ ¡Ventana Estelar activada! (x1.5 durante 2 h)');
@@ -1744,7 +1744,7 @@ function renderShopBoosters(d){
           <strong style="font-size:13px; color:var(--ink); word-break:break-word;">Ventana Estelar</strong>
           <span class="badge" style="font-size:9.5px; background:rgba(180,120,160,0.15); color:var(--wine); padding:2px 7px; border-radius:6px; font-weight:700; white-space:nowrap;">x1.5 · 2 h</span>
         </div>
-        <p style="font-size:10.5px; color:var(--muted); margin:3px 0 0 0; word-break:break-word;">x1.5 en impulsos y racha. Máx +2 ★ extra.</p>
+        <p style="font-size:10.5px; color:var(--muted); margin:3px 0 0 0; word-break:break-word;">x1.5 en diario, recuerdos e impulsos. Máx +2 ★ extra.</p>
       </div>
       <div style="flex-shrink:0; margin-left:auto;">${windowStatus}</div>
     </div>

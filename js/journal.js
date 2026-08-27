@@ -8,8 +8,8 @@ function saveCheckin(){
  let d=load(),k=dayKey(),cId='checkin-'+k;
  d.checkins[k]={id:cId,ts:Date.now(),mood,need:needToday.value.trim(),forMe:forMeToday.value.trim()};
  save(d);
- let got=awardDailyAction('checkin',.2,.2,'Check-in',cId);
- toast(got?'Día guardado · +0,2':'Día actualizado');
+ let boost=awardDailyAction('checkin',.2,.2,'Check-in',cId);
+ toast(boost&&boost.grantAmount?formatRewardToast('Check-in',boost):'Día actualizado');
  render();
 }
 
@@ -32,8 +32,8 @@ function saveGratitudeEntry(){
   if(document.getElementById('gratitude2')) document.getElementById('gratitude2').value = '';
   if(document.getElementById('gratitude3')) document.getElementById('gratitude3').value = '';
   
-  let got = awardDailyAction('journal', 0.1, 0.5, 'Agradecimiento', eId);
-  toast(got ? 'Agradecimientos guardados · +0,1' : 'Agradecimientos guardados');
+  let boost = awardDailyAction('journal', 0.1, 0.5, 'Agradecimiento', eId);
+  toast(boost && boost.grantAmount ? formatRewardToast('Agradecimientos guardados', boost) : 'Agradecimientos guardados');
   render();
 }
 
@@ -45,8 +45,8 @@ function saveQuickEntry(){
  d.journal.push({id:eId,ts:Date.now(),type:'rapida',title:p[0],text:t});
  save(d);
  if(document.getElementById('quickText')) document.getElementById('quickText').value='';
- let got=awardDailyAction('journal',.1,.5,p[0]||'Escribir',eId);
- toast(got?'Guardado · +0,1':'Guardado');
+ let boost=awardDailyAction('journal',.1,.5,p[0]||'Escribir',eId);
+ toast(boost&&boost.grantAmount?formatRewardToast('Guardado',boost):'Guardado');
  render();
 }
 
@@ -72,8 +72,8 @@ function saveJournalEntry(){
  entryTitle.value='';
  entryText.value='';
  futureDate.value='';
- let got=awardDailyAction('journal',.1,.5,'Escribir',eId);
- toast(got?'Entrada guardada · +0,1':'Entrada guardada');
+ let boost=awardDailyAction('journal',.1,.5,'Escribir',eId);
+ toast(boost&&boost.grantAmount?formatRewardToast('Entrada guardada',boost):'Entrada guardada');
  render();
 }
 
@@ -331,8 +331,8 @@ async function addGoodThing(){
   clearGoodPhotoSelect();
   if(submitBtn){ submitBtn.disabled=false; submitBtn.textContent='Guardar en mi órbita de hoy'; }
 
-  let got=awardDailyAction('goodThing',.1,.5,'Algo bueno',gId);
-  toast(got?'Guardado · +0,1':'Guardado en tu órbita de hoy');
+  let boost=awardDailyAction('goodThing',.1,.5,'Algo bueno',gId);
+  toast(boost&&boost.grantAmount?formatRewardToast('Recuerdo guardado',boost):'Guardado en tu órbita de hoy');
   render();
 }
 

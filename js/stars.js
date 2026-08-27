@@ -23,16 +23,30 @@ function cleanExpiredBoosters(d){
   return changed;
 }
 
+function formatRewardToast(actionName, boostResult){
+  if(!boostResult||!boostResult.grantAmount)return `${actionName} guardado`;
+  const baseFmt=parseFloat(Number(boostResult.base||0).toFixed(2)).toString().replace('.',',');
+  const totalFmt=parseFloat(Number(boostResult.total||0).toFixed(2)).toString().replace('.',',');
+  const multFmt=parseFloat(Number(boostResult.multiplier||1).toFixed(2)).toString().replace('.',',');
+  
+  if(boostResult.multiplier>1&&boostResult.extra>0){
+    return `${actionName} · +${baseFmt} ★ ×${multFmt} = +${totalFmt} ★`;
+  }
+  return `${actionName} · +${totalFmt} ★`;
+}
+
 function applyStarBoost(d,baseAmount,kind,context={}){
   baseAmount=Number(baseAmount||0);
-  if(baseAmount<=0)return {base:0,multiplier:1,extra:0,total:0,grantAmount:0,boosterId:null,boosterName:null};
+  if(baseAmount<=0){
+    return {base:0,multiplier:1,extra:0,total:0,grantAmount:0,boosterId:null,boosterName:null,kind:kind||'star'};
+  }
   
-  // Acciones rutinarias NUNCA se multiplican
-  const nonBoostable=['journal','goodThing','checkin','accion'];
+  // Exclusiones justificadas: compras, gastos, canjes, ajustes administrativos o flag noBoost
+  const nonBoostable=['purchase','spend','redeem','refund','revert','admin','sync','cumpleanos'];
   if(nonBoostable.includes(kind)||context.noBoost){
     let already=Number(context.alreadyGranted||0);
     let grantAmt=Math.max(0,Math.round((baseAmount-already)*100)/100);
-    return {base:baseAmount,multiplier:1,extra:0,total:baseAmount,grantAmount:grantAmt,boosterId:null,boosterName:null};
+    return {base:baseAmount,multiplier:1,extra:0,total:baseAmount,grantAmount:grantAmt,boosterId:null,boosterName:null,kind:kind||'star'};
   }
   
   if(!d.boosters){
@@ -43,15 +57,17 @@ function applyStarBoost(d,baseAmount,kind,context={}){
   let eventTs=Number(context.eventTs||Date.now());
   let candidates=[];
   
-  // 1. Boosters activos (ej. Ventana Estelar x1.5, Noche de Constancia x1.5)
+  // 1. Boosters activos temporales (ej. Noche de Constancia x1.5, Ventana Estelar x1.5)
   if(Array.isArray(d.boosters.active)){
     d.boosters.active.forEach(b=>{
       if(!b)return;
-      // Solo elegible si el evento ocurrió dentro de la vigencia del booster
-      let isTimeEligible=(b.startedAt<=eventTs&&(!b.expiresAt||eventTs<b.expiresAt));
+      let start=Number(b.startedAt||b.activatedAt||0);
+      let isTimeEligible=(start<=eventTs&&(!b.expiresAt||eventTs<b.expiresAt));
       if(!isTimeEligible)return;
       
-      let matchScope=!b.scope||b.scope.includes(kind)||(kind.startsWith('impulso')&&b.scope.includes('impulso'));
+      let bScope=Array.isArray(b.scope)?b.scope:[];
+      let matchScope=bScope.includes(kind)||(kind.startsWith('impulso')&&bScope.includes('impulso'));
+      
       if(matchScope){
         candidates.push({booster:b,isInventory:false});
       }
@@ -61,14 +77,15 @@ function applyStarBoost(d,baseAmount,kind,context={}){
   // 2. Boosters de inventario aplicables (ej. Impulso Valiente x2 en próximo timer superado)
   if(Array.isArray(d.boosters.inventory)){
     d.boosters.inventory.forEach(b=>{
-      if(!b)return;
+      if(!b||b.usesRemaining<=0)return;
+      let bScope=Array.isArray(b.scope)?b.scope:[];
       let matchScope=false;
       if(kind==='impulso-timer'||context.isTimer){
-        matchScope=!b.scope||b.scope.includes('impulso-timer')||b.scope.includes('impulso');
-      }else if(b.scope&&b.scope.includes(kind)){
+        matchScope=bScope.includes('impulso-timer')||bScope.includes('impulso');
+      }else if(bScope.includes(kind)){
         matchScope=true;
       }
-      if(matchScope&&b.usesRemaining>0){
+      if(matchScope){
         candidates.push({booster:b,isInventory:true});
       }
     });
@@ -78,7 +95,7 @@ function applyStarBoost(d,baseAmount,kind,context={}){
   
   if(!candidates.length){
     let grantAmt=Math.max(0,Math.round((baseAmount-alreadyGranted)*100)/100);
-    return {base:baseAmount,multiplier:1,extra:0,total:baseAmount,grantAmount:grantAmt,boosterId:null,boosterName:null};
+    return {base:baseAmount,multiplier:1,extra:0,total:baseAmount,grantAmount:grantAmt,boosterId:null,boosterName:null,kind:kind||'star'};
   }
   
   // Criterio No-Stacking: Elegir el de MAYOR multiplicador; si empatan, el que expire antes o el más antiguo
@@ -121,7 +138,8 @@ function applyStarBoost(d,baseAmount,kind,context={}){
     total:totalAmount,
     grantAmount:grantAmount,
     boosterId:b.id,
-    boosterName:b.name
+    boosterName:b.name,
+    kind:kind||'star'
   };
 }
 
@@ -164,12 +182,15 @@ function awardDailyAction(action,points,dailyCap,label,refId=null){
  if(!d.pointAwards[k].actions)d.pointAwards[k].actions={};
  let already=Number(d.pointAwards[k].actions[action]||0);
  let remaining=Math.max(0,Number(dailyCap)-already);
- let grant=Math.min(Number(points),remaining);
- if(grant<=0)return 0;
- d.pointAwards[k].actions[action]=already+grant;
- addPoints(d,grant,'accion',label||action,refId);
- save(d);
- return grant
+ let grantBase=Math.min(Number(points),remaining);
+ if(grantBase<=0){
+   return {base:0,multiplier:1,extra:0,total:0,grantAmount:0,boosterId:null,boosterName:null,kind:action};
+ }
+ d.pointAwards[k].actions[action]=Math.round((already+grantBase)*100)/100;
+ let boostResult=applyStarBoost(d,grantBase,action,{refId});
+ addPoints(d,boostResult.total,'accion',label||action,refId,null,boostResult.boosterId?boostResult:null);
+ save(d,true);
+ return boostResult;
 }
 
 function revertPointsForRef(d,refId,actionType=null,day=null){
