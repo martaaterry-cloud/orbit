@@ -439,6 +439,14 @@
       requestAnimationFrame(() => {
         this.isFrameRequested = false;
         if (!this.isPaused && this.renderer && this.scene && this.camera) {
+          // Aislamiento explícito de sombras por escena (Observatorio vs Universo)
+          if (this.options && this.options.shadows) {
+            this.renderer.shadowMap.enabled = true;
+            this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+          } else {
+            this.renderer.shadowMap.enabled = false;
+          }
+
           if (typeof this.options.onRender === 'function') {
             this.options.onRender();
           }
