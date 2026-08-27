@@ -76,7 +76,7 @@ const rawConstellationCatalog = [
     x: 25,
     y: 64,
     size: 120,
-    rot: 35
+    rot: -15
   },
 
   // PILOTO 3: Osa Mayor (Ursa Major) - El Carro / Septentrión (3 en mango, 4 en cazo)

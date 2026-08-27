@@ -185,7 +185,7 @@
 
     buildObservatoryEnvironment(observatoryScene);
 
-    const modelUrl = 'assets/models/observatory.glb?v=1.3.45';
+    const modelUrl = 'assets/models/observatory.glb?v=1.3.46';
     Orbit3D.loadGLB(
       modelUrl,
       function(gltf, bounds) {

@@ -255,31 +255,54 @@
       starCoordsById.set(String(idx), coord);
     });
 
+    const progState = (typeof ConstellationUtils !== 'undefined' && ConstellationUtils.computeConstellationProgress)
+      ? ConstellationUtils.computeConstellationProgress(c, state.progress, { isUnlocked: state.status === 'claimed' || state.status === 'discovered' })
+      : {
+          activeEdges: (state.status === 'claimed' || state.status === 'discovered') ? (c.edges || []) : [],
+          activeNodeIndices: new Set((state.status === 'claimed' || state.status === 'discovered') ? (stars.map((_, i) => i)) : [])
+        };
+
     if (starPositions.length > 0) {
       const starGeo = new THREE.BufferGeometry();
       starGeo.setAttribute('position', new THREE.Float32BufferAttribute(starPositions, 3));
 
-      let starColor = 0x3d4856;
-      let starSize = 0.28;
-      let starOpacity = 0.22;
+      const starColors = new Float32Array(stars.length * 3);
+      for (let i = 0; i < stars.length; i++) {
+        let r = 0.24, g = 0.28, b = 0.35; // base ghost star
+        if (state.status === 'claimed') {
+          r = 1.0; g = 1.0; b = 1.0;
+        } else if (state.status === 'discovered') {
+          r = 1.0; g = 0.92; b = 0.84;
+        } else if (state.status === 'in-progress') {
+          if (progState.activeNodeIndices.has(i)) {
+            r = 0.96; g = 0.93; b = 0.89; // active discovered star
+          } else {
+            r = 0.24; g = 0.28; b = 0.35; // ghost star
+          }
+        }
+        starColors[i * 3] = r;
+        starColors[i * 3 + 1] = g;
+        starColors[i * 3 + 2] = b;
+      }
+      starGeo.setAttribute('color', new THREE.BufferAttribute(starColors, 3));
+
+      let starSize = 0.30;
+      let starOpacity = 0.25;
 
       if (state.status === 'claimed') {
-        starColor = 0xffffff;
         starSize = 0.58;
         starOpacity = 0.98;
       } else if (state.status === 'discovered') {
-        starColor = 0xffebd6;
         starSize = 0.50;
         starOpacity = 0.88;
       } else if (state.status === 'in-progress') {
-        starColor = 0xf4eee4;
         starSize = 0.44;
-        starOpacity = 0.78;
+        starOpacity = 0.85;
       }
 
       const starMat = new THREE.PointsMaterial({
-        color: starColor,
         size: starSize,
+        vertexColors: true,
         map: getStarTexture(),
         transparent: true,
         depthWrite: false,
@@ -289,17 +312,10 @@
       group.add(starPoints);
     }
 
-    const edges = c.edges || [];
+    const activeEdges = (state.status === 'claimed' || state.status === 'discovered')
+      ? (c.edges || [])
+      : (state.status === 'in-progress' ? progState.activeEdges : []);
     const linePositions = [];
-
-    // Progresión real de las aristas según el estado
-    let activeEdges = [];
-    if (state.status === 'claimed' || state.status === 'discovered') {
-      activeEdges = edges;
-    } else if (state.status === 'in-progress') {
-      const visibleEdgeCount = Math.floor((state.progress || 0) * edges.length);
-      activeEdges = edges.slice(0, visibleEdgeCount);
-    } // Para 'locked', activeEdges permanece vacío ([]), 0 aristas visibles
 
     activeEdges.forEach(([a, b]) => {
       let pA = starCoordsById.get(a);

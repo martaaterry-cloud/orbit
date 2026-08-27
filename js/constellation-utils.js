@@ -350,10 +350,91 @@
     };
   }
 
+  /**
+   * Calcula el estado de progreso unificado para cualquier constelación.
+   * Garantiza coherencia determinista e idéntica entre SVG 2D (Ficha, Atlas) y WebGL 3D (Cielo).
+   *
+   * @param {Object} rawDef - Definición de la constelación
+   * @param {number|boolean} progressVal - Progreso normalizado [0, 1] o booleano de desbloqueo
+   * @param {Object} [opts] - Opciones opcionales { isUnlocked, isClaimed }
+   * @returns {Object} Estado con aristas y nodos activos
+   */
+  function computeConstellationProgress(rawDef, progressVal, opts = {}) {
+    const cDef = normalizeConstellation(rawDef) || rawDef || {};
+    const pts = cDef.pts || (cDef.stars ? cDef.stars.map(s => [s.x, s.y]) : []);
+    const edges = cDef.edges || [];
+    const N = pts.length;
+    const E = edges.length;
+
+    const isUnlocked = Boolean(opts.isUnlocked || opts.isClaimed || progressVal === true);
+    let p = isUnlocked ? 1.0 : (typeof progressVal === 'number' ? Math.max(0, Math.min(1, progressVal)) : 0.0);
+
+    let activeEdgeCount = 0;
+    if (isUnlocked || p >= 1.0) {
+      activeEdgeCount = E;
+      p = 1.0;
+    } else if (p <= 0.0) {
+      activeEdgeCount = 0;
+      p = 0.0;
+    } else {
+      activeEdgeCount = Math.min(E, Math.floor(p * E));
+    }
+
+    const activeEdges = edges.slice(0, activeEdgeCount);
+    const activeEdgeIndices = new Set();
+    for (let i = 0; i < activeEdgeCount; i++) {
+      activeEdgeIndices.add(i);
+    }
+
+    const activeNodeIndices = new Set();
+    if (isUnlocked || p >= 1.0) {
+      for (let i = 0; i < N; i++) activeNodeIndices.add(i);
+    } else if (p > 0.0) {
+      // Nodos conectados por las aristas activas
+      activeEdges.forEach(([a, b]) => {
+        if (a >= 0 && a < N) activeNodeIndices.add(a);
+        if (b >= 0 && b < N) activeNodeIndices.add(b);
+      });
+      // Asegurar que al menos el número base proporcional de estrellas esté iluminado
+      const baseEarnedNodes = Math.min(N, Math.floor(p * N) + 1);
+      for (let i = 0; i < baseEarnedNodes; i++) {
+        activeNodeIndices.add(i);
+      }
+    }
+
+    const isComplete = isUnlocked || (p >= 1.0);
+    const percentage = Math.round(p * 100);
+
+    // Siguiente nodo objetivo para destacar
+    let nextTargetNode = -1;
+    if (!isComplete && N > 0) {
+      for (let i = 0; i < N; i++) {
+        if (!activeNodeIndices.has(i)) {
+          nextTargetNode = i;
+          break;
+        }
+      }
+    }
+
+    return {
+      progress: p,
+      percentage,
+      totalStars: N,
+      totalEdges: E,
+      activeEdgeCount,
+      activeEdges,
+      activeEdgeIndices,
+      activeNodeIndices,
+      isComplete,
+      nextTargetNode
+    };
+  }
+
   return {
     VALID_COLLECTIONS,
     REGION_COLLECTION_MAP,
     normalizeConstellation,
+    computeConstellationProgress,
     validateConstellation,
     validateConstellationCatalog
   };

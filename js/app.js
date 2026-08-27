@@ -321,14 +321,17 @@ function constellationSvg(def, unlocked, progress) {
   
   let pts = cDef.pts || (cDef.stars ? cDef.stars.map(s => [s.x, s.y]) : []);
   let edges = cDef.edges || [];
-  let N = pts.length;
-  let pVal = unlocked ? 1 : Math.max(0, Math.min(1, Number(progress) || 0));
   
-  // Progresión estrella por estrella: cada estrella ganada activa un nodo y sus conexiones
-  let totalNeed = cDef.need || N;
-  let earned = Math.floor(pVal * totalNeed);
-  let achieved = unlocked ? N : Math.min(N, earned);
-  let nextTarget = unlocked ? -1 : (achieved < N ? achieved : -1);
+  let progState = (typeof ConstellationUtils !== 'undefined' && ConstellationUtils.computeConstellationProgress)
+    ? ConstellationUtils.computeConstellationProgress(cDef, unlocked ? 1.0 : progress)
+    : {
+        progress: unlocked ? 1.0 : Math.max(0, Math.min(1, Number(progress) || 0)),
+        activeEdgeIndices: new Set(unlocked ? edges.map((_, i) => i) : []),
+        activeNodeIndices: new Set(unlocked ? pts.map((_, i) => i) : []),
+        nextTargetNode: -1
+      };
+
+  let pVal = progState.progress;
   let isRefined = unlocked || pVal >= 0.875;
   
   // Micro-estrellas de fondo suaves para ambientar el cielo nocturno
@@ -343,19 +346,20 @@ function constellationSvg(def, unlocked, progress) {
     [64, 12, 0.9, 0.24]
   ].map(([cx, cy, r, op]) => `<circle class="ambient-sky-star" cx="${cx}%" cy="${cy}%" r="${r}" opacity="${op}"/>`).join('');
 
-  let lines = edges.map(([a, b]) => {
-    let active = a < achieved && b < achieved;
+  let lines = edges.map(([a, b], edgeIdx) => {
+    let active = progState.activeEdgeIndices.has(edgeIdx);
     let cls = active ? ('line' + (isRefined ? ' refined-line' : '')) : 'ghost-line';
     if (!pts[a] || !pts[b]) return '';
     return `<line class="${cls}" x1="${pts[a][0]}%" y1="${pts[a][1]}%" x2="${pts[b][0]}%" y2="${pts[b][1]}%"/>`;
   }).join('');
   
   let stars = pts.map((p, i) => {
-    let cls = 'ghost-star';
+    let isActive = progState.activeNodeIndices.has(i);
     let isMain = (cDef.id === 'lyra' && i === 0);
+    let cls = 'ghost-star';
     let r = isMain ? 2.3 : 2.1;
     
-    if (i < achieved) {
+    if (isActive) {
       if (isMain) {
         let level = isRefined ? 'main-star-full' : (pVal >= 0.38 ? 'main-star-mid' : 'main-star-low');
         cls = `star ${level}`;
@@ -364,7 +368,7 @@ function constellationSvg(def, unlocked, progress) {
         cls = 'star' + (isRefined ? ' refined-star' : '');
         r = isRefined ? 2.8 : 2.6;
       }
-    } else if (i === nextTarget) {
+    } else if (i === progState.nextTargetNode) {
       cls = 'target-star';
       r = isMain ? 2.5 : 2.3;
     }

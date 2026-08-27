@@ -70,7 +70,76 @@ constellationDefs.forEach((c) => {
   }
 });
 
-// 3. Resumen final
+// 3. Pruebas de progresión unificada y monotonía para Casiopea y Lira
+console.log('\n📊 Verificación de progresión unificada (0%, 25%, 50%, 75%, 100%):');
+
+const testCases = ['cassiopeia', 'lyra'];
+const progressSteps = [0.0, 0.25, 0.50, 0.75, 1.0];
+
+testCases.forEach((targetId) => {
+  const c = constellationDefs.find(x => x.id === targetId);
+  if (!c) {
+    console.error(`  ❌ No se encontró la constelación ${targetId}`);
+    totalErrors++;
+    return;
+  }
+
+  console.log(`\n  Constelación: ${c.name} (${c.id}) - ${c.stars.length} estrellas, ${c.edges.length} aristas:`);
+  let prevEdgeCount = -1;
+
+  progressSteps.forEach((p) => {
+    const res = ConstellationUtils.computeConstellationProgress(c, p);
+    const percentStr = `${Math.round(p * 100)}%`.padStart(4);
+
+    // 1. A 0% debe haber 0 aristas ganadas
+    if (p === 0.0 && res.activeEdgeCount !== 0) {
+      console.error(`    ✖ A 0% se esperaban 0 aristas activas, se obtuvieron ${res.activeEdgeCount}`);
+      totalErrors++;
+    }
+
+    // 2. A 100% deben aparecer todas las aristas y estrellas
+    if (p === 1.0 && (res.activeEdgeCount !== c.edges.length || res.activeNodeIndices.size !== c.stars.length)) {
+      console.error(`    ✖ A 100% se esperaban todas las aristas (${c.edges.length}) y estrellas (${c.stars.length}), se obtuvieron ${res.activeEdgeCount} aristas y ${res.activeNodeIndices.size} estrellas`);
+      totalErrors++;
+    }
+
+    // 3. Monotonía: el número de aristas activas nunca disminuye
+    if (res.activeEdgeCount < prevEdgeCount) {
+      console.error(`    ✖ Ruptura de monotonía en ${percentStr}: ${res.activeEdgeCount} < ${prevEdgeCount}`);
+      totalErrors++;
+    }
+    prevEdgeCount = res.activeEdgeCount;
+
+    // 4. Casiopea al 75% debe tener exactamente 3 aristas
+    if (c.id === 'cassiopeia' && p === 0.75 && res.activeEdgeCount !== 3) {
+      console.error(`    ✖ Casiopea al 75% esperaba 3 aristas, obtuvo ${res.activeEdgeCount}`);
+      totalErrors++;
+    }
+
+    console.log(`    • ${percentStr} -> ${res.activeEdgeCount}/${c.edges.length} aristas | ${res.activeNodeIndices.size}/${c.stars.length} estrellas iluminadas`);
+  });
+
+  // 5. Verificación de integridad geométrica específica
+  if (c.id === 'cassiopeia') {
+    if (c.stars.length !== 5 || c.edges.length !== 4) {
+      console.error(`    ✖ Casiopea debe tener exactamente 5 estrellas y 4 aristas`);
+      totalErrors++;
+    }
+    if (c.rot === 35) {
+      console.error(`    ✖ Casiopea conserva la rotación vertical defectuosa rot: 35`);
+      totalErrors++;
+    }
+  }
+
+  if (c.id === 'lyra') {
+    if (c.stars.length !== 5 || c.edges.length !== 5 || c.rot !== -5) {
+      console.error(`    ✖ Lira ha sufrido modificaciones no permitidas`);
+      totalErrors++;
+    }
+  }
+});
+
+// 4. Resumen final
 console.log('\n=========================================================');
 if (totalErrors === 0) {
   console.log(`🎉 VALIDACIÓN EXITOSA: 0 errores, ${totalWarnings} advertencias.`);
