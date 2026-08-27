@@ -55,7 +55,7 @@
       name: 'Cielo de invierno',
       roman: 'III',
       col: 'invierno',
-      pos: { x: -1.7, y: -2.8, z: -3.5 },
+      pos: { x: -1.85, y: -2.6, z: -3.5 },
       seed: 786433,
       type: 'nebula-ice-crystal',
       // Azul hielo cristalino/blanco suave
@@ -67,7 +67,7 @@
       name: 'Espacio profundo',
       roman: 'IV',
       col: 'profundo',
-      pos: { x: 1.7, y: -3.0, z: -6.0 },
+      pos: { x: 1.95, y: -3.3, z: -6.0 },
       seed: 982451653,
       type: 'gravitational-void',
       // Azul-negro/violeta muy oscuro sin magenta fuerte
@@ -559,14 +559,14 @@
       let screenX = (tempProjectVec.x * 0.5 + 0.5) * width;
       let screenY = (-tempProjectVec.y * 0.5 + 0.5) * height;
 
-      // Margen horizontal de seguridad moderado sin forzar el badge hacia el centro
-      const marginX = 24;
+      // Margen horizontal de seguridad responsivo
+      const marginX = 16;
       screenX = Math.max(marginX, Math.min(width - marginX, screenX));
 
       // Margen vertical de seguridad (debajo de cabecera y encima de toolbar)
-      const minTop = 70;
-      const maxTop = height - 72;
-      const offsetTop = item.isRegion ? 36 : 16;
+      const minTop = 64;
+      const maxTop = height - 76;
+      const offsetTop = item.isRegion ? 32 : 14;
       screenY = Math.max(minTop, Math.min(maxTop, screenY + offsetTop));
 
       item.element.style.display = 'flex';
@@ -845,7 +845,7 @@
 
     const targetPanX = reg.pos.x;
     const targetPanY = reg.pos.y;
-    const targetZoomZ = Math.max(4.5, reg.pos.z + 7.5);
+    const targetZoomZ = Math.max(6.0, reg.pos.z + 10.5);
 
     animateCameraTransition(targetPanX, targetPanY, targetZoomZ, 700);
   }
