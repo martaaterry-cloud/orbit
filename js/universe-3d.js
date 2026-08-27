@@ -650,12 +650,12 @@
 
     // Ajustar límites de navegación según estado (vista general o foco)
     if (activeRegion) {
-      sceneInstance.minPanX = activeRegion.pos.x - 3.5;
-      sceneInstance.maxPanX = activeRegion.pos.x + 3.5;
-      sceneInstance.minPanY = activeRegion.pos.y - 3.5;
-      sceneInstance.maxPanY = activeRegion.pos.y + 3.5;
+      sceneInstance.minPanX = activeRegion.pos.x - 4.0;
+      sceneInstance.maxPanX = activeRegion.pos.x + 4.0;
+      sceneInstance.minPanY = activeRegion.pos.y - 4.0;
+      sceneInstance.maxPanY = activeRegion.pos.y + 4.0;
       sceneInstance.minZoom = Math.max(3.0, activeRegion.pos.z + 3.5);
-      sceneInstance.maxZoom = activeRegion.pos.z + 18.0;
+      sceneInstance.maxZoom = activeRegion.pos.z + 20.0;
     } else {
       sceneInstance.minPanX = -4.5;
       sceneInstance.maxPanX = 4.5;
@@ -845,7 +845,7 @@
 
     const targetPanX = reg.pos.x;
     const targetPanY = reg.pos.y;
-    const targetZoomZ = Math.max(6.0, reg.pos.z + 10.5);
+    const targetZoomZ = Math.max(8.0, reg.pos.z + 15.0);
 
     animateCameraTransition(targetPanX, targetPanY, targetZoomZ, 700);
   }
