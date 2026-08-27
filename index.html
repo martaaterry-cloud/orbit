@@ -14,7 +14,7 @@
 <title>Orbit</title>
 
   <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
-  <link rel="stylesheet" href="css/orbit.css?v=1.3.49">
+  <link rel="stylesheet" href="css/orbit.css?v=1.3.50">
 </head>
 <body>
 <!-- Pantalla de Acceso Inicial Multiusuario -->
@@ -490,7 +490,7 @@
     <button class="btn btn-line settings-logout-btn" onclick="handleCloudLogout()" id="cloudLogoutBtn">
       Cerrar sesión
     </button>
-    <div class="settings-version-label">Orbit v1.3.49</div>
+    <div class="settings-version-label">Orbit v1.3.50</div>
   </div>
 </section>
 
@@ -565,7 +565,7 @@
 
   <!-- Controles Flotantes Inferiores Discretos -->
   <div class="observatory-bottom-dock">
-    <button class="observatory-dock-btn" onclick="openObservatoryUpgradesSheet()" title="Mejoras de la Estación">
+    <button class="observatory-dock-btn" onclick="openObservatoryUpgradesSheet()" title="Mejoras del observatorio">
       <svg class="icon" viewBox="0 0 24 24" style="width:15px; height:15px; stroke:currentColor;"><path d="M12 3a7 7 0 0 0-7 7v3h14v-3a7 7 0 0 0-7-7z"/><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/><path d="M12 3v10"/></svg>
       <span>Mejoras</span>
     </button>
@@ -576,21 +576,21 @@
   </div>
 </section>
 
-<!-- Bottom Sheet: Mejoras de la Estación / Inspector de Módulos -->
-<div class="modal observatory-sheet-modal" id="observatoryUpgradesModal">
+<!-- Bottom Sheet: Mejoras del observatorio -->
+<div class="modal observatory-sheet-modal" id="observatoryUpgradesModal" onclick="if(event.target===this)closeModal('observatoryUpgradesModal')">
   <div class="sheet observatory-sheet">
     <button class="modal-close-x observatory-sheet-close" onclick="closeModal('observatoryUpgradesModal')" aria-label="Cerrar">
       <svg class="icon" viewBox="0 0 24 24" style="width:14px; height:14px; stroke:currentColor; stroke-width:2;"><path d="M18 6L6 18M6 6l12 12"/></svg>
     </button>
-    <h3 class="observatory-sheet-title">Mejoras de la Estación</h3>
-    <p class="observatory-sheet-sub">Optimiza tu instrumental astronómico y eleva el rango del observatorio</p>
+    <h3 class="observatory-sheet-title">Mejoras del observatorio</h3>
+    <p class="observatory-sheet-sub">Evoluciona cada componente y amplía tu alcance.</p>
     
     <div id="observatoryComponents"></div>
   </div>
 </div>
 
 <!-- Bottom Sheet: Regiones del Cielo -->
-<div class="modal observatory-sheet-modal" id="observatoryRegionsModal">
+<div class="modal observatory-sheet-modal" id="observatoryRegionsModal" onclick="if(event.target===this)closeModal('observatoryRegionsModal')">
   <div class="sheet observatory-sheet">
     <button class="modal-close-x observatory-sheet-close" onclick="closeModal('observatoryRegionsModal')" aria-label="Cerrar">
       <svg class="icon" viewBox="0 0 24 24" style="width:14px; height:14px; stroke:currentColor; stroke-width:2;"><path d="M18 6L6 18M6 6l12 12"/></svg>
@@ -1037,20 +1037,20 @@
 <div class="toast" id="toast"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="js/vendor/three.min.js?v=1.3.49"></script>
-  <script src="js/vendor/GLTFLoader.js?v=1.3.49"></script>
-  <script src="js/scene-3d-core.js?v=1.3.49"></script>
-  <script src="js/observatory-3d.js?v=1.3.49"></script>
-  <script src="js/universe-3d.js?v=1.3.49"></script>
-  <script src="js/constellation-utils.js?v=1.3.49"></script>
-  <script src="data/templates.js?v=1.3.49"></script>
-  <script src="data/constellations.js?v=1.3.49"></script>
-  <script src="js/storage.js?v=1.3.49"></script>
-  <script src="js/supabase.js?v=1.3.49"></script>
-  <script src="js/stars.js?v=1.3.49"></script>
-  <script src="js/streak.js?v=1.3.49"></script>
-  <script src="js/journal.js?v=1.3.49"></script>
-  <script src="js/archive.js?v=1.3.49"></script>
-  <script src="js/app.js?v=1.3.49"></script>
+  <script src="js/vendor/three.min.js?v=1.3.50"></script>
+  <script src="js/vendor/GLTFLoader.js?v=1.3.50"></script>
+  <script src="js/scene-3d-core.js?v=1.3.50"></script>
+  <script src="js/observatory-3d.js?v=1.3.50"></script>
+  <script src="js/universe-3d.js?v=1.3.50"></script>
+  <script src="js/constellation-utils.js?v=1.3.50"></script>
+  <script src="data/templates.js?v=1.3.50"></script>
+  <script src="data/constellations.js?v=1.3.50"></script>
+  <script src="js/storage.js?v=1.3.50"></script>
+  <script src="js/supabase.js?v=1.3.50"></script>
+  <script src="js/stars.js?v=1.3.50"></script>
+  <script src="js/streak.js?v=1.3.50"></script>
+  <script src="js/journal.js?v=1.3.50"></script>
+  <script src="js/archive.js?v=1.3.50"></script>
+  <script src="js/app.js?v=1.3.50"></script>
 </body>
 </html>

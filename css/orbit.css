@@ -1202,29 +1202,37 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
    BOTTOM SHEETS DEL OBSERVATORIO (Modales Oscuros Translúcidos)
    ========================================================================== */
 .observatory-sheet-modal {
+  position: fixed !important;
+  inset: 0 !important;
   align-items: flex-end !important;
   justify-content: center !important;
   padding: 0 !important;
-  background: rgba(4, 2, 10, 0.45) !important;
+  background: rgba(4, 6, 12, 0.22) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  z-index: 30 !important;
 }
 
 .observatory-sheet-modal .observatory-sheet {
   width: 100% !important;
-  max-width: min(540px, 100vw) !important;
+  max-width: min(520px, 100vw) !important;
   max-height: 60vh !important;
   max-height: 60dvh !important;
-  border-radius: 24px 24px 0 0 !important;
+  border-radius: 20px 20px 0 0 !important;
   margin: 0 auto !important;
-  background: linear-gradient(180deg, rgba(20, 13, 36, 0.92) 0%, rgba(10, 6, 20, 0.96) 100%) !important;
-  backdrop-filter: blur(28px) !important;
-  -webkit-backdrop-filter: blur(28px) !important;
-  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  background: rgba(12, 16, 26, 0.94) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border: 1px solid rgba(255, 255, 255, 0.10) !important;
   border-bottom: none !important;
-  box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.6) !important;
-  padding: 20px 18px calc(24px + env(safe-area-inset-bottom)) !important;
+  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.5) !important;
+  padding: 16px 16px calc(18px + env(safe-area-inset-bottom)) !important;
   color: #f7f4eb !important;
   box-sizing: border-box !important;
-  animation: observatorySheetSlideUp 0.28s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain !important;
+  -webkit-overflow-scrolling: touch !important;
+  animation: observatorySheetSlideUp 0.26s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
 @keyframes observatorySheetSlideUp {
@@ -1234,24 +1242,29 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
 
 .observatory-sheet-title {
   font-family: var(--serif, Georgia, serif) !important;
-  font-size: 19px !important;
+  font-size: 18px !important;
   font-weight: 600 !important;
   color: #ffffff !important;
-  margin: 0 0 4px !important;
+  margin: 0 0 2px !important;
   padding-right: 36px !important;
 }
 
 .observatory-sheet-sub {
-  font-size: 12px !important;
-  color: #b8a9c4 !important;
-  margin: 0 0 14px !important;
-  line-height: 1.4 !important;
+  font-size: 11.5px !important;
+  color: #9cb0c6 !important;
+  margin: 0 0 10px !important;
+  line-height: 1.35 !important;
 }
 
 .observatory-sheet-close {
   background: rgba(255, 255, 255, 0.08) !important;
   color: #eeddf0 !important;
   border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  min-width: 44px !important;
+  min-height: 44px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
 }
 
 .observatory-sheet-close:hover {
@@ -1260,64 +1273,212 @@ textarea{resize:vertical;min-height:84px;line-height:1.45}
   border-color: rgba(252, 194, 205, 0.35) !important;
 }
 
-.observatory-sheet .card {
-  background: rgba(255, 255, 255, 0.04) !important;
-  border: 1px solid rgba(255, 255, 255, 0.09) !important;
-  color: #f7f4eb !important;
-}
-
-/* Selector de componentes modulares y tarjeta activa */
-.observatory-modules-strip {
+/* Franja de estado general de la estación */
+.observatory-station-banner {
   display: flex;
-  gap: 6px;
-  overflow-x: auto;
-  padding: 10px 2px 6px;
-  scrollbar-width: none;
-  -webkit-overflow-scrolling: touch;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  margin-bottom: 8px;
 }
-.observatory-modules-strip::-webkit-scrollbar {
-  display: none;
+.observatory-station-banner .station-banner-label {
+  font-size: 9.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: rgba(247, 244, 235, 0.55);
+  font-weight: 600;
+}
+.observatory-station-banner .station-banner-val {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #ffffff;
 }
 
-.observatory-module-chip {
-  flex: 0 0 auto;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 99px;
-  padding: 5px 12px;
-  font-size: 11px;
-  color: rgba(247, 244, 235, 0.7);
+/* Cuadrícula 2x2 estable para el selector de componentes */
+.observatory-modules-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin: 6px 0 10px;
+}
+
+@media (min-width: 480px) {
+  .observatory-modules-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.observatory-module-btn {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 8px;
+  min-height: 44px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  color: rgba(247, 244, 235, 0.75);
+  font-size: 12px;
+  font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.18s ease;
+  box-sizing: border-box;
+  text-align: left;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
-.observatory-module-chip:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: #fff;
+.observatory-module-btn:hover {
+  background: rgba(255, 255, 255, 0.07);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.15);
 }
 
-.observatory-module-chip.active {
-  background: var(--wine);
+.observatory-module-btn.active {
+  background: rgba(170, 89, 102, 0.28);
   border-color: var(--rose2);
   color: #ffffff;
-  box-shadow: 0 0 12px rgba(170, 89, 102, 0.4);
+  box-shadow: 0 0 10px rgba(252, 194, 205, 0.2);
 }
 
+.observatory-module-btn .module-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: currentColor;
+}
+
+/* Ficha de detalle simplificada con jerarquía limpia */
 .observatory-detail-card {
-  margin-top: 8px;
-  padding: 14px 16px;
-  border-radius: 16px;
-  background: linear-gradient(145deg, rgba(32, 22, 54, 0.7), rgba(16, 11, 28, 0.85));
-  border: 1.5px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
-  animation: cardFadeIn 0.3s ease;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  animation: cardFadeIn 0.24s ease;
+}
+
+.obs-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.obs-card-title-group {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+}
+
+.obs-card-title-group .obs-card-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--rose2);
+  flex-shrink: 0;
+}
+
+.obs-card-title {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #ffffff;
+  margin: 0 0 1px;
+}
+
+.obs-card-level-name {
+  font-size: 11px;
+  color: rgba(247, 244, 235, 0.7);
+}
+
+.obs-card-rank-badge {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--rose2);
+  background: rgba(252, 194, 205, 0.12);
+  border: 1px solid rgba(252, 194, 205, 0.25);
+  padding: 3px 8px;
+  border-radius: 6px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.obs-card-desc {
+  font-size: 11.5px;
+  color: rgba(247, 244, 235, 0.78);
+  line-height: 1.4;
+  margin: 0;
+}
+
+.obs-card-next-section {
+  background: rgba(0, 0, 0, 0.22);
+  border-radius: 8px;
+  padding: 8px 10px;
+  border-left: 2px solid var(--rose2);
+}
+
+.obs-card-next-label {
+  font-size: 9.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--rose2);
+  font-weight: 700;
+  display: block;
+  margin-bottom: 2px;
+}
+
+.obs-card-next-desc {
+  font-size: 11px;
+  color: rgba(247, 244, 235, 0.85);
+  margin: 0;
+  line-height: 1.35;
+}
+
+.obs-card-footer {
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  padding-top: 9px;
+  margin-top: 1px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.obs-card-cost-info {
+  font-size: 11.5px;
+  color: rgba(247, 244, 235, 0.75);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.obs-upgrade-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 7px 15px;
+  font-size: 11.5px;
+  font-weight: 600;
+  border-radius: 8px;
+  min-height: 38px;
+}
+
+.obs-upgrade-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 @keyframes cardFadeIn {
-  0% { opacity: 0; transform: translateY(6px); }
+  0% { opacity: 0; transform: translateY(4px); }
   100% { opacity: 1; transform: translateY(0); }
 }
 

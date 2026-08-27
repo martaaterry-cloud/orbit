@@ -664,74 +664,56 @@ function renderUniverse(d){
     { level: 0, name: 'Puesto de Observación', cost: 0, desc: 'Instrumental óptico de campo y cartas celestes básicas.' },
     { level: 1, name: 'Refractor Óptico de Precisión', cost: 5, desc: 'Lentes apocromáticas de alta definición y montura de precisión.' },
     { level: 2, name: 'Estación Astrofotográfica', cost: 10, desc: 'Sensor digital de alta resolución y seguimiento sideral motorizado.' },
-    { level: 3, name: 'Observatorio de Alta Montaña', cost: 15, desc: 'Cúpula giratoria automatizada y atmósfera límpida.' },
-    { level: 4, name: 'Complejo de Espacio Profundo', cost: 20, desc: 'Óptica reflectora segmentada y cartografía espectral total.' }
+    { level: 3, name: 'Observatorio de Alta Montaña', cost: 15, desc: 'Cúpula giratoria automatizada y atmósfera límpida.' }
   ];
 
   const observatoryComponents = [
     {
       id: 'telescope',
-      icon: '🔭',
       name: 'Telescopio Principal',
+      shortName: 'Telescopio',
       desc: 'Capta la luz tenue de estrellas y constelaciones lejanas.',
       levels: [
-        'Refractor básico (70mm)',
-        'Refractor apocromático ED (120mm)',
-        'Reflector Newtoniano f/4 (200mm)',
-        'Ritchey-Chrétien de cuarzo (350mm)',
-        'Espejo parabólico segmentado (600mm)'
+        'Refractor básico (70 mm)',
+        'Refractor apocromático ED (120 mm)',
+        'Reflector Newtoniano f/4 (200 mm)',
+        'Ritchey-Chrétien de cuarzo (350 mm)'
       ]
     },
     {
       id: 'mount',
-      icon: '⚙️',
       name: 'Montura y Seguimiento',
+      shortName: 'Montura',
       desc: 'Compensa la rotación de la Tierra para mantener fijas las figuras celestes.',
       levels: [
         'Trípode altacimutal manual',
         'Montura ecuatorial con mandos finos',
         'Sistema GoTo de alineación estelar',
-        'Seguimiento sideral automatizado',
-        'Tracción directa óptica de precisión absoluta'
+        'Seguimiento sideral automatizado'
       ]
     },
     {
       id: 'sensors',
-      icon: '📷',
       name: 'Sensores y Cámara',
+      shortName: 'Sensores',
       desc: 'Captura y procesa los fotones estelares revelando figuras cósmicas.',
       levels: [
         'Oculares de observación directa',
         'Ocular gran angular iluminado',
         'Sensor CMOS astronómico digital',
-        'Cámara espectral refrigerada (-20°C)',
-        'Matriz fotométrica cuántica de banda ultra-estrecha'
+        'Cámara espectral refrigerada (-20 °C)'
       ]
     },
     {
       id: 'dome',
-      icon: '🏛️',
       name: 'Cúpula y Estación',
+      shortName: 'Cúpula',
       desc: 'Protección ambiental y aislamiento contra turbulencias térmicas terrestres.',
       levels: [
         'Plataforma de campo abierta',
         'Caseta protectora con techo deslizante',
         'Cúpula giratoria con compuerta',
-        'Domo automatizado con sellado térmico',
-        'Complejo geodésico con climatización pasiva'
-      ]
-    },
-    {
-      id: 'cartography',
-      icon: '📜',
-      name: 'Cartografía Celeste',
-      desc: 'Registro astrométrico de posiciones, estrellas guía y aristas del firmamento.',
-      levels: [
-        'Planisferio astronómico básico',
-        'Atlas estelar de constelaciones boreales',
-        'Catálogo astrométrico digitalizado',
-        'Base de datos fotométrica de cielo profundo',
-        'Red de coordenadas cósmicas estandarizada'
+        'Domo automatizado con sellado térmico'
       ]
     }
   ];
@@ -743,26 +725,24 @@ function renderUniverse(d){
     { id: 'profundo', name: 'Espacio profundo', cost: 15, desc: 'Galaxias externas y horizontes lejanos.' }
   ];
 
-  let currentLvl = d.observatoryLevel !== undefined ? d.observatoryLevel : (d.shipLevel || 0);
-  let nextLvl = observatoryLevels.find(l => l.level === currentLvl + 1);
+  let currentLvl = Math.max(0, Math.min(3, d.observatoryLevel !== undefined ? d.observatoryLevel : (d.shipLevel || 0)));
 
   // Inspector de Componentes Modulares del Observatorio
   let activeMod = window.activeObservatoryModuleId || 'telescope';
   let chipsHtml = `
-    <div style="margin-top:12px;">
-      <small style="text-transform:uppercase; font-size:9.5px; color:var(--rose2); font-weight:700; letter-spacing:0.08em; display:block; margin-bottom:4px;">
-        Componentes de la Estación
-      </small>
-      <div class="observatory-modules-strip">
-        ${observatoryComponents.map(comp => `
-          <div class="observatory-module-chip ${comp.id === activeMod ? 'active' : ''}" data-module="${comp.id}" onclick="selectObservatoryModule('${comp.id}')">
-            <span>${comp.icon}</span>
-            <span>${comp.name}</span>
-          </div>
-        `).join('')}
-      </div>
-      <div id="observatoryActiveModuleCard"></div>
+    <div class="observatory-station-banner">
+      <span class="station-banner-label">Estación actual</span>
+      <span class="station-banner-val">${observatoryLevels[Math.min(currentLvl, observatoryLevels.length - 1)].name}</span>
     </div>
+    <div class="observatory-modules-grid" role="tablist" aria-label="Componentes del Observatorio">
+      ${observatoryComponents.map(comp => `
+        <button type="button" role="tab" aria-selected="${comp.id === activeMod ? 'true' : 'false'}" class="observatory-module-btn ${comp.id === activeMod ? 'active' : ''}" data-module="${comp.id}" onclick="selectObservatoryModule('${comp.id}')">
+          <span class="module-icon">${getObservatorySvg(comp.id, 18)}</span>
+          <span>${comp.shortName}</span>
+        </button>
+      `).join('')}
+    </div>
+    <div id="observatoryActiveModuleCard"></div>
   `;
 
   let obsCompEl = document.getElementById('observatoryComponents') || document.getElementById('shipDestinations');
@@ -1097,6 +1077,24 @@ function setObservatoryTab(tab){
   if(btnTabReg) btnTabReg.classList.toggle('active', tab === 'regiones');
 }
 
+// Helper de Iconos SVG Lineales para el Observatorio y Mejoras
+function getObservatorySvg(iconName, size = 18) {
+  switch (iconName) {
+    case 'telescope':
+      return `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m10 4 9.5 5.5-2 3.5L8 7.5z"/><path d="m6 11 2-3.5"/><path d="m12 13-4 8"/><path d="m14 14 3 7"/><path d="M11 15h3"/></svg>`;
+    case 'mount':
+      return `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="7"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="2.5"/></svg>`;
+    case 'sensors':
+      return `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="18" height="14" rx="3"/><circle cx="12" cy="13" r="4"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"/><circle cx="17.5" cy="9.5" r="0.7" fill="currentColor"/></svg>`;
+    case 'dome':
+      return `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 21h16"/><path d="M5 21v-7a7 7 0 0 1 14 0v7"/><path d="M12 7v7"/><path d="M9 21v-5h6v5"/></svg>`;
+    case 'star':
+      return `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
+    default:
+      return '';
+  }
+}
+
 function upgradeObservatory(level, cost){
   let d = load();
   if (Number(d.wallet || 0) < cost) {
@@ -1126,111 +1124,109 @@ function renderObservatoryDetailCard(d, moduleId) {
     { level: 0, name: 'Puesto de Observación', cost: 0, desc: 'Instrumental óptico de campo y cartas celestes básicas.' },
     { level: 1, name: 'Refractor Óptico de Precisión', cost: 5, desc: 'Lentes apocromáticas de alta definición y montura de precisión.' },
     { level: 2, name: 'Estación Astrofotográfica', cost: 10, desc: 'Sensor digital de alta resolución y seguimiento sideral motorizado.' },
-    { level: 3, name: 'Observatorio de Alta Montaña', cost: 15, desc: 'Cúpula giratoria automatizada y atmósfera límpida.' },
-    { level: 4, name: 'Complejo de Espacio Profundo', cost: 20, desc: 'Óptica reflectora segmentada y cartografía espectral total.' }
+    { level: 3, name: 'Observatorio de Alta Montaña', cost: 15, desc: 'Cúpula giratoria automatizada y atmósfera límpida.' }
   ];
 
   const observatoryComponents = [
     {
       id: 'telescope',
-      icon: '🔭',
       name: 'Telescopio Principal',
+      shortName: 'Telescopio',
       desc: 'Capta la luz tenue de estrellas y constelaciones lejanas.',
       levels: [
-        'Refractor básico (70mm)',
-        'Refractor apocromático ED (120mm)',
-        'Reflector Newtoniano f/4 (200mm)',
-        'Ritchey-Chrétien de cuarzo (350mm)',
-        'Espejo parabólico segmentado (600mm)'
+        'Refractor básico (70 mm)',
+        'Refractor apocromático ED (120 mm)',
+        'Reflector Newtoniano f/4 (200 mm)',
+        'Ritchey-Chrétien de cuarzo (350 mm)'
       ]
     },
     {
       id: 'mount',
-      icon: '⚙️',
       name: 'Montura y Seguimiento',
+      shortName: 'Montura',
       desc: 'Compensa la rotación de la Tierra para mantener fijas las figuras celestes.',
       levels: [
         'Trípode altacimutal manual',
         'Montura ecuatorial con mandos finos',
         'Sistema GoTo de alineación estelar',
-        'Seguimiento sideral automatizado',
-        'Tracción directa óptica de precisión absoluta'
+        'Seguimiento sideral automatizado'
       ]
     },
     {
       id: 'sensors',
-      icon: '📷',
       name: 'Sensores y Cámara',
+      shortName: 'Sensores',
       desc: 'Captura y procesa los fotones estelares revelando figuras cósmicas.',
       levels: [
         'Oculares de observación directa',
         'Ocular gran angular iluminado',
         'Sensor CMOS astronómico digital',
-        'Cámara espectral refrigerada (-20°C)',
-        'Matriz fotométrica cuántica de banda ultra-estrecha'
+        'Cámara espectral refrigerada (-20 °C)'
       ]
     },
     {
       id: 'dome',
-      icon: '🏛️',
       name: 'Cúpula y Estación',
+      shortName: 'Cúpula',
       desc: 'Protección ambiental y aislamiento contra turbulencias térmicas terrestres.',
       levels: [
         'Plataforma de campo abierta',
         'Caseta protectora con techo deslizante',
         'Cúpula giratoria con compuerta',
-        'Domo automatizado con sellado térmico',
-        'Complejo geodésico con climatización pasiva'
-      ]
-    },
-    {
-      id: 'cartography',
-      icon: '📜',
-      name: 'Cartografía Celeste',
-      desc: 'Registro astrométrico de posiciones, estrellas guía y aristas del firmamento.',
-      levels: [
-        'Planisferio astronómico básico',
-        'Atlas estelar de constelaciones boreales',
-        'Catálogo astrométrico digitalizado',
-        'Base de datos fotométrica de cielo profundo',
-        'Red de coordenadas cósmicas estandarizada'
+        'Domo automatizado con sellado térmico'
       ]
     }
   ];
 
-  let currentLvl = d.observatoryLevel !== undefined ? d.observatoryLevel : (d.shipLevel || 0);
+  let currentLvl = Math.max(0, Math.min(3, d.observatoryLevel !== undefined ? d.observatoryLevel : (d.shipLevel || 0)));
   let nextLvl = observatoryLevels.find(l => l.level === currentLvl + 1);
   let comp = observatoryComponents.find(c => c.id === moduleId) || observatoryComponents[0];
   let currentCap = comp.levels[Math.min(currentLvl, comp.levels.length - 1)];
+  let nextCap = nextLvl ? (comp.levels[nextLvl.level] || nextLvl.name) : null;
+  let canAfford = nextLvl ? Number(d.wallet || 0) >= nextLvl.cost : false;
 
   cardContainer.innerHTML = `
     <div class="observatory-detail-card">
-      <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;">
-        <div style="display:flex; align-items:center; gap:8px;">
-          <span style="font-size:22px; filter:drop-shadow(0 0 8px rgba(252,194,205,0.4));">${comp.icon}</span>
+      <div class="obs-card-header">
+        <div class="obs-card-title-group">
+          <span class="obs-card-icon">${getObservatorySvg(comp.id, 24)}</span>
           <div>
-            <strong style="font-size:14px; color:#ffffff; display:block;">${comp.name}</strong>
-            <small style="font-size:9.5px; color:var(--rose2); font-weight:700; text-transform:uppercase; letter-spacing:0.06em;">✦ Módulo Activo · Rango ${currentLvl}</small>
+            <strong class="obs-card-title">${comp.name}</strong>
+            <div class="obs-card-level-name">${currentCap}</div>
           </div>
         </div>
-        <span style="font-size:10px; font-weight:700; color:#fff8e0; background:rgba(252,194,205,0.14); padding:3px 8px; border-radius:6px; border:1px solid rgba(252,194,205,0.3);">
-          ${currentCap}
-        </span>
+        <span class="obs-card-rank-badge">Rango ${currentLvl} de 3</span>
       </div>
-      <p style="font-size:11.5px; color:rgba(247,244,235,0.8); margin:4px 0 12px; line-height:1.45;">${comp.desc}</p>
+
+      <p class="obs-card-desc">${comp.desc}</p>
       
-      <div style="border-top:1px solid rgba(255,255,255,0.08); padding-top:10px; display:flex; justify-content:space-between; align-items:center; gap:8px;">
+      ${nextLvl ? `
+        <div class="obs-card-next-section">
+          <span class="obs-card-next-label">Próxima mejora</span>
+          <p class="obs-card-next-desc"><strong>${nextCap}</strong>: ${nextLvl.desc}</p>
+        </div>
+      ` : `
+        <div class="obs-card-next-section" style="border-left-color:#95dfb0;">
+          <span class="obs-card-next-label" style="color:#95dfb0;">Estado óptimo</span>
+          <p class="obs-card-next-desc">Instrumental llevado a su máximo rendimiento operativo.</p>
+        </div>
+      `}
+      
+      <div class="obs-card-footer">
         <div>
-          <small style="font-size:9.5px; color:rgba(247,244,235,0.55); text-transform:uppercase;">Nivel de la Estación</small>
-          <div style="font-size:12px; font-weight:700; color:#ffffff;">${observatoryLevels[currentLvl].name}</div>
+          ${nextLvl ? `
+            <span class="obs-card-cost-info">
+              Coste: <strong>${nextLvl.cost}</strong> ${getObservatorySvg('star', 13)}
+            </span>
+          ` : `
+            <span style="font-size:11.5px; color:#95dfb0; font-weight:600;">✦ Rango Máximo alcanzado</span>
+          `}
         </div>
         ${nextLvl ? `
-          <button class="btn btn-main" style="padding:7px 14px; font-size:11px; border-radius:8px;" onclick="upgradeObservatory(${nextLvl.level}, ${nextLvl.cost})">
-            Mejorar · ${nextLvl.cost} ★
+          <button class="btn ${canAfford ? 'btn-main' : 'btn-soft'} obs-upgrade-btn" onclick="upgradeObservatory(${nextLvl.level}, ${nextLvl.cost})" ${!canAfford ? 'disabled' : ''} aria-label="Mejorar a ${nextLvl.name} por ${nextLvl.cost} estrellas">
+            <span>Mejorar · ${nextLvl.cost}</span> ${getObservatorySvg('star', 13)}
           </button>
-        ` : `
-          <span style="font-size:10.5px; color:#95dfb0; font-weight:600;">✦ Nivel Máximo</span>
-        `}
+        ` : ''}
       </div>
     </div>
   `;
@@ -1239,12 +1235,12 @@ function renderObservatoryDetailCard(d, moduleId) {
 function selectObservatoryModule(moduleId) {
   window.activeObservatoryModuleId = moduleId;
   
-  // Actualizar chips de la barra
-  document.querySelectorAll('.observatory-module-chip').forEach(el => {
-    el.classList.toggle('active', el.getAttribute('data-module') === moduleId);
+  document.querySelectorAll('.observatory-module-btn').forEach(el => {
+    const isMatch = el.getAttribute('data-module') === moduleId;
+    el.classList.toggle('active', isMatch);
+    el.setAttribute('aria-selected', isMatch ? 'true' : 'false');
   });
   
-  // Re-renderizar tarjeta de detalle
   let d = load();
   renderObservatoryDetailCard(d, moduleId);
 }
